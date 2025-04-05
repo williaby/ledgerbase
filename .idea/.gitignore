@@ -1,0 +1,6 @@
+# .idea Git ignore list
+workspace.xml
+tasks.xml
+usage.statistics.xml
+dictionaries/
+shelf/
