@@ -1,0 +1,17 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <PythonCodeStyleSettings>
+      <option name="OPTIMIZE_IMPORTS" value="true" />
+      <option name="RIGHT_MARGIN" value="88" />
+      <option name="USE_FQ_NAMES" value="true" />
+    </PythonCodeStyleSettings>
+    <codeStyleSettings language="Python">
+      <option name="RIGHT_MARGIN" value="88" />
+      <indentOptions>
+        <option name="INDENT_SIZE" value="4" />
+        <option name="TAB_SIZE" value="4" />
+        <option name="USE_TAB_CHARACTER" value="false" />
+      </indentOptions>
+    </codeStyleSettings>
+  </code_scheme>
+</component>
