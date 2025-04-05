@@ -1,0 +1,63 @@
+@startuml LedgerBaseSchema
+title LedgerBase Core Schema
+
+entity institutions {
+  *id : SERIAL [PK]
+  *name : TEXT [UNIQUE, NOT NULL]
+  plaid_institution_id : TEXT [UNIQUE]
+  created_at : TIMESTAMP
+}
+
+entity accounts {
+  *id : SERIAL [PK]
+  *institution_id : INT [FK -> institutions.id, NOT NULL]
+  *name : TEXT [NOT NULL]
+  plaid_account_id : TEXT [UNIQUE]
+  account_number_suffix : TEXT
+  *type : TEXT [NOT NULL]
+  subtype : TEXT
+  created_at : TIMESTAMP
+}
+
+entity vendors {
+  *id : SERIAL [PK]
+  *name : TEXT [UNIQUE, NOT NULL]
+  *category_tier_1 : TEXT [NOT NULL]
+  *category_tier_2 : TEXT [NOT NULL]
+  is_creditor : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity vendor_patterns {
+  *id : SERIAL [PK]
+  *vendor_id : INT [FK -> vendors.id, NOT NULL]
+  *pattern : TEXT [NOT NULL]
+  *source_column : TEXT [NOT NULL]
+  created_at : TIMESTAMP
+  UNIQUE (vendor_id, pattern)
+}
+
+entity transactions_normalized {
+  *id : SERIAL [PK]
+  *account_id : INT [FK -> accounts.id, NOT NULL]
+  vendor_id : INT [FK -> vendors.id]
+  *raw_description : TEXT [NOT NULL]
+  parsed_vendor : TEXT
+  *amount : NUMERIC(12,2) [NOT NULL]
+  *transaction_date : DATE [NOT NULL]
+  posted_date : DATE
+  *transaction_type : TEXT [CHECK IN ('income', 'expense', 'transfer')]
+  tag : TEXT
+  comment : TEXT
+  category_tier_1 : TEXT
+  category_tier_2 : TEXT
+  source_file : TEXT
+  created_at : TIMESTAMP
+}
+
+accounts }|--|| institutions : belongs to
+vendor_patterns }|--|| vendors : defines
+transactions_normalized }|--|| accounts : recorded in
+transactions_normalized }|--|| vendors : tagged with
+
+@enduml
