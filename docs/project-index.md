@@ -15,8 +15,12 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #6 Build Command-Line ETL Script
 - [ ] #7 Test Plaid to DB Workflow End-to-End
 - [ ] #8 Add Documentation for Setup + Plaid Integration
+- [ ] #74 Introduce migration toolchain for schema evolution
+- [ ] #75 Create fixture generator for mock data
+- [ ] #76 Build meta setup script for Docker, migration, and test bootstrap
+- [ ] #81 Standardize Git branch flow: dev/main with feature branches
+- [ ] #82 Implement pre-commit hooks (black, flake8, isort)
 
-- [ ] #74 **(Phase 1)** See issue details.
 ## Phase 2 – Vendor Dictionary + Manual Categorization
 - [ ] #9 Create `vendors` and `vendor_patterns` tables
 - [ ] #10 Implement regex-based vendor matching
@@ -26,9 +30,10 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #14 Log vendor version history and pattern changes
 - [ ] #15 Add label and comment fields
 - [ ] #16 Add filters in UI: unmatched, vendor, label, person
-
-- [ ] #65 **(Phase 2)** See issue details.
-- [ ] #70 **(Phase 2)** See issue details.
+- [ ] #65 Create account_formats table and format pipeline mapping.
+- [ ] #70 Support regex pattern scope resolution across institutions
+- [ ] #84 Version and track vendor dictionary changes over time
+      
 ## Phase 3 – Budgeting System Core
 - [ ] #17 Create `budget_entries` schema
 - [ ] #18 Build budget entry UI
@@ -38,9 +43,9 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #22 Add savings health and deviation reporting
 - [ ] #23 Create person-aware budget views
 - [ ] #24 Document budgeting model and assumptions
-
-- [ ] #66 **(Phase 3)** See issue details.
-- [ ] #72 **(Phase 3)** See issue details.
+- [ ] #66 Build person tag manager UI with add/edit support
+- [ ] #72 Enable category locking and archival
+      
 ## Phase 4 – Unmatched Vendor Queue and Review Dashboard
 - [ ] #25 Build unmatched vendor queue backend
 - [ ] #26 Create Flask route for review interface
@@ -50,9 +55,9 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #30 Auto-suggestion engine for vendor matching (future ML)
 - [ ] #31 Track review history and audit log
 - [ ] #32 Document vendor review and approval process
-
-- [ ] #67 **(Phase 4)** See issue details.
-- [ ] #71 **(Phase 4)** See issue details.
+- [ ] #67 Stub ML vendor classifier for training and feedback loop
+- [ ] #71 Add full transaction_audit_log for lifecycle tracking
+      
 ## Phase 5 – Business Expenses + Savings Logic
 - [ ] #33 Add business expense tagging
 - [ ] #34 Build UI for tagging reimbursable items
@@ -72,9 +77,10 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #46 Export reports to CSV/HTML
 - [ ] #47 Schedule recurring monthly reports
 - [ ] #48 Document all standard reports
-
-- [ ] #69 **(Phase 6)** See issue details.
-- [ ] #73 **(Phase 6)** See issue details.
+- [ ] #69 Optional Slack/email notification system for budget alerts
+- [ ] #73 Add inter-account transfer detection and linking logic
+- [ ] #80 Add optional Jupyter notebook container for ad hoc reporting
+      
 ## Phase 7 – Admin Tools, Importers, and CLI Utilities
 - [ ] #49 CLI: CSV import by account
 - [ ] #50 Auto-detect institution format
@@ -84,6 +90,8 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #54 CLI action audit logging
 - [ ] #55 File import + upload status tracker
 - [ ] #56 Document CLI utilities and admin workflows
+- [ ] #77 Refactor ETL loaders into modular classes by institution
+- [ ] #78 Create CLI tools for vendor approvals and report generation
 
 ## Phase 8 – Final UI Polish, Deployment, and Automation
 - [ ] #57 Refactor and style UI templates
@@ -94,4 +102,6 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #62 Admin toggle UI for system config
 - [ ] #63 End-to-end QA workflow validation
 - [ ] #64 Deployment + operations manual
-- [ ] #68 **(Phase 8)** See issue details.
+- [ ] #68 Create system_config table for admin-controlled flags
+- [ ] #79 Add role-based access control (RBAC)
+- [ ] #83 Build health_check.py to verify system readiness
