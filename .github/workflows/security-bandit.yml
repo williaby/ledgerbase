@@ -1,0 +1,32 @@
+# .github/workflows/security-bandit.yml
+name: Security - Bandit Scan
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *' # nightly @ 3AM UTC
+
+jobs:
+  bandit-scan:
+    name: Python Security Scan (Bandit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit
+        run: |
+          bandit -r . -ll -f json -o bandit-report.json || true
+
+      - name: Upload report
+        uses: actions/upload-artifact@v3
+        with:
+          name: bandit-report
+          path: bandit-report.json
