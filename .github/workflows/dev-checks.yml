@@ -1,0 +1,51 @@
+name: Dev Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '30 3 * * *'  # Daily at 3:30 AM UTC
+
+jobs:
+  dev-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dev dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run formatter (black)
+        run: black --check ledgerbase
+
+      - name: Run linter (flake8)
+        run: flake8 ledgerbase
+
+      - name: Run flake8 with reviewdog
+        uses: reviewdog/action-flake8@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+          fail_on_error: false
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=ledgerbase --cov-report=xml
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
