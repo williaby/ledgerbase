@@ -24,3 +24,9 @@ LedgerBase is a personal financial management system tailored for families who w
 ## Getting Started
 
 See [docs/setup-instructions.md](docs/setup-instructions.md)
+
+## Status
+
+[![Dev Checks](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml/badge.svg)](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml)
+[![Weekly Audit](https://github.com/williaby/ledgerbase/actions/workflows/security-deps-audit.yml/badge.svg)](https://github.com/williaby/ledgerbase/actions/workflows/security-deps-audit.yml)
+[![codecov](https://codecov.io/gh/williaby/ledgerbase/branch/main/graph/badge.svg?token=NH77ZXWUJQ)](https://codecov.io/gh/williaby/ledgerbase)

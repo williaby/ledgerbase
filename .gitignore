@@ -1,13 +1,34 @@
+# Python environment + cache
 .venv/
 __pycache__/
-.env
 *.pyc
+*.pyo
+*.pyd
 *.sqlite
-migrations/
+
+# Environment configuration
+.env
+.env.*
+!.env.example
+
+# Pip-tools output
+*.txt~
 *.log
+pip-log.txt
+requirements.txt~
+requirements-dev.txt~
+
+# IDE + notebook artifacts
 .ipynb_checkpoints/
 .DS_Store
-.env.plaid
-.env.postgres
-.env.dev
-.env.prod
+
+# Flask / SQLAlchemy
+migrations/
+
+# Application logs
+*.log
+logs/
+
+# VSCode / PyCharm (optional, depending on tooling)
+.vscode/
+.idea/
