@@ -1,0 +1,12 @@
+# .github/workflows/security-safety.yml
+name: Safety Dependency Scan
+
+on: [push, pull_request]
+
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install -r requirements.txt safety
+      - run: safety check || true
