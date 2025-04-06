@@ -8,3 +8,6 @@ migrations/
 .ipynb_checkpoints/
 .DS_Store
 .env.plaid
+.env.postgres
+.env.dev
+.env.prod

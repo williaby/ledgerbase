@@ -23,3 +23,15 @@ load-plaid-env:
 	@echo "PLAID_CLIENT_ID=$$(grep PLAID_CLIENT_ID .env.plaid | cut -d '=' -f2)"
 	@echo "PLAID_SECRET=$$(grep PLAID_SECRET .env.plaid | cut -d '=' -f2)"
 	@echo "PLAID_ENV=$$(grep PLAID_ENV .env.plaid | cut -d '=' -f2)"
+
+ENV_FILE ?= .env.dev
+
+up:
+	docker compose --env-file $(ENV_FILE) up --build -d
+
+down:
+	docker compose --env-file $(ENV_FILE) down
+
+restart:
+	docker compose --env-file $(ENV_FILE) down
+	docker compose --env-file $(ENV_FILE) up --build -d

@@ -1,32 +1,21 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15
-    container_name: ledgerbase-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
   web:
-    build: ./docker/flask
-    container_name: ledgerbase-api
-    restart: unless-stopped
-    env_file: .env
-    depends_on:
-      - db
+    build: .
+    container_name: ledgerbase_web
+    command: flask run --host=0.0.0.0
     volumes:
-      - ./app:/app
+      - .:/app
     ports:
       - "5000:5000"
-    command: flask run --host=0.0.0.0
-
-
-volumes:
-  pgdata:
+    env_file:
+      - ${ENV_FILE}
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
