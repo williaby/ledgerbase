@@ -2,7 +2,7 @@ flask
 flask-sqlalchemy
 psycopg2-binary
 python-dotenv
-requests<2.32.0
+requests<2.33.0
 cryptography
 sentry-sdk
 flask-limiter
