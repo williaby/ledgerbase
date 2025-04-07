@@ -25,8 +25,19 @@ LedgerBase is a personal financial management system tailored for families who w
 
 See [docs/setup-instructions.md](docs/setup-instructions.md)
 
-## Status
+## CI / DevOps Status
 
-[![Dev Checks](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml/badge.svg)](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml)
-[![Weekly Audit](https://github.com/williaby/ledgerbase/actions/workflows/security-deps-audit.yml/badge.svg)](https://github.com/williaby/ledgerbase/actions/workflows/security-deps-audit.yml)
-[![codecov](https://codecov.io/gh/williaby/ledgerbase/branch/main/graph/badge.svg?token=NH77ZXWUJQ)](https://codecov.io/gh/williaby/ledgerbase)
+| Workflow           | Status |
+|--------------------|--------|
+| Lint & Format      | ![Lint](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml/badge.svg?branch=main) |
+| Unit Tests         | ![Tests](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml/badge.svg?branch=main) |
+| Type Check (mypy)  | ![Mypy](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml/badge.svg?branch=main) |
+| Pre-commit Hooks   | ![Pre-commit](https://github.com/williaby/ledgerbase/actions/workflows/pre-commit.yml/badge.svg?branch=main) |
+| Security - Bandit  | ![Bandit](https://github.com/williaby/ledgerbase/actions/workflows/security-bandit.yml/badge.svg?branch=main) |
+| Security - Safety  | ![Safety](https://github.com/williaby/ledgerbase/actions/workflows/security-safety.yml/badge.svg?branch=main) |
+| Security - Trivy   | ![Trivy](https://github.com/williaby/ledgerbase/actions/workflows/security-trivy.yml/badge.svg?branch=main) |
+| Security - Secrets | ![Secrets](https://github.com/williaby/ledgerbase/actions/workflows/security-secrets.yml/badge.svg?branch=main) |
+| pip-audit & License| ![pip-audit](https://github.com/williaby/ledgerbase/actions/workflows/security-pip-audit.yml/badge.svg?branch=main) |
+| SBOM Scan          | ![SBOM](https://github.com/williaby/ledgerbase/actions/workflows/sbom.yml/badge.svg?branch=main) |
+| License Scan       | ![License](https://github.com/williaby/ledgerbase/actions/workflows/license-scan.yml/badge.svg?branch=main) |
+| Status Summary     | ![Summary](https://github.com/williaby/ledgerbase/actions/workflows/status-summary.yml/badge.svg?branch=main) |

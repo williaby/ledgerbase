@@ -32,4 +32,3 @@
 ---
 
 ## Directory Integration
-

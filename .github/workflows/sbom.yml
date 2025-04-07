@@ -1,0 +1,110 @@
+name: SBOM Generation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'requirements.txt'
+      - 'requirements.in'
+      - 'Dockerfile'
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-sbom:
+    name: Generate SBOM - ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [python, docker]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python (for both paths)
+        if: matrix.target == 'python'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-licenses
+        if: matrix.target == 'python'
+        run: |
+          pip install pip-licenses
+          pip install -r requirements.txt
+
+      - name: Generate SPDX SBOM (Python)
+        if: matrix.target == 'python'
+        run: pip-licenses --format=spdx --with-urls --output-file=SBOM.spdx.json
+
+      - name: Upload SPDX SBOM
+        if: matrix.target == 'python'
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-sbom-spdx
+          path: SBOM.spdx.json
+
+      - name: Set up Docker Buildx
+        if: matrix.target == 'docker'
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        if: matrix.target == 'docker'
+        run: docker build -t ledgerbase:latest .
+
+      - name: Generate CycloneDX SBOM (Docker)
+        if: matrix.target == 'docker'
+        run: |
+          docker run --rm \
+            -v $PWD:/project \
+            aquasec/trivy:0.49.1 \
+            image --format cyclonedx ledgerbase:latest > sbom.cdx.json
+
+      - name: Upload CycloneDX SBOM
+        if: matrix.target == 'docker'
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-sbom-cyclonedx
+          path: sbom.cdx.json
+
+  label-sbom:
+    name: Label SBOM-related PRs
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Auto-label PR if SBOM-related files modified
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changed = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            const labels = [];
+            for (const file of changed.data) {
+              if (file.filename.includes("requirements")) {
+                labels.push("sbom:python");
+              }
+              if (file.filename.includes("Dockerfile")) {
+                labels.push("sbom:docker");
+              }
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                labels: [...new Set(labels)],
+              });
+            }

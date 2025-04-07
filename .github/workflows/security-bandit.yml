@@ -1,32 +1,58 @@
-# .github/workflows/security-bandit.yml
 name: Security - Bandit Scan
 
 on:
-  push:
   pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   schedule:
-    - cron: '0 3 * * *' # nightly @ 3AM UTC
+    - cron: '0 3 * * *'
 
 jobs:
   bandit-scan:
     name: Python Security Scan (Bandit)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write           # Needed for labeling
+      security-events: write         # Needed for SARIF upload
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
       - name: Install Bandit
         run: pip install bandit
 
-      - name: Run Bandit
+      - name: Run Bandit with SARIF output
         run: |
-          bandit -r . -ll -f json -o bandit-report.json || true
+          bandit -r . -ll -f sarif -o bandit-results.sarif || true
 
-      - name: Upload report
-        uses: actions/upload-artifact@v3
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
         with:
-          name: bandit-report
-          path: bandit-report.json
+          sarif_file: bandit-results.sarif
+
+      - name: Auto-label PR if Bandit finds issues
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const sarif = JSON.parse(fs.readFileSync('bandit-results.sarif', 'utf8'));
+            const results = sarif.runs?.[0]?.results || [];
+            if (results.length > 0) {
+              const label = "security:bandit";
+              const pr = context.payload.pull_request;
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: [label],
+              });
+            }

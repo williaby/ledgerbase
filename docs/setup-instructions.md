@@ -51,7 +51,7 @@ These instructions ensure a smooth development start for LedgerBase. Complete be
 Install:
 - Docker & Docker Compose
 - Python 3.11+
-- [ ] Pre-commit:  
+- [ ] Pre-commit:
   ```bash
   pip install pre-commit
   ```

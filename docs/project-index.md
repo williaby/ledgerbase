@@ -33,7 +33,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #65 Create account_formats table and format pipeline mapping.
 - [ ] #70 Support regex pattern scope resolution across institutions
 - [ ] #84 Version and track vendor dictionary changes over time
-      
+
 ## Phase 3 – Budgeting System Core
 - [ ] #17 Create `budget_entries` schema
 - [ ] #18 Build budget entry UI
@@ -45,7 +45,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #24 Document budgeting model and assumptions
 - [ ] #66 Build person tag manager UI with add/edit support
 - [ ] #72 Enable category locking and archival
-      
+
 ## Phase 4 – Unmatched Vendor Queue and Review Dashboard
 - [ ] #25 Build unmatched vendor queue backend
 - [ ] #26 Create Flask route for review interface
@@ -57,7 +57,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #32 Document vendor review and approval process
 - [ ] #67 Stub ML vendor classifier for training and feedback loop
 - [ ] #71 Add full transaction_audit_log for lifecycle tracking
-      
+
 ## Phase 5 – Business Expenses + Savings Logic
 - [ ] #33 Add business expense tagging
 - [ ] #34 Build UI for tagging reimbursable items
@@ -80,7 +80,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #69 Optional Slack/email notification system for budget alerts
 - [ ] #73 Add inter-account transfer detection and linking logic
 - [ ] #80 Add optional Jupyter notebook container for ad hoc reporting
-      
+
 ## Phase 7 – Admin Tools, Importers, and CLI Utilities
 - [ ] #49 CLI: CSV import by account
 - [ ] #50 Auto-detect institution format

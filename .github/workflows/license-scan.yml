@@ -1,0 +1,86 @@
+name: License Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  license-scan:
+    name: Scan Python Dependency Licenses
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-licenses
+        run: |
+          pip install pip-licenses
+          pip install -r requirements.txt
+
+      - name: Generate license report
+        run: |
+          pip-licenses --format=json --with-urls --output-file=license-report.json
+
+      - name: Fail if disallowed licenses are found
+        id: check
+        run: |
+          allowlist='MIT|BSD|Apache-2.0|ISC|MPL-2.0'
+          violations=$(jq -r --arg re "$allowlist" '.[] | select(.License | test($re) | not) | [.Name, .License] | @tsv' license-report.json)
+          echo "$violations" > disallowed.txt
+          echo "violations=$(wc -l < disallowed.txt)" >> $GITHUB_OUTPUT
+          cat disallowed.txt
+          test $(wc -l < disallowed.txt) -eq 0 || exit 1
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v3
+        with:
+          name: license-report
+          path: license-report.json
+
+      - name: Label PR if disallowed licenses found
+        if: github.event_name == 'pull_request' && steps.check.outputs.violations != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['compliance:license-check'],
+            });
+
+      - name: Remove label if clean
+        if: github.event_name == 'pull_request' && steps.check.outputs.violations == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labelsToRemove = ['compliance:license-check'];
+            const issueLabels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number
+            });
+
+            for (const label of issueLabels.data) {
+              if (labelsToRemove.includes(label.name)) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: label.name,
+                });
+              }
+            }
