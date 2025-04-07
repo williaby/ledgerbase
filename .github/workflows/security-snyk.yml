@@ -1,4 +1,4 @@
-name: Security - Bandit
+name: Security - Snyk
 
 on:
     push:
@@ -6,41 +6,49 @@ on:
     pull_request:
         branches: [ main ]
     schedule:
-        -   cron: '0 3 * * *'  # Daily at 3 AM UTC
+        -   cron: '0 3 * * *'
 
 permissions:
     contents: read
-    security-events: write
     pull-requests: write
 
 jobs:
-    bandit:
-        name: Bandit Scan
+    snyk:
+        name: Snyk Scan
         runs-on: ubuntu-latest
         steps:
             -   uses: actions/checkout@v4
 
-            -   name: Run Bandit with SARIF output
-                uses: PyCQA/bandit-action@v1
+            -   name: Set up Python
+                uses: actions/setup-python@v5
                 with:
-                    path: '.'
-                    level: 'high'
-                    confidence: 'high'
-                    exclude: 'tests,migrations'
-                    output: 'bandit-results.sarif'
-                    output_format: 'sarif'
+                    python-version: '3.11'
 
-            -   name: Upload Bandit SARIF to GitHub Security tab
-                uses: github/codeql-action/upload-sarif@v2
+            -   name: Install dependencies
+                run: |
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+
+            -   name: Run Snyk to check for vulnerabilities
+                uses: snyk/actions/python@0.3.0
+                env:
+                    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
                 with:
-                    sarif_file: bandit-results.sarif
+                    args: test --all-projects --json-file-output=snyk-results.json
+                continue-on-error: true
 
-            -   name: Add bandit-failed label on failure
+            -   name: Upload Snyk JSON report
+                uses: actions/upload-artifact@v3
+                with:
+                    name: snyk-report
+                    path: snyk-results.json
+
+            -   name: Add snyk-failed label on failure
                 if: failure()
                 uses: actions/github-script@v7
                 with:
                     script: |
-                        const label = 'bandit-failed';
+                        const label = 'snyk-failed';
                         const issue_number = context.payload.pull_request?.number;
                         if (issue_number) {
                           const labels = await github.rest.issues.listLabelsOnIssue({
@@ -59,12 +67,12 @@ jobs:
                           }
                         }
 
-            -   name: Remove bandit-failed label on success
+            -   name: Remove snyk-failed label on success
                 if: success()
                 uses: actions/github-script@v7
                 with:
                     script: |
-                        const label = 'bandit-failed';
+                        const label = 'snyk-failed';
                         const issue_number = context.payload.pull_request?.number;
                         if (issue_number) {
                           try {

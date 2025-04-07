@@ -1,4 +1,4 @@
-name: Security - Bandit
+name: Semgrep
 
 on:
     push:
@@ -6,41 +6,37 @@ on:
     pull_request:
         branches: [ main ]
     schedule:
-        -   cron: '0 3 * * *'  # Daily at 3 AM UTC
+        -   cron: '0 3 * * *'
 
 permissions:
     contents: read
-    security-events: write
     pull-requests: write
 
 jobs:
-    bandit:
-        name: Bandit Scan
+    semgrep:
+        name: Semgrep Code Scan
         runs-on: ubuntu-latest
         steps:
             -   uses: actions/checkout@v4
 
-            -   name: Run Bandit with SARIF output
-                uses: PyCQA/bandit-action@v1
-                with:
-                    path: '.'
-                    level: 'high'
-                    confidence: 'high'
-                    exclude: 'tests,migrations'
-                    output: 'bandit-results.sarif'
-                    output_format: 'sarif'
+            -   name: Install Semgrep
+                run: pip install semgrep
 
-            -   name: Upload Bandit SARIF to GitHub Security tab
-                uses: github/codeql-action/upload-sarif@v2
-                with:
-                    sarif_file: bandit-results.sarif
+            -   name: Run Semgrep with custom rules and output to JSON
+                run: semgrep --config=semgrep.yml --error --json > semgrep-results.json
 
-            -   name: Add bandit-failed label on failure
+            -   name: Upload Semgrep Report
+                uses: actions/upload-artifact@v3
+                with:
+                    name: semgrep-report
+                    path: semgrep-results.json
+
+            -   name: Add semgrep label on failure
                 if: failure()
                 uses: actions/github-script@v7
                 with:
                     script: |
-                        const label = 'bandit-failed';
+                        const label = 'semgrep-failed';
                         const issue_number = context.payload.pull_request?.number;
                         if (issue_number) {
                           const labels = await github.rest.issues.listLabelsOnIssue({
@@ -59,12 +55,12 @@ jobs:
                           }
                         }
 
-            -   name: Remove bandit-failed label on success
+            -   name: Remove semgrep label on success
                 if: success()
                 uses: actions/github-script@v7
                 with:
                     script: |
-                        const label = 'bandit-failed';
+                        const label = 'semgrep-failed';
                         const issue_number = context.payload.pull_request?.number;
                         if (issue_number) {
                           try {

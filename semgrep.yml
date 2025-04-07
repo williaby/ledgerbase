@@ -1,0 +1,76 @@
+rules:
+    -   id: avoid-eval
+        pattern: eval(...)
+        message: "Avoid use of eval() – high risk of code injection."
+        severity: ERROR
+        metadata:
+            cwe: "CWE-95: Eval Injection"
+            owasp: "A03:2021 Injection"
+        languages: [ python ]
+
+    -   id: avoid-exec
+        pattern: exec(...)
+        message: "Avoid use of exec() – unsafe and hard to validate inputs."
+        severity: ERROR
+        metadata:
+            cwe: "CWE-78: OS Command Injection"
+            owasp: "A03:2021 Injection"
+        languages: [ python ]
+
+    -   id: insecure-subprocess
+        pattern: subprocess.run(...)
+        message: "Verify inputs to subprocess.run – user data must be sanitized."
+        severity: WARNING
+        metadata:
+            cwe: "CWE-78"
+            owasp: "A03:2021"
+        languages: [ python ]
+
+    -   id: avoid-md5
+        pattern: hashlib.md5(...)
+        message: "Avoid MD5 – it is insecure and broken."
+        severity: WARNING
+        metadata:
+            cwe: "CWE-327: Use of Broken Cryptographic Algorithm"
+            owasp: "A02:2021 Cryptographic Failures"
+        languages: [ python ]
+
+    -   id: yaml-load-without-loader
+        pattern: yaml.load(...)
+        message: "Avoid unsafe yaml.load – use yaml.safe_load instead."
+        severity: ERROR
+        metadata:
+            cwe: "CWE-502: Deserialization of Untrusted Data"
+            owasp: "A08:2021 Software and Data Integrity Failures"
+        languages: [ python ]
+
+    -   id: hardcoded-secrets
+        patterns:
+            -   pattern: $VAR = "..."
+            -   metavariable-pattern:
+                    metavariable: $VAR
+                    regex: (?i)(key|secret|token|password)
+        message: "Avoid hardcoded secrets – use environment variables or secret stores."
+        severity: ERROR
+        metadata:
+            cwe: "CWE-798: Use of Hard-coded Credentials"
+            owasp: "A07:2021 Identification and Authentication Failures"
+        languages: [ python ]
+
+    -   id: raw-sql-query
+        pattern: cursor.execute(...)
+        message: "Ensure queries are parameterized – raw SQL may allow injection."
+        severity: ERROR
+        metadata:
+            cwe: "CWE-89: SQL Injection"
+            owasp: "A03:2021 Injection"
+        languages: [ python ]
+
+    -   id: pickle-load
+        pattern: pickle.load(...)
+        message: "Avoid pickle.load – can deserialize malicious input."
+        severity: ERROR
+        metadata:
+            cwe: "CWE-502"
+            owasp: "A08:2021"
+        languages: [ python ]
