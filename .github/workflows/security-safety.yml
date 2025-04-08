@@ -1,12 +1,25 @@
-# .github/workflows/security-safety.yml
-name: Safety Dependency Scan
+name: security-audit
 
-on: [push, pull_request]
+on:
+    schedule:
+        -   cron: '0 3 * * 0'  # Weekly on Sunday
+    workflow_dispatch:
 
 jobs:
-  safety:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: pip install -r requirements.txt safety
-      - run: safety check || true
+    safety-check:
+        runs-on: ubuntu-latest
+
+        steps:
+            -   uses: actions/checkout@v4
+
+            -   name: Install Poetry
+                run: curl -sSL https://install.python-poetry.org | python3 -
+
+            -   name: Install Safety
+                run: poetry add --group dev safety
+
+            -   name: Export dependencies
+                run: poetry export --without-hashes --format=requirements.txt > requirements.txt
+
+            -   name: Run Safety audit
+                run: poetry run safety check --file=requirements.txt --full-report

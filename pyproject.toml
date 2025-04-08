@@ -1,57 +1,86 @@
-[project]
+[tool.poetry]
 name = "ledgerbase"
 version = "0.1.0"
 description = "A financial ledger and budgeting application."
-requires-python = ">=3.11"
+authors = ["Byron Williams"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "ledgerbase", from = "src" }]
 
-dependencies = [
-    "Flask>=3.0.3",
-    "Flask-SQLAlchemy>=3.1.1",
-    "cryptography>=42.0.5",
-    "python-dotenv>=1.0.1",
-    "sentry-sdk[flask]>=2.2.0",
-    "marshmallow>=3.21.2",
-    "Flask-Limiter>=3.5.0",
-    "gunicorn>=21.2.0",
-    "psycopg[binary]>=3.1.18",
-    "python-dateutil>=2.9.0.post0",
-    "plaid-python>=15.6.0",
-    "PyYAML>=6.0.1"
-]
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+Flask = "3.0.3"
+Flask-SQLAlchemy = "3.1.1"
+cryptography = "42.0.5"
+python-dotenv = "1.0.1"
+sentry-sdk = { extras = ["flask"], version = "2.2.0" }
+marshmallow = "3.21.2"
+Flask-Limiter = "3.5.0"
+gunicorn = "21.2.0"
+psycopg = { version = "3.1.18", extras = ["binary"] }
+python-dateutil = "2.9.0.post0"
+plaid-python = "^15.3.0"
+PyYAML = "6.0.1"
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.2.0",
-    "pre-commit>=3.7.0",
-    "flake8>=7.0.0",
-    "black>=24.4.2",
-    "isort>=5.13.2"
-]
-
-[project.authors]
-name = "Byron Williams"
-# email = "your.email@example.com"
-
-[project.license]
-text = "MIT"
-
-# [project.urls]
-# homepage = "https://github.com/williaby/ledgerbase"
-# documentation = "https://github.com/williaby/ledgerbase/wiki"
-# repository = "https://github.com/williaby/ledgerbase"
-
-# [project.classifiers]
-# "Programming Language :: Python :: 3.11",
-# "License :: OSI Approved :: MIT License",
-# "Operating System :: OS Independent",
+[tool.poetry.group.dev.dependencies]
+pytest = "8.2.0"
+pre-commit = "3.7.0"
+flake8 = "7.0.0"
+black = "24.4.2"
+isort = "5.13.2"
+mypy = "^1.9.0"
+bandit = "^1.7.8"
+types-requests = "^2.31.0.10"
 
 [tool.black]
-line-length = 88  # A common line length, often used with flake8 default
+line-length = 88
+target-version = ["py311"]
+skip-string-normalization = false
 
 [tool.isort]
-profile = "black"  # Crucial line for compatibility with black formatter
+profile = "black"
+line_length = 88
+combine_as_imports = true
+skip_gitignore = true
 
 [tool.flake8]
-max-line-length = 88
-exclude = [".git", "__pycache__", "build", "dist"]
-extend-ignore = ["E203", "W503"]
+max-line-length = 120
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".eggs",
+    "migrations",
+    "tests",
+]
+extend-ignore = [
+    "E203",  # whitespace before ':' — conflicts with Black
+    "W503",  # line break before binary operator — conflicts with Black
+    "B101",  # asserts are flagged by bandit, not flake8
+    "E501",  # optionally ignore long lines if Black is used
+]
+
+
+#[tool.mypy]
+#python_version = "3.12"
+#warn_unused_configs = true
+#disallow_untyped_defs = true
+#disallow_incomplete_defs = true
+#no_implicit_optional = true
+#check_untyped_defs = true
+#ignore_missing_imports = true
+#namespace_packages = true
+#show_error_codes = true
+#strict_equality = true
+
+[tool.mypy.requests]
+ignore_missing_imports = true
+
+[tool.mypy."flask.*"]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
