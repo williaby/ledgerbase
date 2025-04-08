@@ -23,10 +23,6 @@ attribution — all managed via a structured ETL pipeline and a clean interface.
 - Jinja2 Templates + HTMX (planned)
 - Optional: Jupyter, Alembic, GitHub Actions, ML integration
 
-## Getting Started
-
-See [docs/setup-instructions.md](docs/setup-instructions.md)
-
 ## CI / DevOps Status
 
 | Workflow            | Status                                                                                                  |

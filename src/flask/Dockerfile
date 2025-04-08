@@ -1,0 +1,24 @@
+FROM python:3.11-slim AS base
+
+ENV POETRY_VERSION=1.8.2
+ENV POETRY_HOME="/opt/poetry"
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+ENV PATH="$POETRY_HOME/bin:$PATH"
+
+# Set working directory
+WORKDIR /app
+
+# Copy only necessary files for installing deps
+COPY pyproject.toml poetry.lock ./
+
+# Install dependencies without dev tools
+RUN poetry install --no-dev --no-interaction
+
+# Copy actual app code
+COPY . .
+
+# Run app
+CMD ["poetry", "run", "python", "-m", "app"]

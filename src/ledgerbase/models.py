@@ -1,4 +1,4 @@
-from . import db
+from ledgerbase import db  # Fully-qualified import for clarity and typing
 
 
 class ExampleModel(db.Model):
