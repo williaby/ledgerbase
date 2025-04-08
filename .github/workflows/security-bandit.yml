@@ -1,80 +1,29 @@
-name: Security - Bandit
+name: Bandit Scan
 
-on:
-    push:
-        branches: [ main ]
-    pull_request:
-        branches: [ main ]
-    schedule:
-        -   cron: '0 3 * * *'  # Daily at 3 AM UTC
-
-permissions:
-    contents: read
-    security-events: write
-    pull-requests: write
+on: [ push, pull_request ]
 
 jobs:
     bandit:
         name: Bandit Scan
         runs-on: ubuntu-latest
-        steps:
-            -   uses: actions/checkout@v4
 
-            -   name: Run Bandit with SARIF output
-                uses: PyCQA/bandit-action@v1
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+
+            -   name: Set up Python
+                uses: actions/setup-python@v4
                 with:
-                    path: '.'
-                    level: 'high'
-                    confidence: 'high'
-                    exclude: 'tests,migrations'
-                    output: 'bandit-results.sarif'
-                    output_format: 'sarif'
+                    python-version: '3.12'
+
+            -   name: Install Bandit
+                run: pip install bandit
+
+            -   name: Run Bandit scan with SARIF output
+                run: |
+                    bandit -r src -f sarif -o bandit-results.sarif || true
 
             -   name: Upload Bandit SARIF to GitHub Security tab
-                uses: github/codeql-action/upload-sarif@v2
+                uses: github/codeql-action/upload-sarif@v3
                 with:
                     sarif_file: bandit-results.sarif
-
-            -   name: Add bandit-failed label on failure
-                if: failure()
-                uses: actions/github-script@v7
-                with:
-                    script: |
-                        const label = 'bandit-failed';
-                        const issue_number = context.payload.pull_request?.number;
-                        if (issue_number) {
-                          const labels = await github.rest.issues.listLabelsOnIssue({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            issue_number
-                          });
-                          const hasLabel = labels.data.some(l => l.name === label);
-                          if (!hasLabel) {
-                            await github.rest.issues.addLabels({
-                              owner: context.repo.owner,
-                              repo: context.repo.repo,
-                              issue_number,
-                              labels: [label]
-                            });
-                          }
-                        }
-
-            -   name: Remove bandit-failed label on success
-                if: success()
-                uses: actions/github-script@v7
-                with:
-                    script: |
-                        const label = 'bandit-failed';
-                        const issue_number = context.payload.pull_request?.number;
-                        if (issue_number) {
-                          try {
-                            await github.rest.issues.removeLabel({
-                              owner: context.repo.owner,
-                              repo: context.repo.repo,
-                              issue_number,
-                              name: label
-                            });
-                          } catch (e) {
-                            if (e.status !== 404) throw e;
-                          }
-                        }

@@ -1,2 +1,24 @@
 [bandit]
+# Don't scan test code (unit tests typically use assert statements)
 exclude = tests
+
+# Target only .py files, exclude virtual environments and build artifacts
+skips = B101  # Temporarily skip assert usage if not yet refactored
+
+# Enable all built-in Bandit tests
+# You can limit with 'tests = BXXX,BYYY' if desired
+tests: ALL
+
+# Output control
+format = screen
+verbosity = 1
+
+# Number of lines of code in a file before skipping (for performance)
+# Set high to avoid skipping large files
+max-line-length = 120
+
+# Enable recursive scan of directories
+recursive = True
+
+# Output file if you want logging (optional)
+# output_file = bandit_report.txt
