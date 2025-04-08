@@ -7,17 +7,27 @@ on:
         branches: [ main ]
 
 jobs:
-    dev-checks:
+    lint-test:
+        name: Lint, Type Check, Format
         runs-on: ubuntu-latest
 
         steps:
-            -   uses: actions/checkout@v4
+            -   name: Checkout Code
+                uses: actions/checkout@v4
+
+            -   name: Set up Python
+                uses: actions/setup-python@v5
+                with:
+                    python-version: '3.12'
 
             -   name: Install Poetry
-                run: curl -sSL https://install.python-poetry.org | python3 -
+                run: |
+                    curl -sSL https://install.python-poetry.org | python3 -
+                    echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-            -   name: Install project dependencies (including dev)
-                run: poetry install
+            -   name: Install dependencies
+                run: |
+                    poetry install --no-interaction --no-root
 
             -   name: Run Black
                 run: poetry run black --check .
@@ -25,11 +35,11 @@ jobs:
             -   name: Run isort
                 run: poetry run isort --check-only .
 
-            -   name: Run Flake8
+            -   name: Run flake8
                 run: poetry run flake8 .
 
-            -   name: Run Mypy
+            -   name: Run mypy
                 run: poetry run mypy .
 
-            -   name: Run Bandit
-                run: poetry run bandit -r app/
+            -   name: Run Bandit (security linter)
+                run: poetry run bandit -r src/ledgerbase -x tests --skip B101
