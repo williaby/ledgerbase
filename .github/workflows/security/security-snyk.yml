@@ -1,0 +1,112 @@
+name: Security - Snyk (Free Plan)
+
+on:
+    pull_request:
+        branches: [ main ]
+    push:
+        branches: [ main ]
+
+permissions:
+    contents: read
+    pull-requests: write
+    issues: write
+
+env:
+    JSON_FILE: snyk-results.json
+    PR_FAILURE_LABEL: status:security-failed
+
+jobs:
+    snyk:
+        name: Run Snyk CLI
+        runs-on: ubuntu-22.04
+
+        steps:
+            -   name: Fail if SNYK_TOKEN is not defined
+                if: ${{ secrets.SNYK_TOKEN == '' }}
+                run: |
+                    echo "::error::Missing required secret: SNYK_TOKEN"
+                    exit 1
+
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+
+            -   name: Set up Node.js
+                uses: actions/setup-node@v4
+                with:
+                    node-version: 20
+
+            -   name: Set up Python
+                uses: actions/setup-python@v4
+                with:
+                    python-version: "3.12"
+
+            -   name: Install Python dependencies
+                run: |
+                    pip install poetry
+                    poetry install --no-root
+
+            -   name: Install Snyk CLI
+                run: npm install -g snyk
+
+            -   name: Authenticate Snyk
+                run: snyk auth "${{ secrets.SNYK_TOKEN }}"
+
+            -   name: Run Snyk audit (JSON output)
+                run: |
+                    snyk test \
+                      --all-projects \
+                      --detection-depth=3 \
+                      --json-file-output="${{ env.JSON_FILE }}" \
+                      || echo "Snyk scan completed with issues."
+
+            -   name: Verify JSON output file
+                run: |
+                    if [ ! -f "${{ env.JSON_FILE }}" ]; then
+                      echo "::error::${{ env.JSON_FILE }} not found."
+                      exit 1
+                    fi
+
+            -   name: Upload Snyk JSON results
+                uses: actions/upload-artifact@v3
+                with:
+                    name: snyk-results
+                    path: ${{ env.JSON_FILE }}
+
+            -   name: Count vulnerabilities
+                id: scan
+                run: |
+                    count=$(grep -c '"id"' "${{ env.JSON_FILE }}" || true)
+                    echo "vulns=$count" >> "$GITHUB_OUTPUT"
+
+            -   name: Comment on PR with Snyk findings
+                if: github.event_name == 'pull_request' && steps.scan.outputs.vulns != '0'
+                uses: actions/github-script@v7
+                with:
+                    script: |
+                        const fs = require('fs');
+                        let findings = 'No findings were generated.';
+                        if (fs.existsSync('${{ env.JSON_FILE }}')) {
+                          findings = fs.readFileSync('${{ env.JSON_FILE }}', 'utf8').trim();
+                          if (findings.length > 6500) {
+                            findings = findings.substring(0, 6400) + '\n...\n(Results truncated)';
+                          }
+                        }
+                        const comment = `### 🔒 Snyk Security Audit Report\n\n\`\`\`json\n${findings}\n\`\`\`\nView full logs in the artifact attached above.`;
+                        await github.rest.issues.createComment({
+                          issue_number: context.payload.pull_request.number,
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          body: comment
+                        });
+
+            -   name: Label PR on vulnerability findings
+                if: github.event_name == 'pull_request' && steps.scan.outputs.vulns != '0'
+                uses: actions/github-script@v7
+                with:
+                    script: |
+                        await github.rest.issues.addLabels({
+                          issue_number: context.payload.pull_request.number,
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          labels: ['${{ env.PR_FAILURE_LABEL }}']
+                        });

@@ -1,0 +1,87 @@
+name: License Compliance
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        types: [ opened, reopened, synchronize ]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    pull-requests: write
+
+jobs:
+    license:
+        name: Run License Checks
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+
+            -   name: Set up Python
+                uses: actions/setup-python@v4
+                with:
+                    python-version: "3.12"
+
+            -   name: Install Nox
+                run: |
+                    python -m pip install --upgrade pip
+                    pip install nox
+
+            -   name: Export dev dependencies
+                run: |
+                    pip install poetry
+                    poetry self add poetry-plugin-export
+                    poetry export --only dev --without-hashes --format=requirements.txt > dev-requirements.txt
+
+            -   name: Run Nox license session
+                run: nox -s license
+
+    comment-violations:
+        name: Comment on PR with License Violations
+        needs: license
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+
+            -   name: Check for disallowed licenses
+                id: check
+                run: |
+                    if [[ -f disallowed.txt ]]; then
+                      count=$(wc -l < disallowed.txt)
+                      echo "violations=$count" >> "$GITHUB_OUTPUT"
+                    else
+                      echo "violations=0" >> "$GITHUB_OUTPUT"
+                    fi
+
+            -   name: Comment PR if violations exist
+                if: steps.check.outputs.violations != '0'
+                uses: actions/github-script@v7
+                with:
+                    script: |
+                        const fs = require('fs');
+                        if (fs.existsSync('./disallowed.txt')) {
+                          const violations = fs.readFileSync('./disallowed.txt', 'utf-8').trim();
+                          const count = violations.split('\n').length;
+                          const comment = `### License Scan Results\n\n⚠️ **${count} license violations found:**\n\n\`\`\`\n${violations}\n\`\`\``;
+                          await github.rest.issues.createComment({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            issue_number: context.payload.pull_request.number,
+                            body: comment,
+                          });
+                        }
+
+            -   name: Upload license report
+                if: always()
+                uses: actions/upload-artifact@v3
+                with:
+                    name: license-report
+                    path: |
+                        license-report.json
+                        disallowed.txt

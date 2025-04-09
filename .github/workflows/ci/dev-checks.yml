@@ -1,0 +1,46 @@
+name: Dev Checks
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+    workflow_dispatch:
+        inputs:
+            sessions:
+                description: "Nox sessions to run (space-separated)"
+                required: false
+                default: "lint typecheck security"
+
+jobs:
+    matrix:
+        name: Load Python Version Matrix
+        runs-on: ubuntu-latest
+        outputs:
+            versions: ${{ steps.load.outputs.versions }}
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Install yq
+                run: |
+                    sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+                    sudo chmod +x /usr/bin/yq
+
+            -   name: Extract Python version array
+                id: load
+                run: |
+                    versions=$(yq e '.python-versions' .github/workflows/ci/python-version-matrix.yml -o=json)
+                    echo "versions=$versions" >> "$GITHUB_OUTPUT"
+
+    dev-checks:
+        name: Nox Dev Checks
+        needs: matrix
+        strategy:
+            matrix:
+                python-version: ${{ fromJson(needs.matrix.outputs.versions) }}
+
+        uses: ./.github/workflows/templates/nox-template.yml
+        with:
+            python-version: ${{ matrix.python-version }}
+            sessions: ${{ inputs.sessions }}

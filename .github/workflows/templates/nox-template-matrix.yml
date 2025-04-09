@@ -1,0 +1,54 @@
+name: Nox Matrix Session Runner
+
+on:
+    workflow_call:
+        inputs:
+            sessions:
+                required: true
+                type: string
+                description: Comma-separated list of Nox sessions to run (e.g., "lint,tests,sbom")
+
+jobs:
+    get-matrix:
+        runs-on: ubuntu-latest
+        outputs:
+            matrix: ${{ steps.set-matrix.outputs.matrix }}
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+
+            -   name: Read python-version-matrix.yml
+                id: set-matrix
+                run: |
+                    matrix=$(yq -o=json '.python-version-matrix' .github/workflows/ci/python-version-matrix.yml)
+                    echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
+    prepare:
+        uses: .github/workflows/templates/prepare-poetry.yml
+
+    run-nox:
+        name: Run Nox Session
+        needs: [ get-matrix, prepare ]
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ${{ fromJson(needs.get-matrix.outputs.matrix) }}
+
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+
+            -   name: Set up Python
+                uses: actions/setup-python@v4
+                with:
+                    python-version: ${{ matrix.python-version }}
+
+            -   name: Upgrade pip and install Nox
+                run: |
+                    python -m pip install --upgrade pip
+                    pip install nox
+
+            -   name: Run Nox sessions
+                run: |
+                    nox -s ${{ inputs.sessions }}

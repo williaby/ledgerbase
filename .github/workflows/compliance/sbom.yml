@@ -1,0 +1,53 @@
+name: SBOM (CycloneDX)
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    security-events: write     # for SARIF upload to Security tab
+    actions: read
+
+jobs:
+    sbom:
+        uses: .github/workflows/templates/nox-template-matrix.yml
+        with:
+            sessions: "sbom"
+
+    upload-sarif:
+        name: Upload SARIF to GitHub Security tab
+        needs: sbom
+        runs-on: ubuntu-latest
+        if: always()
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v4
+
+            -   name: Download SARIF from runner
+                run: |
+                    if [ ! -f sbom.sarif ]; then echo "Missing SARIF file"; exit 1; fi
+
+            -   name: Upload SARIF to GitHub Security tab
+                uses: github/codeql-action/upload-sarif@v3
+                with:
+                    sarif_file: sbom.sarif
+
+    upload-json:
+        name: Archive CycloneDX JSON
+        needs: sbom
+        runs-on: ubuntu-latest
+        if: always()
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v4
+
+            -   name: Upload CycloneDX JSON artifact
+                uses: actions/upload-artifact@v3
+                with:
+                    name: sbom-cyclonedx-json
+                    path: sbom.json

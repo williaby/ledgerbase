@@ -1,0 +1,51 @@
+name: Nox Session Runner
+
+on:
+    workflow_call:
+        inputs:
+            python-version:
+                description: Python version to run Nox under
+                required: false
+                type: string
+                default: "3.12"
+
+            sessions:
+                description: Space-separated list of Nox sessions to run (e.g., "lint typecheck tests")
+                required: false
+                type: string
+                default: "lint typecheck"
+
+jobs:
+    prepare:
+        uses: .github/workflows/templates/prepare-poetry.yml
+
+    nox:
+        name: Run Nox Sessions
+        needs: prepare
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+
+            -   name: Cache pip
+                uses: actions/cache@v4
+                with:
+                    path: ~/.cache/pip
+                    key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml', '**/poetry.lock') }}
+                    restore-keys: |
+                        ${{ runner.os }}-pip-
+
+            -   name: Set up Python
+                uses: actions/setup-python@v4
+                with:
+                    python-version: ${{ inputs.python-version }}
+
+            -   name: Upgrade pip and install Nox
+                run: |
+                    python -m pip install --upgrade pip
+                    pip install nox
+
+            -   name: Run Nox Sessions
+                run: |
+                    nox -s ${{ inputs.sessions }}

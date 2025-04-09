@@ -1,0 +1,44 @@
+name: Status Summary
+
+on:
+    workflow_run:
+        workflows: [ "Dev Checks" ]
+        types:
+            - completed
+
+jobs:
+    status-summary:
+        if: ${{ github.event.workflow_run && github.event.workflow_run.event == 'pull_request' }}
+        runs-on: ubuntu-22.04
+
+        steps:
+            -   name: Checkout PR repository
+                uses: actions/checkout@v4
+
+            -   name: Set up Node.js
+                uses: actions/setup-node@v4
+                with:
+                    node-version: 20
+
+            -   name: Cache node_modules
+                uses: actions/cache@v3
+                with:
+                    path: .github/scripts/node_modules
+                    key: ${{ runner.os }}-pr-status-${{ hashFiles('**/package-lock.json') }}
+                    restore-keys: |
+                        ${{ runner.os }}-pr-status-
+
+            -   name: Install dependencies
+                run: |
+                    cd .github/scripts
+                    npm install --no-audit || exit 1
+
+            -   name: Run Status Summary Script
+                run: |
+                    cd .github/scripts
+                    if [ -f pr-status-summary.js ]; then
+                      echo "✅ Running status summary script..."
+                      node pr-status-summary.js
+                    else
+                      echo "::warning::⚠️ pr-status-summary.js not found — skipping."
+                    fi
