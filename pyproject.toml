@@ -16,7 +16,7 @@ python-dotenv = "1.0.1"
 sentry-sdk = { extras = ["flask"], version = "2.2.0" }
 marshmallow = "3.21.2"
 Flask-Limiter = "3.5.0"
-gunicorn = "21.2.0"
+gunicorn = "23.0.0"
 psycopg = { version = "3.1.18", extras = ["binary"] }
 python-dateutil = "2.9.0.post0"
 plaid-python = "^15.3.0"
