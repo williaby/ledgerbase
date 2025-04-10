@@ -1,14 +1,20 @@
 # LedgerBase
-
-![Lint](https://github.com/williaby/ledgerbase/actions/workflows/dev-checks.yml/badge.svg)
-![Security Audit](https://github.com/williaby/ledgerbase/actions/workflows/security-deps-audit.yml/badge.svg)
-![Trivy Scan](https://github.com/williaby/ledgerbase/actions/workflows/security-trivy.yml/badge.svg)
-![Snyk Scan](https://github.com/williaby/ledgerbase/actions/workflows/security-snyk.yml/badge.svg)
-
 LedgerBase is a modular financial transaction classification and budgeting platform
 designed for centralized, transparent, and analyzable financial recordkeeping. Built
 with modern Python practices and cloud-native tools, it supports multi-account imports,
 vendor classification, budget tracking, and reconciliation with actual savings.
+
+## 🛡️ Security Workflow Status
+
+| Workflow          | Status |
+|-------------------|--------|
+| Bandit            | ![Bandit](https://github.com/williaby/ledgerbase/actions/workflows/security/security-bandit.yml/badge.svg?branch=main) |
+| pip-audit         | ![pip-audit](https://github.com/williaby/ledgerbase/actions/workflows/security/security-pip-audit.yml/badge.svg?branch=main) |
+| Semgrep           | ![Semgrep](https://github.com/williaby/ledgerbase/actions/workflows/security/security-semgrep.yml/badge.svg?branch=main) |
+| Snyk              | ![Snyk](https://github.com/williaby/ledgerbase/actions/workflows/security/security-snyk.yml/badge.svg?branch=main) |
+| Trivy             | ![Trivy](https://github.com/williaby/ledgerbase/actions/workflows/security/security-trivy.yml/badge.svg?branch=main) |
+| Safety            | ![Safety](https://github.com/williaby/ledgerbase/actions/workflows/security/safety.yml/badge.svg?branch=main) |
+
 
 ---
 
