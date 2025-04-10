@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 
 import nox
+from nox.sessions import Session
+os.chdir(os.path.dirname(__file__))
 
 # Define Python version usage
 FULL_MATRIX = ["3.9", "3.10", "3.11", "3.12"]
@@ -10,24 +12,39 @@ LATEST = "3.12"
 SOURCE_DIR = "src/ledgerbase"
 TESTS_DIR = "tests"
 
+# Paths to exclude from linting
+EXCLUDE_PATHS = {
+    ".nox", ".venv", "__pycache__", "build", "dist", ".git", "migrations", "tests", "scripts"
+}
 
-def export_dev_requirements(tmp_path: Path) -> Path:
-    """
-    Use Poetry to export only the dev group dependencies to a temporary requirements.txt file.
-    This ensures consistent tooling versions aligned with pyproject.toml.
-    """
-    export_path = tmp_path / "dev-requirements.txt"
-    nox.command.run(
+
+# Helper to find files with given extensions, excluding certain paths
+def discover_files(root: str, extensions: list[str], exclude_dirs: set[str]) -> list[str]:
+    found = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        if any(excluded in Path(dirpath).parts for excluded in exclude_dirs):
+            continue
+        for file in filenames:
+            if any(file.endswith(ext) for ext in extensions):
+                found.append(str(Path(dirpath) / file))
+    return found
+
+
+# Helper to export requirements for the session
+def export_dev_requirements(session: Session, temp_path: Path) -> Path:
+    requirements = temp_path / "dev-requirements.txt"
+    session.run(
         "poetry",
         "export",
-        "--only",
+        "--with",
         "dev",
-        "--without-hashes",
         "--format=requirements.txt",
-        stdout=str(export_path),
+        "--without-hashes",
+        "-o",
+        str(requirements),
         external=True,
     )
-    return export_path
+    return requirements
 
 
 @nox.session(python=LATEST)
@@ -36,11 +53,16 @@ def lint(session):
     Run linters: black, isort, flake8.
     Run on latest Python only to reduce matrix overhead.
     """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
+    requirements = export_dev_requirements(session, Path(session.create_tmp()))
     session.install("-r", str(requirements))
     session.run("black", "--check", ".")
     session.run("isort", "--check-only", ".")
-    session.run("flake8", ".")
+    session.run(
+        "flake8",
+        ".",
+        "--exclude=.nox,.venv,__pycache__,build,dist,.git,migrations,tests",
+        external=True,
+    )
 
 
 @nox.session(python=LATEST)
@@ -48,7 +70,7 @@ def typecheck(session):
     """
     Run static type checks using mypy.
     """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
+    requirements = export_dev_requirements(session, Path(session.create_tmp()))
     session.install("-r", str(requirements))
     session.run("mypy", SOURCE_DIR)
 
@@ -62,9 +84,8 @@ def security(session):
     - pip-audit uses success codes 0/1 (1 = issues found).
     - Safety results are exported to safety_output.txt for CI workflows.
     """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
+    requirements = export_dev_requirements(session, Path(session.create_tmp()))
     session.install("-r", str(requirements))
-
     session.run(
         "bandit",
         "-r",
@@ -93,7 +114,7 @@ def secrets(session):
     Scan for secrets using TruffleHog.
     Exclude common noisy paths to reduce false positives.
     """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
+    requirements = export_dev_requirements(session, Path(session.create_tmp()))
     session.install("-r", str(requirements))
     session.install("trufflehog")
     session.run(
@@ -186,7 +207,7 @@ def pip_audit(session: nox.Session) -> None:
             session.log(f"Attempt {attempt} of pip-audit...")
             session.run("pip-audit", "--output", "audit_results.txt", external=True)
             break
-        except nox.command.CommandFailed as e:
+        except nox.command.CommandFailed:
             if attempt == retries:
                 session.error("pip-audit failed after 3 attempts.")
             session.log("Retrying pip-audit after failure...")
@@ -200,7 +221,7 @@ def semgrep(session):
     - JSON: used for direct PR feedback
     - SARIF: uploaded to GitHub Security dashboard
     """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
+    requirements = export_dev_requirements(session, Path(session.create_tmp()))
     session.install("-r", str(requirements))
     session.install("semgrep")
 
@@ -223,7 +244,7 @@ def semgrep(session):
     session.log("Semgrep analysis completed.")
 
 
-@nox.session(name="snyk")
+@nox.session(name="snyk_scan")
 def snyk_scan(session: nox.Session) -> None:
     """Run Snyk scan and output JSON results."""
     session.install("poetry")  # Optional: to ensure dependencies are present
@@ -299,18 +320,50 @@ def lint_markdown(session):
     """
     Lint Markdown files using markdownlint-cli.
     """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
+    requirements = export_dev_requirements(session, Path(session.create_tmp()))
     session.install("-r", str(requirements))
     session.run("markdownlint", ".", external=True)
 
 
 @nox.session(name="lint_all", python=LATEST)
-def lint_all(session):
+def lint_all(session: Session) -> None:
     """
-    Run all linting tools including Python, YAML, and Markdown linters.
+    Run full lint suite: flake8, prettier (for YAML), markdownlint.
+    Discovered files are written to scripts/lint-*.txt.
     """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
+    tmp = Path(session.create_tmp())
+    requirements = export_dev_requirements(session, tmp)
     session.install("-r", str(requirements))
-    session.run("flake8", ".")
-    session.run("yamllint", ".")
-    session.run("markdownlint", ".", external=True)
+    session.install("yamllint")
+    session.install("prettier")
+
+    # Run flake8
+    session.log("Running flake8...")
+    session.run("flake8", ".", "--exclude=" + ",".join(EXCLUDE_PATHS))
+
+    # YAML formatting + linting
+    yaml_files = discover_files(".", [".yaml", ".yml"], EXCLUDE_PATHS)
+    yaml_list = Path("scripts/lint-yaml.txt")
+    yaml_list.parent.mkdir(parents=True, exist_ok=True)
+    yaml_list.write_text("\n".join(yaml_files))
+
+    if yaml_files:
+        session.log(
+            f"Formatting {len(yaml_files)} YAML files with Prettier (via npx)...")
+        session.run("npx", "prettier", "--write", *yaml_files, external=True)
+
+        session.log(f"Running yamllint on {len(yaml_files)} YAML files...")
+        session.run("yamllint", "-f", "parsable", *yaml_files)
+    else:
+        session.log("No YAML files found for yamllint.")
+
+    # Markdown formatting + linting
+    md_files = discover_files(".", [".md"], EXCLUDE_PATHS)
+    md_list = Path("scripts/lint-md.txt")
+    md_list.write_text("\n".join(md_files))
+
+    if md_files:
+        session.log(f"Formatting {len(md_files)} Markdown files with markdownlint --fix...")
+        session.run("markdownlint", "--fix", *md_files, external=True)
+    else:
+        session.log("No Markdown files found for markdownlint.")

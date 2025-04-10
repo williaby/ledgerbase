@@ -1,14 +1,21 @@
 default_stages: [ commit ]
 exclude: |
-    (?x)^(
-      \.venv/|
-      \.idea/|
-      dist/|
-      build/|
-      migrations/|
-      .*\.sqlite|
-      tests/
-    )
+  ^(
+    \.venv/
+    | \.idea/
+    | \.nox/
+    | \.pytest_cache/
+    | dist/
+    | build/
+    | .*\.egg-info/
+    | .*\.pyc
+    | __pycache__/
+    | notebooks/.ipynb_checkpoints/
+    | migrations/
+    | static/
+  )/
+
+
 
 repos:
     -   repo: https://github.com/psf/black
@@ -59,13 +66,26 @@ repos:
     #   hooks:
     #     - id: reorder-python-imports
 
-    -   repo: https://github.com/Yelp/detect-secrets
-        rev: v1.5.0
-        hooks:
-            -   id: detect-secrets
+    - repo: https://github.com/Yelp/detect-secrets
+      rev: v1.5.0
+      hooks:
+        - id: detect-secrets
+          args: ["--baseline", ".secrets.baseline"]
+
 
     -   repo: https://github.com/nbQA-dev/nbQA
         rev: 1.9.1
         hooks:
             -   id: nbqa-black
             -   id: nbqa-isort
+
+    -   repo: https://github.com/igorshubovych/markdownlint-cli
+        rev: v0.39.0
+        hooks:
+            -   id: markdownlint
+                name: markdownlint
+                entry: markdownlint
+                language: node
+                types: [ markdown ]
+                additional_dependencies: [ ]
+
