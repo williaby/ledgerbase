@@ -1,135 +1,110 @@
 name: Composite Security Scans
 
 on:
-    push:
-        branches: [ main ]
-    pull_request:
-        branches: [ main ]
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *'  # Runs daily at 5:00 AM UTC
 
 permissions:
-    contents: read
-    pull-requests: write
-    issues: write
-    security-events: write
+  contents: read
+  pull-requests: write
+  issues: write
+  security-events: write
 
 jobs:
+  safety:
+    name: Safety Scan
+    strategy:
+      matrix:
+        python-version: [ "3.11", "3.12" ]
+    uses: ./.github/workflows/templates/nox-template.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      sessions: "safety"
 
-    safety:
-        name: Safety Scan
-        strategy:
-            matrix:
-                python-version: [ "3.11", "3.12" ]
-        uses: ./.github/workflows/templates/nox-template.yml
+  pip-audit:
+    name: Pip Audit
+    strategy:
+      matrix:
+        python-version: [ "3.11", "3.12" ]
+    uses: ./.github/workflows/templates/nox-template.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      sessions: "pip-audit"
+
+  bandit:
+    name: Bandit Security Scan
+    strategy:
+      matrix:
+        python-version: [ "3.11", "3.12" ]
+    uses: ./.github/workflows/templates/nox-template.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      sessions: "bandit"
+
+  semgrep:
+    name: Semgrep Static Analysis
+    uses: ./.github/workflows/templates/nox-template.yml
+    with:
+      python-version: "3.12"
+      sessions: "semgrep"
+
+  snyk:
+    name: Snyk Dependency Scan
+    uses: ./.github/workflows/templates/nox-template.yml
+    with:
+      python-version: "3.12"
+      sessions: "snyk"
+
+  trivy:
+    name: Trivy Container Scan
+    uses: ./.github/workflows/templates/nox-template.yml
+    with:
+      python-version: "3.12"
+      sessions: "trivy"
+
+  status-summary:
+    name: Consolidate Results and Add Labels
+    runs-on: ubuntu-22.04
+    needs:
+      - safety
+      - pip-audit
+      - bandit
+      - semgrep
+      - snyk
+      - trivy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.0
+
+      - name: Collect Security Result Files
+        run: |
+          mkdir -p merged_sarif
+          cp *.sarif merged_sarif/ || true
+          cp *_output.txt merged_sarif/ || true
+          cp *.json merged_sarif/ || true
+
+      - name: Merge SARIF Files
+        run: |
+          npx @microsoft/sarif-multitool merge merged_sarif/*.sarif --output merged-results.sarif
+
+      - name: Upload Merged SARIF to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3.24.9
         with:
-            python-version: ${{ matrix.python-version }}
-            sessions: "safety"
+          sarif_file: merged-results.sarif
 
-    pip-audit:
-        name: Pip Audit
-        strategy:
-            matrix:
-                python-version: [ "3.11", "3.12" ]
-        uses: ./.github/workflows/templates/nox-template.yml
+      - name: Label PR Based on Security Scan Output
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7.1.0
         with:
-            python-version: ${{ matrix.python-version }}
-            sessions: "pip-audit"
-
-    bandit:
-        name: Bandit Security Scan
-        strategy:
-            matrix:
-                python-version: [ "3.11", "3.12" ]
-        uses: ./.github/workflows/templates/nox-template.yml
-        with:
-            python-version: ${{ matrix.python-version }}
-            sessions: "bandit"
-
-    semgrep:
-        name: Semgrep Static Analysis
-        uses: ./.github/workflows/templates/nox-template.yml
-        with:
-            python-version: "3.12"
-            sessions: "semgrep"
-
-    snyk:
-        name: Snyk Dependency Scan
-        uses: ./.github/workflows/templates/nox-template.yml
-        with:
-            python-version: "3.12"
-            sessions: "snyk"
-
-    trivy:
-        name: Trivy Container Scan
-        uses: ./.github/workflows/templates/nox-template.yml
-        with:
-            python-version: "3.12"
-            sessions: "trivy"
-
-    status-summary:
-        name: Consolidate Results and Add Labels
-        runs-on: ubuntu-22.04
-        needs:
-            - safety
-            - pip-audit
-            - bandit
-            - semgrep
-            - snyk
-            - trivy
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v4.1.0
-
-            -   name: Collect Security Result Files
-                run: |
-                    mkdir -p merged_sarif
-                    cp *.sarif merged_sarif/ || true
-                    cp *_output.txt merged_sarif/ || true
-                    cp *.json merged_sarif/ || true
-
-            -   name: Merge SARIF Files
-                run: |
-                    npx @microsoft/sarif-multitool merge merged_sarif/*.sarif --output merged-results.sarif
-
-            -   name: Upload Merged SARIF to GitHub Security Tab
-                uses: github/codeql-action/upload-sarif@v3.24.9
-                with:
-                    sarif_file: merged-results.sarif
-
-            -   name: Label PR Based on Security Scan Output
-                if: github.event_name == 'pull_request'
-                uses: actions/github-script@v7.1.0
-                with:
-                    script: |
-                        const fs = require('fs');
-                        const core = require('@actions/core');
-                        const labelMap = {
-                          "audit_results.txt": "security:audit",
-                          "safety_output.txt": "security:safety",
-                          "snyk-results.json": "security:snyk",
-                          "semgrep-results.json": "security:semgrep",
-                          "trivy-results.sarif": "security:trivy",
-                          "bandit_output.txt": "security:bandit"
-                        };
-
-                        const labels = [];
-                        for (const [file, label] of Object.entries(labelMap)) {
-                          if (fs.existsSync(file)) {
-                            const content = fs.readFileSync(file, 'utf8').trim();
-                            if (content.length > 0) {
-                              labels.push(label);
-                            }
-                          }
-                        }
-
-                        if (labels.length > 0) {
-                          const pr = context.payload.pull_request;
-                          await github.rest.issues.addLabels({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            issue_number: pr.number,
-                            labels: labels
-                          });
-                          console.log("Labels added:", labels);
-                        } else {
-                          console.log("No issues detected. No labels applied.");
-                        }
+          script: |
+            github.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['security-reviewed']
+            })
