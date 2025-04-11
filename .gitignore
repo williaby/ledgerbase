@@ -35,7 +35,7 @@ build/
 !.secrets.template  # if you want a sample .secrets file
 
 # Security baselines
-# .secrets.baseline
+.secrets.baseline
 .security.baseline
 
 # Act-specific override
@@ -46,3 +46,19 @@ build/
 *.sops.yaml
 *.sops.json
 *.sops.env
+
+# Security and audit artifacts
+*.sarif
+*.json
+safety_output.txt
+semgrep-results.json
+license-report.json
+
+# Local build/cache
+node_modules/
+logs/
+ledgerbase_secure_env/
+src/migrations/
+
+# Backup / temp files
+.git.bak/
