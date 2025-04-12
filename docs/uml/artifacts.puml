@@ -1,0 +1,14 @@
+```puml
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam wrapWidth 180
+skinparam linetype ortho
+left to right direction
+
+package "Generated Artifacts" #MistyRose {
+  [docs/scripts.md]
+  [requirements.txt]
+  [.venv/]
+}
+@enduml

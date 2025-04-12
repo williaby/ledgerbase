@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# check-system.sh — Validate Ledgerbase's secure development environment
+##: name = check-system.sh
+##: description = Verifies required system dependencies for LedgerBase.
+##: usage = ./check-system.sh
+##: behavior = Prints version info for poetry, Python, and sops; exits if any tool is missing.
+
 set -e
+command -v poetry && poetry --version
+command -v python3 && python3 --version
+command -v sops && sops --version
+
 
 echo "🔍 Checking system environment..."
 

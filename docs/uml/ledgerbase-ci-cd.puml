@@ -1,0 +1,32 @@
+@startuml
+!include ci.puml
+!include cd.puml
+!include scripts.puml
+!include artifacts.puml
+
+skinparam linetype ortho
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam wrapWidth 180
+left to right direction
+
+package "CI/CD Flow Connections" {
+  ' Connect CI to Scripts and Artifacts
+  [daily-check.yml] --> [generate_script_docs.py]
+  [generate_script_docs.py] --> [docs/scripts.md]
+
+  [dev-checks.yml] --> [noxfile.py]
+  [pre-commit.yml] --> [noxfile.py]
+  [nox-template-matrix.yml] --> [noxfile.py]
+  [bandit.yml] --> [noxfile.py]
+  [pip-audit.yml] --> [noxfile.py]
+  [semgrep.yml] --> [noxfile.py]
+
+  ' Shell scripts used during dev workflows
+  [check-system.sh] --> [dev-checks.yml]
+  [generate_requirements.sh] --> [dev-checks.yml]
+  [decrypt_env.sh] --> [dev-checks.yml]
+  [encrypt_env.sh] --> [dev-checks.yml]
+  [validate_env_keys.sh] --> [dev-checks.yml]
+}
+@enduml

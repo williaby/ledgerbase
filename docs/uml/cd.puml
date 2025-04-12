@@ -1,0 +1,14 @@
+@startuml
+' Future CD Workflows
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam wrapWidth 180
+skinparam linetype ortho
+left to right direction
+
+package "CD Workflows (Planned)" #DarkSeaGreen {
+  [docker-build.yml]
+  [deploy-api.yml]
+  [release-tag.yml]
+}
+@enduml

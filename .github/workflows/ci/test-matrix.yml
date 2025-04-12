@@ -1,0 +1,76 @@
+name: Test Matrix
+
+on:
+  workflow_call:
+    inputs:
+      session:
+        required: true
+        type: string
+      python-version:
+        required: false
+        type: string
+        default: '3.11'
+
+jobs:
+  setup:
+    if: inputs.python-version == '3.11'
+    runs-on: ubuntu-22.04
+    outputs:
+      python-version: ${{ steps.extract.outputs.versions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Load Python versions from python-versions.json
+        id: extract
+        run: |
+          versions=$(jq -c .python_versions .github/workflows/templates/python-versions.json)
+          echo "versions=$versions" >> $GITHUB_OUTPUT
+
+  run-default:
+    if: inputs.python-version == '3.11'
+    needs: setup
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        session: ["tests"]
+        python-version: ${{ fromJson(needs.setup.outputs.python-version) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Nox and run session
+        run: |
+          python -m pip install --upgrade pip nox
+          nox -s ${{ matrix.session }}
+
+  run-override:
+    if: inputs.python-version != '3.11'
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        session: ${{ fromJson(format('["{0}"]', inputs.session)) }}
+        python-version: ${{ fromJson(inputs.python-version) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Nox and run session
+        run: |
+          python -m pip install --upgrade pip nox
+          nox -s ${{ matrix.session }}

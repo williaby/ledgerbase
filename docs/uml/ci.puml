@@ -1,0 +1,69 @@
+@startuml
+title Daily CI Health Check Flow
+
+skinparam rectangle {
+  BackgroundColor #F2F2F2
+  BorderColor black
+  BorderThickness 1
+}
+
+' ─────────────────────────────────────────────────────────────
+' External Trigger
+' ─────────────────────────────────────────────────────────────
+rectangle "Trigger: push / pull_request / dispatch / schedule" as Trigger
+
+' ─────────────────────────────────────────────────────────────
+' Grouped CI Workflow Runtime Block
+' ─────────────────────────────────────────────────────────────
+rectangle "CI Workflow Runtime" as CIBlock {
+  rectangle "generate-matrix.yml" as GenerateMatrix
+  rectangle "security-checks.yml" as SecurityChecks
+  rectangle "Merge SARIF Files" as MergeSarif
+  rectangle "Upload SARIF" as UploadSARIF
+  rectangle "CI Summary" as Summary
+
+  rectangle "ci/pre-commit.yml" as PreCommit
+  rectangle "ci/dev-checks.yml" as DevChecks
+  rectangle "ci/lint-matrix.yml" as LintMatrix
+  rectangle "ci/test-matrix.yml" as TestMatrix
+
+  ' Internal CI connections
+  GenerateMatrix --> SecurityChecks
+  SecurityChecks --> MergeSarif
+  MergeSarif --> UploadSARIF
+  UploadSARIF --> Summary
+  MergeSarif --> Summary : <<fallback>>\nno SARIF files found
+
+  PreCommit --> Summary
+  DevChecks --> Summary
+  LintMatrix --> Summary
+  TestMatrix --> Summary
+}
+
+' ─────────────────────────────────────────────────────────────
+' External trigger connections
+' ─────────────────────────────────────────────────────────────
+Trigger --> GenerateMatrix
+Trigger --> PreCommit
+Trigger --> DevChecks
+Trigger --> LintMatrix
+Trigger --> TestMatrix
+
+' ─────────────────────────────────────────────────────────────
+' Manual Dispatch Instructions (Legend)
+' ─────────────────────────────────────────────────────────────
+legend right
+🛠️ Manual Run Options:
+
+▶️ From GitHub UI:
+- Go to GitHub → Actions → "Daily CI Health Check"
+- Click "Run workflow"
+- Adjust inputs if needed
+
+💻 From local CLI (`act`):
+- Run: act workflow_dispatch -W .github/workflows/daily-check.yml
+- Optional: pass inputs with -i
+  e.g. -i sessions='["ruff","mypy"]'
+endlegend
+
+@enduml

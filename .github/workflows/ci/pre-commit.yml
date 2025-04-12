@@ -10,4 +10,4 @@ jobs:
     pre-commit:
         uses: ./.github/workflows/templates/nox-template.yml
         with:
-            sessions: "precommit"
+            sessions: "pre-commit"

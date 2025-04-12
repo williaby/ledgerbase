@@ -1,4 +1,4 @@
-name: Composite Security Scans
+name: Composite Security Scan
 
 on:
   push:

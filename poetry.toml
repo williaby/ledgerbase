@@ -1,0 +1,20 @@
+[virtualenvs]
+# Store virtualenv inside the project for easier control and visibility
+in-project = true
+
+# Recommended for PyCharm + WSL so it doesn't default to ~/.cache/pypoetry
+path = ".venv"
+
+# Disable reuse of existing virtualenvs to avoid accidental cross-project contamination
+prefer-active-python = false
+
+[installer]
+# Automatically install dev dependencies (e.g. ruff, pytest, bandit)
+with = ["dev"]
+
+# Prevent installing the root package itself (e.g. if ledgerbase is not installable yet)
+no-root = true
+
+[cache]
+# Override global cache directory (optional, but you already cache this in GitHub Actions)
+#dir = "~/.cache/pypoetry"

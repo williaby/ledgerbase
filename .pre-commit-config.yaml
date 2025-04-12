@@ -100,3 +100,15 @@ repos:
         language: system
         types: [file]
         files: ^\.env\.prod$
+
+      - id: generate-script-docs
+        name: Generate script documentation
+        entry: python scripts/generate_script_docs.py
+        language: system
+        pass_filenames: false
+
+      - id: check-script-docs-freshness
+        name: Check scripts.md is up to date
+        entry: bash -c 'git diff --exit-code docs/scripts.md || (echo "docs/scripts.md is out of date. Run generate_script_docs.py." && exit 1)'
+        language: system
+        pass_filenames: false

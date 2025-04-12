@@ -6,11 +6,12 @@ on:
     pull_request:
         branches: [ main ]
     workflow_dispatch:
-        inputs:
-            sessions:
-                description: "Nox sessions to run (space-separated)"
-                required: false
-                default: "lint typecheck security"
+      inputs:
+        session:
+          description: "Nox session to run (one at a time)"
+          required: true
+          default: "lint typecheck gen_script_docs"
+
 
 jobs:
     matrix:
@@ -42,5 +43,5 @@ jobs:
 
         uses: ./.github/workflows/templates/nox-template.yml
         with:
-            python-version: ${{ matrix.python-version }}
-            sessions: ${{ inputs.sessions }}
+          python-version: ${{ matrix.python-version }}
+          sessions: ${{ inputs.session }}

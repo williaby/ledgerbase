@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# validate_env_keys.sh - Pre-commit hook to check required keys in .env.prod.sops.yaml
+##: name = validate_env_keys.sh
+##: description = Validates that required keys exist in the decrypted .env file.
+##: usage = ./validate_env_keys.sh
+##: behavior = Greps required keys and exits with error if any are missing.
 
 set -e
 

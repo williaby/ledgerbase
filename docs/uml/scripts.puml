@@ -1,0 +1,18 @@
+```puml
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam wrapWidth 180
+skinparam linetype ortho
+left to right direction
+
+package "Shell Scripts & Utilities" #Wheat {
+  [check-system.sh]
+  [decrypt_env.sh]
+  [encrypt_env.sh]
+  [generate_requirements.sh]
+  [validate_env_keys.sh]
+  [noxfile.py] as Nox
+  [generate_script_docs.py]
+}
+@enduml

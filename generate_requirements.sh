@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# generate_requirements.sh - Export Poetry dependencies to requirements.txt
+##: name = generate_requirements.sh
+##: description = Generates requirements.txt from poetry.lock for compatibility tools.
+##: usage = ./generate_requirements.sh
+##: behavior = Uses poetry export to regenerate requirements.txt with hashes.
 
 set -e
 

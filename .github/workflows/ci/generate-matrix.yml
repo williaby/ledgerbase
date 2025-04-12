@@ -1,0 +1,42 @@
+name: Generate Security Session Matrix
+
+on:
+  workflow_call:
+    outputs:
+      sessions:
+        description: "Discovered security-related nox sessions"
+        value: ${{ jobs.generate.outputs.sessions }}
+
+jobs:
+  generate:
+    runs-on: ubuntu-22.04
+    outputs:
+      sessions: ${{ steps.set-matrix.outputs.sessions }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Nox
+        run: python -m pip install --upgrade nox
+
+      - name: Run session discovery
+        run: |
+          set -e
+          python -m nox -s list-security-sessions > matrix.json
+          echo "Discovered sessions:"
+          cat matrix.json
+
+      - name: Validate and export matrix
+        id: set-matrix
+        run: |
+          if [ ! -s matrix.json ]; then
+            echo "::error::No sessions discovered."
+            exit 1
+          fi
+          sessions=$(cat matrix.json)
+          echo "sessions=$sessions" >> $GITHUB_OUTPUT

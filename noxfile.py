@@ -1,25 +1,66 @@
+# LedgerBase - Nox Configuration
+# Organized for CI, security, linting, testing, and utility automation
+# ─────────────────────────────────────────────────────────────────────────────
+# Table of Contents
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Global Config
+# 2. Core Dev Sessions (Tests, Lint, Pre-commit)       [tags: ci, core]
+# 3. Security and Compliance                           [tags: ci, security]
+# 4. Docker & Artifacts                                [tags: ci, docker, docs]
+# 5. Extended Linting (YAML, Markdown, Mixed)          [tags: ci, extended-linting]
+# 6. Session Discovery Utilities                       [tags: ci, util]
+#
+# Tag Legend:
+#   - ci: included in automated CI pipelines
+#   - core: unit testing and source linting
+#   - security: vulnerability and license checks
+#   - docker: container build and image scans
+#   - docs: documentation and generation workflows
+#   - extended-linting: combined config format checks
+#   - util: internal tooling helpers
+import json
 import os
 from pathlib import Path
 
 import nox
 from nox.sessions import Session
-os.chdir(os.path.dirname(__file__))
 
-# Define Python version usage
-FULL_MATRIX = ["3.9", "3.10", "3.11", "3.12"]
-LATEST = "3.12"
+# ─────────────────────────────────────────────────────────────────────────────
+# Global Config
+# ─────────────────────────────────────────────────────────────────────────────
 
-SOURCE_DIR = "src/ledgerbase"
+PYTHON_VERSIONS = ["3.9", "3.10", "3.11"]
+LATEST = "3.11"
+PACKAGE_DIR = "src/ledgerbase"
 TESTS_DIR = "tests"
-
-# Paths to exclude from linting
 EXCLUDE_PATHS = {
-    ".nox", ".venv", "__pycache__", "build", "dist", ".git", "migrations", "tests", "scripts"
+    ".nox",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    ".git",
+    "migrations",
+    "tests",
+    "scripts",
 }
 
 
-# Helper to find files with given extensions, excluding certain paths
-def discover_files(root: str, extensions: list[str], exclude_dirs: set[str]) -> list[str]:
+def install_poetry_and_deps(session, with_dev=True, no_root=True):
+    session.install("poetry")
+    command = ["poetry", "install"]
+    if no_root:
+        command.append("--no-root")
+    if with_dev:
+        command.extend(["--with", "dev"])
+    else:
+        command.extend(["--only", "main"])
+    session.run(*command)
+
+
+def discover_files(
+    root: str, extensions: list[str], exclude_dirs: set[str]
+) -> list[str]:
     found = []
     for dirpath, dirnames, filenames in os.walk(root):
         if any(excluded in Path(dirpath).parts for excluded in exclude_dirs):
@@ -30,234 +71,91 @@ def discover_files(root: str, extensions: list[str], exclude_dirs: set[str]) -> 
     return found
 
 
-# Helper to export requirements for the session
-def export_dev_requirements(session: Session, temp_path: Path) -> Path:
-    requirements = temp_path / "dev-requirements.txt"
-    session.run(
-        "poetry",
-        "export",
-        "--with",
-        "dev",
-        "--format=requirements.txt",
-        "--without-hashes",
-        "-o",
-        str(requirements),
-        external=True,
-    )
-    return requirements
+# ─────────────────────────────────────────────────────────────────────────────
+# Core Dev Sessions (Tests, Lint, Pre-commit)
+# ─────────────────────────────────────────────────────────────────────────────
 
 
-@nox.session(python=LATEST)
-def lint(session):
-    """
-    Run linters: black, isort, flake8.
-    Run on latest Python only to reduce matrix overhead.
-    """
-    requirements = export_dev_requirements(session, Path(session.create_tmp()))
-    session.install("-r", str(requirements))
-    session.run("black", "--check", ".")
-    session.run("isort", "--check-only", ".")
-    session.run(
-        "flake8",
-        ".",
-        "--exclude=.nox,.venv,__pycache__,build,dist,.git,migrations,tests",
-        external=True,
-    )
-
-
-@nox.session(python=LATEST)
-def typecheck(session):
-    """
-    Run static type checks using mypy.
-    """
-    requirements = export_dev_requirements(session, Path(session.create_tmp()))
-    session.install("-r", str(requirements))
-    session.run("mypy", SOURCE_DIR)
-
-
-@nox.session(python=LATEST)
-def security(session):
-    """
-    Run security tooling: Bandit, Safety, pip-audit.
-    - Bandit outputs SARIF-compatible JSON.
-    - B101 is skipped (asserts allowed for dev assertions).
-    - pip-audit uses success codes 0/1 (1 = issues found).
-    - Safety results are exported to safety_output.txt for CI workflows.
-    """
-    requirements = export_dev_requirements(session, Path(session.create_tmp()))
-    session.install("-r", str(requirements))
-    session.run(
-        "bandit",
-        "-r",
-        SOURCE_DIR,
-        "-x",
-        TESTS_DIR,
-        "-f",
-        "json",
-        "-o",
-        "bandit-results.json",
-        "--skip",
-        "B101",
-    )
-    session.log("Bandit JSON results written to bandit-results.json")
-
-    with open("safety_output.txt", "w") as f:
-        session.run("safety", "check", "--full-report", stdout=f)
-    session.log("Safety output written to safety_output.txt")
-
-    session.run("pip-audit", success_codes=[0, 1])
-
-
-@nox.session(python=LATEST)
-def secrets(session):
-    """
-    Scan for secrets using TruffleHog.
-    Exclude common noisy paths to reduce false positives.
-    """
-    requirements = export_dev_requirements(session, Path(session.create_tmp()))
-    session.install("-r", str(requirements))
-    session.install("trufflehog")
-    session.run(
-        "trufflehog",
-        "filesystem",
-        "--no-update",
-        "--regex",
-        "--entropy=True",
-        "--exclude",
-        ".git,.venv,.tox,__pycache__",
-        ".",
-    )
-
-
-@nox.session(python=FULL_MATRIX)
+@nox.session(name="tests", python=PYTHON_VERSIONS, tags=["ci", "core"])
 def tests(session):
-    """
-    Run tests using pytest across full Python version matrix.
-    Fail explicitly if requirements.txt is missing.
-    """
-    requirements_file = Path("requirements.txt")
-    if not requirements_file.exists():
-        session.error(
-            "requirements.txt is missing. Please add it before running tests."
-        )
-    session.install("-r", str(requirements_file))
-    session.install("pytest")
-    session.run("pytest", TESTS_DIR)
+    install_poetry_and_deps(session)
+    session.run("pytest")
 
 
-@nox.session(python=LATEST)
-def sbom(session):
-    """
-    Generate SBOMs using cyclonedx-bom.
-    - sarif: for GitHub Security tab
-    - json: for compliance archival
-    """
-    session.install("cyclonedx-bom")
-    session.run(
-        "cyclonedx-py", "--output-format", "sarif", "--output-file", "sbom.sarif"
-    )
-    session.run("cyclonedx-py", "--output-format", "json", "--output-file", "sbom.json")
+@nox.session(name="lint", python=PYTHON_VERSIONS, tags=["ci", "core"])
+def lint(session):
+    install_poetry_and_deps(session)
+    session.run("ruff", PACKAGE_DIR)
 
 
-@nox.session(python=LATEST)
-def license(session):
-    """
-    Generate a license report and filter disallowed licenses.
-    Produces:
-    - license-report.json (full)
-    - disallowed.txt (if any non-allowed licenses found)
-    """
-    session.install("pip-licenses")
-    session.run(
-        "pip-licenses",
-        "--format=json",
-        "--output-file=license-report.json",
-        "--with-authors",
-        "--with-urls",
-    )
-
-    # Create filtered list of disallowed licenses
-    allowed = {"MIT", "BSD", "Apache-2.0", "ISC"}
-    import json
-
-    with open("license-report.json") as f:
-        licenses = json.load(f)
-
-    disallowed = [
-        f"{pkg['Name']} ({pkg['License']})"
-        for pkg in licenses
-        if pkg["License"] not in allowed
-    ]
-
-    if disallowed:
-        with open("disallowed.txt", "w") as out:
-            out.write("\n".join(disallowed))
-        session.log(f"Found {len(disallowed)} disallowed licenses.")
-    else:
-        session.log("No disallowed licenses found.")
+@nox.session(name="pre-commit", python=PYTHON_VERSIONS, tags=["ci", "core"])
+def pre_commit(session):
+    install_poetry_and_deps(session)
+    session.run("pre-commit", "run", "--all-files")
 
 
-@nox.session(name="pip-audit", python=LATEST)
-def pip_audit(session: nox.Session) -> None:
-    """Run pip-audit for dependency vulnerability scanning."""
-    session.install("pip-audit")
-    retries = 3
-    for attempt in range(1, retries + 1):
-        try:
-            session.log(f"Attempt {attempt} of pip-audit...")
-            session.run("pip-audit", "--output", "audit_results.txt", external=True)
-            break
-        except nox.command.CommandFailed:
-            if attempt == retries:
-                session.error("pip-audit failed after 3 attempts.")
-            session.log("Retrying pip-audit after failure...")
-            session.sleep(10)
+@nox.session(name="ruff", python=PYTHON_VERSIONS, tags=["ci", "core"])
+def ruff_check(session):
+    install_poetry_and_deps(session)
+    session.install("ruff")
+    session.run("ruff", PACKAGE_DIR, "--format", "sarif", "--output", "ruff.sarif")
 
 
-@nox.session(python=LATEST)
+@nox.session(name="black", python=PYTHON_VERSIONS, tags=["ci", "core"])
+def black_check(session):
+    install_poetry_and_deps(session)
+    session.install("black")
+    session.run("black", "--check", PACKAGE_DIR)
+
+
+@nox.session(name="mypy", python=PYTHON_VERSIONS, tags=["ci", "core"])
+def mypy_check(session):
+    install_poetry_and_deps(session)
+    session.install("mypy")
+    session.run("mypy", PACKAGE_DIR)
+
+
+@nox.session(name="check-lockfile", python=False, tags=["ci", "core"])
+def check_lockfile(session):
+    session.install("poetry")
+    session.run("poetry", "lock", "--check")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Security and Compliance
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@nox.session(name="bandit", python=LATEST, tags=["ci", "security"])
+def bandit_scan(session):
+    install_poetry_and_deps(session)
+    session.run("bandit", "-r", PACKAGE_DIR, "-f", "json", "-o", "bandit-report.json")
+
+
+@nox.session(name="pip-audit", python=LATEST, tags=["ci", "security"])
+def pip_audit(session):
+    install_poetry_and_deps(session)
+    session.run("pip-audit")
+
+
+@nox.session(name="semgrep", python=LATEST, tags=["ci", "security"])
 def semgrep(session):
-    """
-    Run Semgrep with both JSON and SARIF output formats.
-    - JSON: used for direct PR feedback
-    - SARIF: uploaded to GitHub Security dashboard
-    """
-    requirements = export_dev_requirements(session, Path(session.create_tmp()))
-    session.install("-r", str(requirements))
-    session.install("semgrep")
-
+    install_poetry_and_deps(session)
     session.run(
-        "semgrep",
-        "--config=auto",
-        "--json",
-        "--output=semgrep-results.json",
-        external=True,
+        "semgrep", "--config", "auto", "--json", "--output", "semgrep-results.json"
     )
-
-    session.run(
-        "semgrep",
-        "--config=auto",
-        "--sarif",
-        "--output=semgrep.sarif",
-        external=True,
-    )
-
-    session.log("Semgrep analysis completed.")
+    session.run("semgrep", "--config", "auto", "--sarif", "--output", "semgrep.sarif")
 
 
-@nox.session(name="snyk_scan")
-def snyk_scan(session: nox.Session) -> None:
-    """Run Snyk scan and output JSON results."""
-    session.install("poetry")  # Optional: to ensure dependencies are present
+@nox.session(name="snyk_scan", tags=["ci", "security"])
+def snyk_scan(session: Session):
+    session.install("poetry")
     session.run("poetry", "install", "--no-root", external=True)
-
     session.run("npm", "install", "-g", "snyk", external=True)
-
     snyk_token = os.environ.get("SNYK_TOKEN")
     if not snyk_token:
         session.error("Missing required SNYK_TOKEN environment variable.")
-
     session.run("snyk", "auth", snyk_token, external=True)
-
     session.run(
         "snyk",
         "test",
@@ -268,24 +166,12 @@ def snyk_scan(session: nox.Session) -> None:
     )
 
 
-@nox.session(name="trivy", reuse_venv=True)
+@nox.session(name="trivy", reuse_venv=True, tags=["ci", "security", "docker"])
 def trivy(session):
-    """
-    Runs a Trivy vulnerability scan on the Docker image built from the repository.
-    Outputs results to a SARIF file for GitHub Security integration.
-    """
     image_name = "ledgerbase:latest"
     sarif_output = "trivy-results.sarif"
-
-    # Ensure Docker is installed
     session.run("docker", "--version", external=True)
-
-    # Build Docker image
-    session.log("Building Docker image for scanning...")
     session.run("docker", "build", "-t", image_name, ".", external=True)
-
-    # Run Trivy scan
-    session.log("Running Trivy vulnerability scan...")
     session.run(
         "trivy",
         "image",
@@ -294,7 +180,7 @@ def trivy(session):
         "--output",
         sarif_output,
         "--exit-code",
-        "0",  # Let GitHub Actions handle alerting
+        "0",
         "--ignore-unfixed",
         "--severity",
         "HIGH,CRITICAL",
@@ -302,68 +188,105 @@ def trivy(session):
         external=True,
     )
 
-    session.log(f"Trivy scan completed. Output written to {sarif_output}")
+
+@nox.session(name="sbom", python=LATEST, tags=["ci", "security"])
+def sbom(session):
+    session.install("cyclonedx-bom")
+    session.run(
+        "cyclonedx-py", "--output-format", "sarif", "--output-file", "sbom.sarif"
+    )
+    session.run("cyclonedx-py", "--output-format", "json", "--output-file", "sbom.json")
 
 
-@nox.session(python=LATEST)
-def lint_yaml(session):
-    """
-    Lint YAML files using yamllint.
-    """
-    requirements = export_dev_requirements(Path(session.create_tmp()))
-    session.install("-r", str(requirements))
-    session.run("yamllint", ".")
+@nox.session(name="license", python=LATEST, tags=["ci", "security"])
+def license(session):
+    session.install("pip-licenses")
+    session.run(
+        "pip-licenses",
+        "--format=json",
+        "--output-file=license-report.json",
+        "--with-authors",
+        "--with-urls",
+    )
+    with open("license-report.json") as f:
+        licenses = json.load(f)
+    allowed = {"MIT", "BSD", "Apache-2.0", "ISC"}
+    disallowed = [
+        f"{pkg['Name']} ({pkg['License']})"
+        for pkg in licenses
+        if pkg["License"] not in allowed
+    ]
+    if disallowed:
+        with open("disallowed.txt", "w") as out:
+            out.write("\n".join(disallowed))
+        session.log(f"Found {len(disallowed)} disallowed licenses.")
+    else:
+        session.log("No disallowed licenses found.")
 
 
-@nox.session(python=LATEST)
-def lint_markdown(session):
-    """
-    Lint Markdown files using markdownlint-cli.
-    """
-    requirements = export_dev_requirements(session, Path(session.create_tmp()))
-    session.install("-r", str(requirements))
-    session.run("markdownlint", ".", external=True)
+@nox.session(name="safety", python="3.12", tags=["ci", "security"])
+def safety(session):
+    session.install("safety", "safety-sarif", "jq")
+    session.run(
+        "safety", "check", "--full-report", "--json", "-o", "safety_output.json"
+    )
+    session.run("safety-sarif", "safety_output.json", "-o", "safety.sarif")
 
 
-@nox.session(name="lint_all", python=LATEST)
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker & Artifacts
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@nox.session(name="docker-build", python=False, tags=["ci", "docker"])
+def docker_build(session):
+    session.run("docker", "build", "-f", "Dockerfile", "-t", "ledgerbase:dev", ".")
+
+
+@nox.session(name="gen_script_docs", tags=["ci", "docs"])
+def gen_script_docs(session):
+    session.run("python", "scripts/generate_script_docs.py")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Extended Linting (YAML, Markdown, Mixed)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@nox.session(name="lint_all", python=LATEST, tags=["ci", "extended-linting"])
 def lint_all(session: Session) -> None:
-    """
-    Run full lint suite: flake8, prettier (for YAML), markdownlint.
-    Discovered files are written to scripts/lint-*.txt.
-    """
-    tmp = Path(session.create_tmp())
-    requirements = export_dev_requirements(session, tmp)
-    session.install("-r", str(requirements))
     session.install("yamllint")
     session.install("prettier")
+    session.install("markdownlint-cli")
 
-    # Run flake8
-    session.log("Running flake8...")
-    session.run("flake8", ".", "--exclude=" + ",".join(EXCLUDE_PATHS))
-
-    # YAML formatting + linting
     yaml_files = discover_files(".", [".yaml", ".yml"], EXCLUDE_PATHS)
     yaml_list = Path("scripts/lint-yaml.txt")
     yaml_list.parent.mkdir(parents=True, exist_ok=True)
     yaml_list.write_text("\n".join(yaml_files))
-
     if yaml_files:
-        session.log(
-            f"Formatting {len(yaml_files)} YAML files with Prettier (via npx)...")
         session.run("npx", "prettier", "--write", *yaml_files, external=True)
-
-        session.log(f"Running yamllint on {len(yaml_files)} YAML files...")
         session.run("yamllint", "-f", "parsable", *yaml_files)
-    else:
-        session.log("No YAML files found for yamllint.")
 
-    # Markdown formatting + linting
     md_files = discover_files(".", [".md"], EXCLUDE_PATHS)
     md_list = Path("scripts/lint-md.txt")
     md_list.write_text("\n".join(md_files))
-
     if md_files:
-        session.log(f"Formatting {len(md_files)} Markdown files with markdownlint --fix...")
         session.run("markdownlint", "--fix", *md_files, external=True)
-    else:
-        session.log("No Markdown files found for markdownlint.")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Session Discovery Utilities
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@nox.session(name="list-security-sessions", python=False, tags=["ci", "util"])
+def list_security_sessions(session):
+    from nox._decorators import Func
+
+    security_sessions = [
+        name
+        for name, obj in globals().items()
+        if isinstance(obj, Func) and "security" in getattr(obj, "tags", [])
+    ]
+    session.log("Security sessions: " + ", ".join(security_sessions))
+    session.run("echo", json.dumps(security_sessions))

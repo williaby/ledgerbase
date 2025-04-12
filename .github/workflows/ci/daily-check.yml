@@ -1,0 +1,113 @@
+name: Daily CI Health Check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+
+jobs:
+  # ------------------------------
+  # Generate Session Matrix (Reusable)
+  # ------------------------------
+  generate-matrix:
+    uses: ./.github/workflows/generate-matrix.yml
+
+  # ------------------------------
+  # Run Security Checks via Matrix
+  # ------------------------------
+  security-checks:
+    needs: generate-matrix
+    uses: ./.github/workflows/security-checks.yml
+    with:
+      sessions: ${{ needs.generate-matrix.outputs.sessions }}
+      # python-version is omitted to defer to python-versions.json
+
+  # ------------------------------
+  # DEVELOPMENT CHECKS
+  # ------------------------------
+  pre-commit:
+    uses: ./.github/workflows/ci/pre-commit.yml
+
+  dev-checks:
+    uses: ./.github/workflows/ci/dev-checks.yml
+
+  # ------------------------------
+  # Lint & Test Matrix (Split)
+  # ------------------------------
+  lint-matrix:
+    uses: ./.github/workflows/ci/lint-matrix.yml
+    with:
+      sessions: '["ruff", "mypy", "black"]'
+      # optional: omit python-version to use centralized config
+
+  test-matrix:
+    uses: ./.github/workflows/ci/test-matrix.yml
+    with:
+      session: "tests"
+      # optional: omit python-version to use centralized config
+
+  # ------------------------------
+  # Final Summary and PR Labeling
+  # ------------------------------
+summary:
+  name: CI Status Summary
+  runs-on: ubuntu-22.04
+  if: always()
+  needs:
+    - security-checks
+    - pre-commit
+    - dev-checks
+    - lint-matrix
+    - test-matrix
+  steps:
+    - name: Print CI Summary
+      run: |
+        echo "----- CI STATUS SUMMARY -----"
+        echo "Workflow: daily-check.yml"
+        echo "Timestamp (UTC): $(date -u)"
+        echo "Note: Review individual job results for any failures."
+
+    - name: Install SARIF Multitool
+      continue-on-error: true
+      run: |
+        npm install -g @microsoft/sarif-multitool jq
+
+    - name: Merge SARIF Files
+      run: |
+        mkdir -p merged
+        if ls *.sarif 1> /dev/null 2>&1; then
+          cp *.sarif merged/
+        else
+          echo "No SARIF files found to merge."
+        fi
+        npx @microsoft/sarif-multitool merge merged/*.sarif --output merged-results.sarif || echo "SARIF merge failed or nothing to merge."
+
+    - name: Upload Merged SARIF to GitHub Security Tab
+      if: ${{ hashFiles('merged-results.sarif') != '' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: merged-results.sarif
+
+    - name: Check for issues in SARIF
+      id: check_sarif
+      run: |
+        if [ -f merged-results.sarif ]; then
+          count=$(jq '[.runs[].results[]] | length' merged-results.sarif)
+          echo "Found $count security issues."
+          echo "issue_count=$count" >> $GITHUB_OUTPUT
+        else
+          echo "issue_count=0" >> $GITHUB_OUTPUT
+
+    - name: Label PR if Security Issues Found
+      if: github.event_name == 'pull_request' && steps.check_sarif.outputs.issue_count != '0'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: ['security-reviewed']
+          })

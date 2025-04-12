@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# encrypt_env.sh - Encrypt ledgerbase_secure_env/.env.prod into .env.prod.sops.yaml
+##: name = encrypt_env.sh
+##: description = Encrypts the .env file into .env.enc using sops.
+##: usage = ./encrypt_env.sh
+##: behavior = Uses sops to encrypt .env and stores the result in .env.enc.
 
 set -e
+sops -e .env > .env.enc
 
 ENV_FILE="ledgerbase_secure_env/.env.prod"
 ENCRYPTED_FILE=".env.prod.sops.yaml"

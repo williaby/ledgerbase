@@ -1,51 +1,46 @@
-name: Nox Session Runner
+name: Nox Task
+
+# This is a reusable template for running a single nox session on a fixed Python version.
 
 on:
-    workflow_call:
-        inputs:
-            python-version:
-                description: Python version to run Nox under
-                required: false
-                type: string
-                default: "3.12"
-
-            sessions:
-                description: Space-separated list of Nox sessions to run (e.g., "lint typecheck tests")
-                required: false
-                type: string
-                default: "lint typecheck"
+  workflow_call:
+    inputs:
+      sessions:
+        required: true
+        type: string
+      python-version:
+        required: false
+        type: string
+        default: "3.11"
 
 jobs:
-    prepare:
-        uses: .github/workflows/templates/prepare-poetry.yml
+  nox-single:
+    name: Run nox -s ${{ inputs.session }}
+    runs-on: ubuntu-latest
 
-    nox:
-        name: Run Nox Sessions
-        needs: prepare
-        runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.0
 
-        steps:
-            -   name: Checkout repository
-                uses: actions/checkout@v4
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v4.8.0
+        with:
+          python-version: ${{ inputs.python-version }}
 
-            -   name: Cache pip
-                uses: actions/cache@v4
-                with:
-                    path: ~/.cache/pip
-                    key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml', '**/poetry.lock') }}
-                    restore-keys: |
-                        ${{ runner.os }}-pip-
+      - name: Cache Poetry + pip + .nox
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .nox
+          key: ${{ runner.os }}-nox-${{ inputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nox-${{ inputs.python-version }}-
 
-            -   name: Set up Python
-                uses: actions/setup-python@v4
-                with:
-                    python-version: ${{ inputs.python-version }}
+      - name: Install Nox
+        run: python -m pip install --upgrade nox
 
-            -   name: Upgrade pip and install Nox
-                run: |
-                    python -m pip install --upgrade pip
-                    pip install nox
-
-            -   name: Run Nox Sessions
-                run: |
-                    nox -s ${{ inputs.sessions }}
+      - name: Run nox -s ${{ inputs.session }}
+        run: |
+            echo "${{ inputs.sessions }}" | xargs -n1 echo "-s" | xargs nox

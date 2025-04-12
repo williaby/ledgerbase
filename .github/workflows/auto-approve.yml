@@ -1,4 +1,4 @@
-name: Auto-Approve Trusted PRs
+name: Auto-Approve Trusted PR
 
 on:
   pull_request_target:

@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# decrypt_env.sh - Decrypt .env.prod.sops.yaml into ledgerbase_secure_env/.env.prod
+##: name = decrypt_env.sh
+##: description = Decrypts the LedgerBase .env file using sops.
+##: usage = ./decrypt_env.sh
+##: behavior = Uses sops to decrypt .env.enc and writes the output to .env.
 
 set -e
+sops -d .env.enc > .env
 
 ENCRYPTED_FILE=".env.prod.sops.yaml"
 OUTPUT_FILE="ledgerbase_secure_env/.env.prod"
