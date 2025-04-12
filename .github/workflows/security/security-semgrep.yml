@@ -1,111 +1,75 @@
 name: Security - Semgrep
 
 on:
-    pull_request:
-        branches: [ main ]
-    push:
-        branches: [ main ]
-    workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
-    contents: read
-    pull-requests: write
-    issues: write
-    security-events: write
+  contents: read
+  pull-requests: write
+  issues: write
+  security-events: write
 
 env:
-    PR_FAILURE_LABEL: semgrep-failed
-    SARIF_FILE: semgrep-results.sarif
-    JSON_FILE: semgrep-results.json
+  PR_FAILURE_LABEL: semgrep-failed
+  SARIF_FILE: semgrep.sarif
 
 jobs:
-    semgrep:
-        uses: ./.github/workflows/templates/nox-template.yml
+  semgrep:
+    name: Semgrep Cloud Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep with publishing
+        uses: returntocorp/semgrep-action@fcd5ab7459e8d91cb1777481980d1b18b4fc6735
         with:
-            python-version: "3.12"
-            sessions: "semgrep"
+          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+          publishDeployment: ${{ secrets.SEMGREP_DEPLOYMENT_ID }}
+          generateSarif: "1"
 
-    post-process:
-        name: Handle Semgrep Results
-        needs: semgrep
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ env.SARIF_FILE }}
         if: always()
-        runs-on: ubuntu-22.04
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v4.1.0
 
-            -   name: Check for Semgrep JSON output file
-                run: |
-                    if [ ! -f "${{ env.JSON_FILE }}" ]; then
-                      echo "::error::${{ env.JSON_FILE }} not found."
-                      exit 1
-                    fi
+  post-process:
+    name: Comment & Label PR
+    needs: semgrep
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add label on failure
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [process.env.PR_FAILURE_LABEL]
+            })
 
-            -   name: Check for SARIF file
-                run: |
-                    if [ ! -f "${{ env.SARIF_FILE }}" ]; then
-                      echo "::error::${{ env.SARIF_FILE }} not found."
-                      exit 1
-                    fi
-
-            -   name: Upload Semgrep JSON
-                uses: actions/upload-artifact@v3.1.2
-                with:
-                    name: semgrep-json
-                    path: ${{ env.JSON_FILE }}
-
-            -   name: Upload SARIF to GitHub Security tab
-                uses: github/codeql-action/upload-sarif@v2
-                with:
-                    sarif_file: ${{ env.SARIF_FILE }}
-
-            -   name: Comment on PR if Semgrep issues exist
-                if: github.event_name == 'pull_request'
-                uses: actions/github-script@v7.1.0
-                with:
-                    script: |
-                        const fs = require('fs');
-                        let findings = '';
-                        if (fs.existsSync(process.env.JSON_FILE)) {
-                          findings = fs.readFileSync(process.env.JSON_FILE, 'utf-8').trim();
-                        } else {
-                          findings = 'No findings file available.';
-                        }
-
-                        if (findings.length > 10) {
-                          const summary = findings.substring(0, 6500);
-                          await github.rest.issues.createComment({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            issue_number: context.issue.number,
-                            body: `### 🛡️ Semgrep Report\n\n\`\`\`\n${summary}\n\`\`\`\nFull results uploaded as an artifact.`
-                          });
-                        }
-
-            -   name: Label PR on failure
-                if: github.event_name == 'pull_request'
-                uses: actions/github-script@v7.1.0
-                with:
-                    script: |
-                        await github.rest.issues.addLabels({
-                          issue_number: context.issue.number,
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          labels: [process.env.PR_FAILURE_LABEL]
-                        });
-
-            -   name: Remove label on success
-                if: github.event_name == 'pull_request'
-                uses: actions/github-script@v7.1.0
-                with:
-                    script: |
-                        try {
-                          await github.rest.issues.removeLabel({
-                            issue_number: context.issue.number,
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            name: process.env.PR_FAILURE_LABEL
-                          });
-                        } catch (error) {
-                          console.log("Label not found or already removed.");
-                        }
+      - name: Remove label if scan passes
+        if: success()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            try {
+              github.rest.issues.removeLabel({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: process.env.PR_FAILURE_LABEL
+              })
+            } catch (e) {
+              console.log("Label already removed or not present");
+            }

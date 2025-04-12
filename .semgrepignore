@@ -1,0 +1,35 @@
+# Respect the same exclusions as in global and .gitignore
+.git/
+:include .gitignore
+
+# Python environments and virtualenvs
+.venv/
+env/
+env.bak/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# CI/CD and build artifacts
+.nox/
+.tox/
+build/
+dist/
+htmlcov/
+.mypy_cache/
+pytest_cache/
+coverage.xml
+*.egg-info/
+
+# Node/JS leftovers (just in case)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Security-sensitive directories
+ledgerbase_secure_env/
+
+# Test-related or dev-only directories
+tests/
+testdata/

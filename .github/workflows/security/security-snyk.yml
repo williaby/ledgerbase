@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: 20
       - name: Set up Snyk CLI
-        uses: snyk/actions/setup@v3
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: Run Snyk Code scan and output SARIF
@@ -50,12 +50,22 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
+      -   name: Cache Poetry Dependencies
+          uses: actions/cache@v3
+          with:
+              path: |
+                  ~/.cache/pypoetry
+                  ~/.cache/pip
+                  .venv
+              key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+              restore-keys: |
+                  ${{ runner.os }}-poetry-
       - name: Install Python dependencies
         run: |
           pip install poetry
           poetry install --no-root
       - name: Set up Snyk CLI
-        uses: snyk/actions/setup@v3
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: Snyk Open Source test (JSON for PR comments)
@@ -116,7 +126,7 @@ jobs:
         with:
           node-version: 20
       - name: Set up Snyk CLI
-        uses: snyk/actions/setup@v3
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: Run IaC scan and output SARIF
@@ -137,7 +147,7 @@ jobs:
         with:
           node-version: 20
       - name: Set up Snyk CLI
-        uses: snyk/actions/setup@v3
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: Monitor container image

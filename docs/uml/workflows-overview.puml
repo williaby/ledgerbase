@@ -1,0 +1,47 @@
+@startuml WorkflowsOverview
+
+title GitHub Actions Workflows Overview
+
+package "automation" {
+    file "stale.yml"
+}
+
+package "cd" {
+    file "auto-merge.yml"
+    file "deploy.yml"
+}
+
+package "ci" {
+    file "daily-check.yml"
+    file "dev-checks.yml"
+    file "generate-matrix.yml"
+    file "lint-matrix.yml"
+    file "pre-commit.yml"
+    file "python-version-matrix.yml"
+    file "security-checks.yml"
+    file "status-summary.yml"
+    file "test-matrix.yml"
+}
+
+package "compliance" {
+    file "license.yml"
+    file "sbom.yml"
+}
+
+package "security" {
+    file "safety.yml"
+    file "security-bandit.yml"
+    file "security-pip-audit.yml"
+    file "security-semgrep.yml"
+    file "security-snyk.yml"
+    file "security-trivy.yml"
+}
+
+package "templates" {
+    file "docker-template.yml"
+    file "nox-template.yml"
+    file "nox-template-matrix.yml"
+    file "prepare-poetry.yml"
+}
+
+@enduml

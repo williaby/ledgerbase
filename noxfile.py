@@ -154,10 +154,17 @@ def pip_audit(session):
 @nox.session(name="semgrep", python=LATEST, tags=["ci", "security"])
 def semgrep(session):
     install_poetry_and_deps(session)
+
+    # Run Semgrep scan using Semgrep.dev rules (metrics are required for config auto)
     session.run(
-        "semgrep", "--config", "auto", "--json", "--output", "semgrep-results.json"
+        "semgrep", "ci", "--json", "--output", "semgrep-results.json", external=True
     )
-    session.run("semgrep", "--config", "auto", "--sarif", "--output", "semgrep.sarif")
+    session.run("semgrep", "ci", "--sarif", "--output", "semgrep.sarif", external=True)
+
+    for file in ("semgrep-results.json", "semgrep.sarif"):
+        path = Path(file)
+        if not path.exists() or path.stat().st_size == 0:
+            session.error(f"{file} was not generated or is empty.")
 
 
 # Unified Snyk Scan Sessions
