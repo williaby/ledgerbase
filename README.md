@@ -1,4 +1,6 @@
+
 # LedgerBase
+
 LedgerBase is a modular financial transaction classification and budgeting platform
 designed for centralized, transparent, and analyzable financial recordkeeping. Built
 with modern Python practices and cloud-native tools, it supports multi-account imports,
@@ -15,6 +17,8 @@ vendor classification, budget tracking, and reconciliation with actual savings.
 | Trivy             | ![Trivy](https://github.com/williaby/ledgerbase/actions/workflows/security/security-trivy.yml/badge.svg?branch=main) |
 | Safety            | ![Safety](https://github.com/williaby/ledgerbase/actions/workflows/security/safety.yml/badge.svg?branch=main) |
 
+**Repository Scorecard:**
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/williaby/ledgerbase/badge)](https://securityscorecards.dev/viewer/?uri=github.com/williaby/ledgerbase)
 
 ---
 
@@ -90,6 +94,7 @@ pre-commit run --all-files
 ```
 
 > Note: Ensure `pre-commit` is installed and initialized:
+>
 > ```bash
 > poetry run pre-commit install
 > ```

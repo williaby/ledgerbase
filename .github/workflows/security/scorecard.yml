@@ -1,0 +1,49 @@
+# Workflow: OpenSSF Scorecard Security Scan
+# Location: workflows/security/scorecard.yml
+
+name: Security - Scorecard
+
+on:
+  branch_protection_rule:
+  schedule:
+    - cron: '21 21 * * 2'  # Weekly on Tuesdays
+  push:
+    branches: [main]
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Run Scorecard analysis
+    runs-on: ubuntu-latest
+    if: github.event.repository.default_branch == github.ref_name || github.event_name == 'pull_request'
+    permissions:
+      security-events: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard scan
+        uses: ossf/scorecard-action@v2.4.1
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+          # Optional: uncomment below to enable branch-protection check on public repos
+          # repo_token: ${{ secrets.SCORECARD_TOKEN }}
+
+      - name: Upload artifact (SARIF JSON)
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload to GitHub Code Scanning dashboard
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
