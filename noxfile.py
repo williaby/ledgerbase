@@ -129,7 +129,20 @@ def check_lockfile(session):
 @nox.session(name="bandit", python=LATEST, tags=["ci", "security"])
 def bandit_scan(session):
     install_poetry_and_deps(session)
+    session.install("bandit", "bandit2sarif")
+
+    # Run Bandit and generate JSON output
     session.run("bandit", "-r", PACKAGE_DIR, "-f", "json", "-o", "bandit-report.json")
+
+    # Convert JSON to SARIF format for GitHub Security tab
+    session.run("bandit2sarif", "bandit-report.json", "--output", "bandit-report.sarif")
+
+    # Confirm SARIF output exists and is non-empty
+    sarif_path = Path("bandit-report.sarif")
+    if not sarif_path.exists() or sarif_path.stat().st_size == 0:
+        session.error(
+            "SARIF file was not generated or is empty. Check bandit2sarif installation."
+        )
 
 
 @nox.session(name="pip-audit", python=LATEST, tags=["ci", "security"])
@@ -147,14 +160,28 @@ def semgrep(session):
     session.run("semgrep", "--config", "auto", "--sarif", "--output", "semgrep.sarif")
 
 
-@nox.session(name="snyk_scan", tags=["ci", "security"])
-def snyk_scan(session: Session):
-    session.install("poetry")
-    session.run("poetry", "install", "--no-root", external=True)
-    session.run("npm", "install", "-g", "snyk", external=True)
+# Unified Snyk Scan Sessions
+
+
+@nox.session(name="snyk_code", tags=["ci", "security"])
+def snyk_code(session: Session):
     snyk_token = os.environ.get("SNYK_TOKEN")
     if not snyk_token:
         session.error("Missing required SNYK_TOKEN environment variable.")
+    session.run("npm", "install", "-g", "snyk", external=True)
+    session.run("snyk", "auth", snyk_token, external=True)
+    session.run(
+        "snyk", "code", "test", "--sarif", "--output", "snyk-code.sarif", external=True
+    )
+
+
+@nox.session(name="snyk_oss", tags=["ci", "security"])
+def snyk_oss(session: Session):
+    snyk_token = os.environ.get("SNYK_TOKEN")
+    if not snyk_token:
+        session.error("Missing required SNYK_TOKEN environment variable.")
+    install_poetry_and_deps(session)
+    session.run("npm", "install", "-g", "snyk", external=True)
     session.run("snyk", "auth", snyk_token, external=True)
     session.run(
         "snyk",
@@ -166,12 +193,47 @@ def snyk_scan(session: Session):
     )
 
 
+@nox.session(name="snyk_iac", tags=["ci", "security"])
+def snyk_iac(session: Session):
+    snyk_token = os.environ.get("SNYK_TOKEN")
+    if not snyk_token:
+        session.error("Missing required SNYK_TOKEN environment variable.")
+    session.run("npm", "install", "-g", "snyk", external=True)
+    session.run("snyk", "auth", snyk_token, external=True)
+    session.run(
+        "snyk", "iac", "test", "--sarif", "--output", "snyk-iac.sarif", external=True
+    )
+
+
+@nox.session(name="snyk_container", tags=["ci", "security", "docker"])
+def snyk_container(session: Session):
+    snyk_token = os.environ.get("SNYK_TOKEN")
+    if not snyk_token:
+        session.error("Missing required SNYK_TOKEN environment variable.")
+    session.run("docker", "build", "-t", "ledgerbase:latest", ".", external=True)
+    session.run("npm", "install", "-g", "snyk", external=True)
+    session.run("snyk", "auth", snyk_token, external=True)
+    session.run(
+        "snyk",
+        "container",
+        "monitor",
+        "ledgerbase:latest",
+        "--file=Dockerfile",
+        external=True,
+    )
+
+
 @nox.session(name="trivy", reuse_venv=True, tags=["ci", "security", "docker"])
-def trivy(session):
-    image_name = "ledgerbase:latest"
+def trivy(session: Session):
+    image_tag = session.posargs[0] if session.posargs else "ledgerbase:latest"
     sarif_output = "trivy-results.sarif"
+    json_output = "trivy-results.json"
+
+    # Build Docker image
     session.run("docker", "--version", external=True)
-    session.run("docker", "build", "-t", image_name, ".", external=True)
+    session.run("docker", "build", "-t", image_tag, ".", external=True)
+
+    # Run Trivy SARIF scan
     session.run(
         "trivy",
         "image",
@@ -184,9 +246,32 @@ def trivy(session):
         "--ignore-unfixed",
         "--severity",
         "HIGH,CRITICAL",
-        image_name,
+        image_tag,
         external=True,
     )
+
+    # Run Trivy JSON scan
+    session.run(
+        "trivy",
+        "image",
+        "--format",
+        "json",
+        "--output",
+        json_output,
+        "--ignore-unfixed",
+        "--severity",
+        "HIGH,CRITICAL",
+        image_tag,
+        external=True,
+    )
+
+    # Verify SARIF file exists
+    if not Path(sarif_output).exists() or Path(sarif_output).stat().st_size == 0:
+        session.error("SARIF file not generated or is empty.")
+
+    # Verify JSON file exists
+    if not Path(json_output).exists() or Path(json_output).stat().st_size == 0:
+        session.error("JSON output file was not generated or is empty.")
 
 
 @nox.session(name="sbom", python=LATEST, tags=["ci", "security"])
