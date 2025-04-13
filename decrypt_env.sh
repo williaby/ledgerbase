@@ -1,9 +1,17 @@
 #!/bin/bash
 
 ##: name = decrypt_env.sh
-##: description = Decrypts the LedgerBase .env file using sops.
+##: description = Decrypts the LedgerBase environment files using sops.
+##: category = dev
 ##: usage = ./decrypt_env.sh
-##: behavior = Uses sops to decrypt .env.enc and writes the output to .env.
+##: behavior = Decrypts .env.enc and .env.prod.sops.yaml into plaintext .env files for local use.
+##: inputs = .env.enc, .env.prod.sops.yaml
+##: outputs = .env, ledgerbase_secure_env/.env.prod
+##: dependencies = sops, bash
+##: tags = secrets, env, sops, decryption
+##: author = Byron Williams
+##: last_modified = 2025-04-12
+
 
 set -e
 sops -d .env.enc > .env

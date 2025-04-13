@@ -59,11 +59,6 @@ repos:
       - id: name-tests-test
       - id: requirements-txt-fixer
 
-  - repo: https://github.com/asottile/reorder_python_imports
-    rev: v3.14.0
-    hooks:
-      - id: reorder-python-imports
-
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
@@ -85,6 +80,12 @@ repos:
         language: system
         types: [ markdown ]
         additional_dependencies: [ ]
+
+  - repo: https://github.com/PyCQA/doc8
+    rev: v1.1.1
+    hooks:
+      - id: doc8
+        args: ["--max-line-length=120", "--ignore=D001"]
 
   - repo: local
     hooks:

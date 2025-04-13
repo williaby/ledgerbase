@@ -12,14 +12,14 @@ jobs:
   # Generate Session Matrix (Reusable)
   # ------------------------------
   generate-matrix:
-    uses: ./.github/workflows/generate-matrix.yml
+    uses: ./.github/workflows/ci/generate-matrix.yml
 
   # ------------------------------
   # Run Security Checks via Matrix
   # ------------------------------
   security-checks:
     needs: generate-matrix
-    uses: ./.github/workflows/security-checks.yml
+    uses: ./.github/workflows/ci/security-checks.yml
     with:
       sessions: ${{ needs.generate-matrix.outputs.sessions }}
       # python-version is omitted to defer to python-versions.json
@@ -111,3 +111,6 @@ summary:
             repo: context.repo.repo,
             labels: ['security-reviewed']
           })
+
+    - name: Run doc8 on .rst files
+      run: poetry run nox -s lint_rst

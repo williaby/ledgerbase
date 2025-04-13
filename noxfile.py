@@ -1,3 +1,12 @@
+##: name = noxfile.py  # noqa: E265
+##: description = Nox sessions for testing, linting, CI, and documentation generation in LedgerBase.  # noqa: E265
+##: category = dev  # noqa: E265
+##: usage = nox -s <session_name> (e.g., nox -s tests)  # noqa: E265
+##: behavior = Defines reusable Nox sessions for CI workflows such as linting, testing, doc building, and security scans.  # noqa: E265
+##: dependencies = nox, poetry  # noqa: E265
+##: tags = ci, automation, testing, docs  # noqa: E265
+##: author = Byron Williams  # noqa: E265
+##: last_modified = 2025-04-12  # noqa: E265
 # LedgerBase - Nox Configuration
 # Organized for CI, security, linting, testing, and utility automation
 # ─────────────────────────────────────────────────────────────────────────────
@@ -340,6 +349,17 @@ def gen_script_docs(session):
     session.run("python", "scripts/generate_script_docs.py")
 
 
+@nox.session(name="build_docs_strict", python=LATEST, tags=["ci", "docs"])
+def build_docs_strict(session):
+    install_poetry_and_deps(session)
+    session.run("sphinx-build", "-n", "-W", "docs/source", "docs/build")
+
+
+@nox.session(name="gen_master_index", tags=["ci", "docs"])
+def gen_master_index(session):
+    session.run("python", "scripts/generate_master_index.py")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Extended Linting (YAML, Markdown, Mixed)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -364,6 +384,14 @@ def lint_all(session: Session) -> None:
     md_list.write_text("\n".join(md_files))
     if md_files:
         session.run("markdownlint", "--fix", *md_files, external=True)
+
+
+@nox.session(name="lint_rst", python=LATEST, tags=["ci", "docs"])
+def lint_rst(session):
+    install_poetry_and_deps(session)
+    session.install("doc8")
+    rst_dirs = ["docs/source/rst/"]
+    session.run("doc8", *rst_dirs)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

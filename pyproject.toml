@@ -21,6 +21,7 @@ psycopg = { version = "3.1.18", extras = ["binary"] }
 python-dateutil = "2.9.0.post0"
 plaid-python = "^15.3.0"
 PyYAML = "6.0.1"
+jinja2 = "^3.1.6"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -33,6 +34,11 @@ mypy = "^1.9.0"
 bandit = "^1.7.8"
 types-requests = "^2.31.0.10"
 nox = "^2025.2.9"
+pathspec = "^0.12.1"
+pydantic = "^2.11.3"
+sphinx = "^8.2.3"
+doc8 = "^1.1.2"
+jinja2 = "^3.1.6"
 
 [tool.black]
 line-length = 88
