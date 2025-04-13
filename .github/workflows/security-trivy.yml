@@ -36,7 +36,7 @@ jobs:
         run: docker build -t ledgerbase:${{ github.sha }} .
 
       - name: Run Trivy with SARIF output
-        uses: aquasecurity/trivy-action@v2
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
         with:
           image-ref: ledgerbase:${{ github.sha }}
           format: sarif
@@ -46,7 +46,7 @@ jobs:
           severity: 'HIGH,CRITICAL'
 
       - name: Also generate JSON report for review
-        uses: aquasecurity/trivy-action@v2
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
         with:
           image-ref: ledgerbase:${{ github.sha }}
           format: json
