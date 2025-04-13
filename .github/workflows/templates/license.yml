@@ -85,3 +85,4 @@ jobs:
                     path: |
                         license-report.json
                         disallowed.txt
+                    retention-days: 2

@@ -1,11 +1,5 @@
 name: SBOM (CycloneDX)
 
-on:
-    push:
-        branches: [ main ]
-    pull_request:
-    workflow_dispatch:
-
 permissions:
     contents: read
     security-events: write     # for SARIF upload to Security tab

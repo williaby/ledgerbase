@@ -31,7 +31,7 @@ jobs:
             -   name: Extract Python version array
                 id: load
                 run: |
-                    versions=$(yq e '.python-versions' .github/workflows/ci/python-version-matrix.yml -o=json)
+                    versions=$(yq e '.python-versions' .github/workflows/templates/python-version-matrix.yml -o=json)
                     echo "versions=$versions" >> "$GITHUB_OUTPUT"
 
     dev-checks:
