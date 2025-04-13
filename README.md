@@ -10,12 +10,12 @@ vendor classification, budget tracking, and reconciliation with actual savings.
 
 | Workflow          | Status |
 |-------------------|--------|
-| Bandit            | ![Bandit](https://github.com/williaby/ledgerbase/actions/workflows/security/security-bandit.yml/badge.svg?branch=main) |
-| pip-audit         | ![pip-audit](https://github.com/williaby/ledgerbase/actions/workflows/security/security-pip-audit.yml/badge.svg?branch=main) |
-| Semgrep           | ![Semgrep](https://github.com/williaby/ledgerbase/actions/workflows/security/security-semgrep.yml/badge.svg?branch=main) |
-| Snyk              | ![Snyk](https://github.com/williaby/ledgerbase/actions/workflows/security/security-snyk.yml/badge.svg?branch=main) |
-| Trivy             | ![Trivy](https://github.com/williaby/ledgerbase/actions/workflows/security/security-trivy.yml/badge.svg?branch=main) |
-| Safety            | ![Safety](https://github.com/williaby/ledgerbase/actions/workflows/security/safety.yml/badge.svg?branch=main) |
+| Bandit            | ![Bandit](https://github.com/williaby/ledgerbase/actions/workflows/security-bandit.yml/badge.svg?branch=main) |
+| pip-audit         | ![pip-audit](https://github.com/williaby/ledgerbase/actions/workflows/security-pip-audit.yml/badge.svg?branch=main) |
+| Semgrep           | ![Semgrep](https://github.com/williaby/ledgerbase/actions/workflows/security-semgrep.yml/badge.svg?branch=main) |
+| Snyk              | ![Snyk](https://github.com/williaby/ledgerbase/actions/workflows/security-snyk.yml/badge.svg?branch=main) |
+| Trivy             | ![Trivy](https://github.com/williaby/ledgerbase/actions/workflows/security-trivy.yml/badge.svg?branch=main) |
+| Safety            | ![Safety](https://github.com/williaby/ledgerbase/actions/workflows/safety.yml/badge.svg?branch=main) |
 
 **Repository Scorecard:**
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/williaby/ledgerbase/badge)](https://securityscorecards.dev/viewer/?uri=github.com/williaby/ledgerbase)
