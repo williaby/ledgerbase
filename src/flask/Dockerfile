@@ -1,4 +1,4 @@
-FROM python:3.11-slim AS base
+FROM python:3.11-slim@sha256:82c07f2f6e35255b92eb16f38dbd22679d5e8fb523064138d7c6468e7bf0c15b AS base
 
 ENV POETRY_VERSION=1.8.2
 ENV POETRY_HOME="/opt/poetry"

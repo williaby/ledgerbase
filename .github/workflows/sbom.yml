@@ -26,15 +26,20 @@ jobs:
         if: always()
 
         steps:
+            - name: Harden the runner (Audit all outbound calls)
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              with:
+                egress-policy: audit
+
             -   name: Checkout code
-                uses: actions/checkout@v4
+                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
             -   name: Download SARIF from runner
                 run: |
                     if [ ! -f sbom.sarif ]; then echo "Missing SARIF file"; exit 1; fi
 
             -   name: Upload SARIF to GitHub Security tab
-                uses: github/codeql-action/upload-sarif@v3
+                uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
                 with:
                     sarif_file: sbom.sarif
 
@@ -45,11 +50,16 @@ jobs:
         if: always()
 
         steps:
+            - name: Harden the runner (Audit all outbound calls)
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              with:
+                egress-policy: audit
+
             -   name: Checkout code
-                uses: actions/checkout@v4
+                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
             -   name: Upload CycloneDX JSON artifact
-                uses: actions/upload-artifact@v3
+                uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
                 with:
                     name: sbom-cyclonedx-json
                     path: sbom.json
