@@ -1,5 +1,13 @@
 name: SBOM (CycloneDX)
 
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+
 permissions:
     contents: read
     security-events: write     # for SARIF upload to Security tab

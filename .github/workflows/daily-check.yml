@@ -9,17 +9,17 @@ on:
 
 jobs:
   # ------------------------------
-  # Generate Session Matrix (Reusable)
+  # Generate Session Matrix
   # ------------------------------
   generate-matrix:
-    uses: ./.github/workflows/templates/generate-matrix.yml
+    uses: ./.github/workflows/generate-matrix.yml
 
   # ------------------------------
-  # Run Security Checks via Matrix
+  # Run Security Tools via Nox (if still applicable)
   # ------------------------------
   security-checks:
     needs: generate-matrix
-    uses: ./.github/workflows/templates/security-checks.yml
+    uses: ./.github/workflows/security-checks.yml
     with:
       sessions: ${{ needs.generate-matrix.outputs.sessions }}
 
@@ -27,21 +27,21 @@ jobs:
   # DEVELOPMENT CHECKS
   # ------------------------------
   pre-commit:
-    uses: ./.github/workflows/templates/pre-commit.yml
+    uses: ./.github/workflows/pre-commit.yml
 
   dev-checks:
-    uses: ./.github/workflows/templates/dev-checks.yml
+    uses: ./.github/workflows/dev-checks.yml
 
   # ------------------------------
   # Lint & Test Matrix (Split)
   # ------------------------------
   lint-matrix:
-    uses: ./.github/workflows/templates/lint-matrix.yml
+    uses: ./.github/workflows/lint-matrix.yml
     with:
       sessions: '["ruff", "mypy", "black"]'
 
   test-matrix:
-    uses: ./.github/workflows/templates/test-matrix.yml
+    uses: ./.github/workflows/test-matrix.yml
     with:
       session: "tests"
 

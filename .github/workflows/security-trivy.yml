@@ -2,10 +2,11 @@ name: Security - Trivy
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
 
 permissions:
   contents: read

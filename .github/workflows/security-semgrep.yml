@@ -1,11 +1,12 @@
 name: Security - Semgrep
 
 on:
-  pull_request:
-    branches: [ main ]
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
 
 permissions:
   contents: read

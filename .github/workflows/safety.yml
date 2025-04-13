@@ -1,4 +1,12 @@
-name: Security - pip-audit
+name: Security - Safety
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
 
 permissions:
     contents: read
@@ -6,9 +14,10 @@ permissions:
     pull-requests: write
 
 jobs:
-    pip-audit:
-        name: Run pip-audit security scan
+    safety:
+        name: Run Safety security scan
         runs-on: ubuntu-22.04
+
         steps:
             -   name: Checkout repository
                 uses: actions/checkout@v4.1.0
@@ -18,52 +27,52 @@ jobs:
                 with:
                     python-version: "3.12"
 
-            -   name: Install pip-audit
+            -   name: Install Safety
                 run: |
                     python -m pip install --upgrade pip
-                    pip install pip-audit
+                    pip install safety
 
-            -   name: Run pip-audit
+            -   name: Run Safety scan
                 run: |
-                    pip-audit --output pip-audit-results.json --format json
+                    safety check --full-report --json > safety_output.json
 
-            -   name: Verify pip-audit results file exists
+            -   name: Verify output exists
                 run: |
-                    if [ ! -f pip-audit-results.json ]; then
-                      echo "::error::pip-audit-results.json not found!"
+                    if [ ! -f safety_output.json ]; then
+                      echo "::error::safety_output.json not found!"
                       exit 1
                     fi
 
-            -   name: Count high-severity issues
+            -   name: Count high or critical vulnerabilities
                 id: count
                 run: |
-                    high=$(jq '[.[] | select(.vulns[]?.severity == "high" or .vulns[]?.severity == "critical")] | length' pip-audit-results.json)
-                    echo "High/critical issues: $high"
+                    high=$(jq '[.vulnerabilities[] | select(.severity == "high" or .severity == "critical")] | length' safety_output.json)
                     echo "vulns=$high" >> $GITHUB_OUTPUT
+                    echo "Found $high high/critical vulnerabilities"
 
-            -   name: Upload audit results
+            -   name: Upload Safety report
                 uses: actions/upload-artifact@v3
                 with:
-                    name: pip-audit-results
-                    path: pip-audit-results.json
+                    name: safety-report
+                    path: safety_output.json
 
             -   name: Convert to SARIF
                 run: |
-                    pip install pip-audit-sarif
-                    pip-audit-sarif --input pip-audit-results.json --output pip-audit-results.sarif
+                    pip install safety-sarif
+                    safety-sarif safety_output.json > safety.sarif
 
             -   name: Upload SARIF to GitHub Security tab
                 uses: github/codeql-action/upload-sarif@v3.24.9
                 with:
-                    sarif_file: pip-audit-results.sarif
+                    sarif_file: safety.sarif
 
-            -   name: Fail if high-severity issues found
+            -   name: Fail on high/critical issues
                 if: steps.count.outputs.vulns != '0'
                 run: |
-                    echo "::error::pip-audit found ${{ steps.count.outputs.vulns }} high or critical vulnerabilities"
+                    echo "::error::Safety scan found ${{ steps.count.outputs.vulns }} high/critical issues"
                     exit 1
 
-            -   name: Label PR on issues
+            -   name: Label PR if issues found
                 if: github.event_name == 'pull_request' && steps.count.outputs.vulns != '0'
                 uses: actions/github-script@v7.1.0
                 with:
@@ -77,5 +86,5 @@ jobs:
                           owner: context.repo.owner,
                           repo: context.repo.repo,
                           issue_number: pr.number,
-                          labels: ['security:pip-audit']
+                          labels: ['security:safety']
                         });
