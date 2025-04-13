@@ -30,12 +30,17 @@ jobs:
             build-mode: none
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -47,7 +52,7 @@ jobs:
 
       - name: Cache Poetry dependencies
         if: matrix.language == 'python'
-        uses: actions/cache@v3
+        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f # v3.4.3
         with:
           path: |
             ~/.cache/pypoetry
@@ -61,7 +66,7 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3.24.9
+        uses: github/codeql-action/init@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -71,6 +76,6 @@ jobs:
         run: echo "Poetry-based Python build handled above."
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3.24.9
+        uses: github/codeql-action/analyze@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
         with:
           category: "/language:${{ matrix.language }}"

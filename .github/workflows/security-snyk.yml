@@ -25,8 +25,13 @@ jobs:
     name: Snyk Code Scan
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: 20
       - name: Set up Snyk CLI
@@ -36,7 +41,7 @@ jobs:
       - name: Run Snyk Code scan and output SARIF
         run: snyk code test --sarif > ${{ env.SARIF_FILE }}
       - name: Upload Snyk Code SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
         with:
           sarif_file: ${{ env.SARIF_FILE }}
 
@@ -44,15 +49,20 @@ jobs:
     name: Snyk Open Source (SCA) Scan
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: 20
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
         with:
           python-version: "3.12"
       -   name: Cache Poetry Dependencies
-          uses: actions/cache@v3
+          uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f # v3.4.3
           with:
               path: |
                   ~/.cache/pypoetry
@@ -77,7 +87,7 @@ jobs:
             --json-file-output=${{ env.JSON_FILE }} \
             || echo "Snyk scan completed with issues."
       - name: Upload Snyk JSON results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: snyk-results
           path: ${{ env.JSON_FILE }}
@@ -88,7 +98,7 @@ jobs:
           echo "vulns=$count" >> "$GITHUB_OUTPUT"
       - name: Comment on PR with Snyk findings
         if: github.event_name == 'pull_request' && steps.scan.outputs.vulns != '0'
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const fs = require('fs');
@@ -108,7 +118,7 @@ jobs:
             });
       - name: Label PR on vulnerability findings
         if: github.event_name == 'pull_request' && steps.scan.outputs.vulns != '0'
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             await github.rest.issues.addLabels({
@@ -122,8 +132,13 @@ jobs:
     name: Snyk IaC Scan
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: 20
       - name: Set up Snyk CLI
@@ -133,7 +148,7 @@ jobs:
       - name: Run IaC scan and output SARIF
         run: snyk iac test --sarif > ${{ env.IAC_SARIF_FILE }} || echo "IaC scan completed with issues."
       - name: Upload IaC SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
         with:
           sarif_file: ${{ env.IAC_SARIF_FILE }}
 
@@ -141,10 +156,15 @@ jobs:
     name: Snyk Container Scan
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Build Docker image
         run: docker build -t ledgerbase:latest .
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: 20
       - name: Set up Snyk CLI

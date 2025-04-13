@@ -6,22 +6,30 @@ on:
         types:
             - completed
 
+permissions:
+  contents: read
+
 jobs:
     status-summary:
         if: ${{ github.event.workflow_run && github.event.workflow_run.event == 'pull_request' }}
         runs-on: ubuntu-22.04
 
         steps:
+            - name: Harden the runner (Audit all outbound calls)
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              with:
+                egress-policy: audit
+
             -   name: Checkout PR repository
-                uses: actions/checkout@v4
+                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
             -   name: Set up Node.js
-                uses: actions/setup-node@v4
+                uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
                 with:
                     node-version: 20
 
             -   name: Cache node_modules
-                uses: actions/cache@v3
+                uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f # v3.4.3
                 with:
                     path: .github/scripts/node_modules
                     key: ${{ runner.os }}-pr-status-${{ hashFiles('**/package-lock.json') }}
