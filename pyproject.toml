@@ -27,9 +27,7 @@ jinja2 = "^3.1.6"
 [tool.poetry.group.dev.dependencies]
 pytest = "8.2.0"
 pre-commit = "3.7.0"
-flake8 = "7.0.0"
 black = "24.4.2"
-isort = "5.13.2"
 mypy = "^1.9.0"
 bandit = "^1.7.8"
 types-requests = "^2.31.0.10"
@@ -39,37 +37,50 @@ pydantic = "^2.11.3"
 sphinx = "^8.2.3"
 doc8 = "^1.1.2"
 jinja2 = "^3.1.6"
+ruff = "^0.11.5"
 
 [tool.black]
 line-length = 88
 target-version = ["py311"]
 skip-string-normalization = false
 
-[tool.isort]
-profile = "black"
-line_length = 88
-combine_as_imports = true
-skip_gitignore = true
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+fix = true
+show-fixes = true
 
-[tool.flake8]
-max-line-length = 120
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "auto"
+docstring-code-format = true
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D100",  # Missing docstring in public module
+  "D104",  # Missing docstring in public package
+  "D107",  # Missing docstring in __init__
+  "ANN101",  # Missing type annotation for self in method
+  "T201",  # print() used
+]
 exclude = [
-    ".nox",
-    ".git",
-    "__pycache__",
-    "build",
-    "dist",
-    ".venv",
-    ".eggs",
-    "migrations",
-    "tests",
+  ".git",
+  ".nox",
+  ".venv",
+  "build",
+  "dist",
+  "migrations",
+  "__pycache__",
+  "tests",
 ]
-extend-ignore = [
-    "E203",  # whitespace before ':' — conflicts with Black
-    "W503",  # line break before binary operator — conflicts with Black
-    "B101",  # asserts are flagged by bandit, not flake8
-    "E501",  # optionally ignore long lines if Black is used
-]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ledgerbase"]
+combine-as-imports = true
+
+
 
 
 #[tool.mypy]

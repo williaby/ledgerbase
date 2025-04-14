@@ -1,0 +1,48 @@
+{{ name }}
+{{ "=" * name|length }}
+
+**Description**: {{ description }}
+
+{% if usage %}
+**Usage**::
+
+   {{ usage }}
+{% endif %}
+
+{% if behavior %}
+**Behavior**:
+{{ behavior }}
+{% endif %}
+
+{% if inputs %}
+**Inputs**:
+{% for input in inputs %}
+- {{ input }}
+{% endfor %}
+{% endif %}
+
+{% if outputs %}
+**Outputs**:
+{% for output in outputs %}
+- {{ output }}
+{% endfor %}
+{% endif %}
+
+{% if dependencies %}
+**Dependencies**:
+{% for dep in dependencies %}
+- {{ dep }}
+{% endfor %}
+{% endif %}
+
+{% if tags %}
+**Tags**: {{ tags | join(", ") }}
+{% endif %}
+
+{% if author %}
+**Author**: {{ author }}
+{% endif %}
+
+{% if last_modified %}
+**Last Modified**: {{ last_modified }}
+{% endif %}

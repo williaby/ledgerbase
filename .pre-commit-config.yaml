@@ -1,4 +1,4 @@
-default_stages: [ commit ]
+default_stages: [commit]
 exclude: |
   ^(
     \.venv/
@@ -16,23 +16,17 @@ exclude: |
   )/
 
 repos:
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.4.3
+    hooks:
+      - id: ruff
+        name: ruff (lint and fix)
+        args: ["--fix"]
+
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
       - id: black
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.2.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8
-          - flake8-bandit
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.15.0
@@ -65,12 +59,6 @@ repos:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
 
-  - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.9.1
-    hooks:
-      - id: nbqa-black
-      - id: nbqa-isort
-
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.44.0
     hooks:
@@ -78,14 +66,23 @@ repos:
         name: markdownlint
         entry: markdownlint
         language: system
-        types: [ markdown ]
-        additional_dependencies: [ ]
+        types: [markdown]
 
   - repo: https://github.com/PyCQA/doc8
     rev: v1.1.1
     hooks:
       - id: doc8
         args: ["--max-line-length=120", "--ignore=D001"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.16.3
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: shellcheck
 
   - repo: local
     hooks:
@@ -113,15 +110,3 @@ repos:
         entry: bash -c 'git diff --exit-code docs/scripts.md || (echo "docs/scripts.md is out of date. Run generate_script_docs.py." && exit 1)'
         language: system
         pass_filenames: false
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.16.3
-    hooks:
-      - id: gitleaks
-  - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
-    hooks:
-      - id: shellcheck
-  - repo: https://github.com/pylint-dev/pylint
-    rev: v2.17.2
-    hooks:
-      - id: pylint

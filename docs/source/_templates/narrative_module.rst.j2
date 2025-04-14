@@ -1,0 +1,59 @@
+{{ title }}
+{{ "=" * title|length }}
+
+Purpose
+-------
+
+{{ description }}
+
+Inputs
+------
+
+{% if inputs %}
+{% for item in inputs %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- *None documented*
+{% endif %}
+
+Outputs
+-------
+
+{% if outputs %}
+{% for item in outputs %}
+- {{ item }}
+{% endfor %}
+{% else %}
+- *None documented*
+{% endif %}
+
+Processing Steps
+----------------
+
+{% if behavior %}
+1. {{ behavior }}
+{% else %}
+1. *Not yet documented*
+{% endif %}
+
+Dependencies
+------------
+
+{% if dependencies %}
+{% for dep in dependencies %}
+- {{ dep }}
+{% endfor %}
+{% else %}
+- *None documented*
+{% endif %}
+
+Related Modules
+---------------
+
+{% if tags %}
+- :doc:`{{ tags | join(">`
+- :doc:`") }}`
+{% else %}
+- *None documented*
+{% endif %}

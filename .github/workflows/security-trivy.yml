@@ -15,16 +15,17 @@ permissions:
 
 jobs:
   trivy:
-    name: Run Trivy vulnerability scan
+    name: Run Trivy vulnerability scan (Image, FS, IaC, Secrets)
     runs-on: ubuntu-22.04
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2.11.1     # v2.11.1
+        uses: step-security/harden-runner@v2.11.1
         with:
           egress-policy: audit
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq curl
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,47 +36,55 @@ jobs:
       - name: Build Docker image with commit SHA tag
         run: docker build -t ledgerbase:${{ github.sha }} .
 
-      - name: Run Trivy with SARIF output
-        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
-        with:
-          image-ref: ledgerbase:${{ github.sha }}
-          format: sarif
-          output: trivy-results.sarif
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'HIGH,CRITICAL'
-
-      - name: Also generate JSON report for review
-        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
-        with:
-          image-ref: ledgerbase:${{ github.sha }}
-          format: json
-          output: trivy-results.json
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
-
-      - name: Check if SARIF file was created
+      - name: Install Trivy CLI
         run: |
-          if [ ! -f trivy-results.sarif ]; then
-            echo "::error::SARIF output not found. Trivy scan may have failed."
-            exit 1
-          fi
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy --version
 
-      - name: Check if JSON file was created
+      - name: Run Trivy Image Scan and Export SARIF & JSON (using shared cache)
         run: |
-          if [ ! -f trivy-results.json ]; then
-            echo "::error::JSON output not found. Trivy scan may have failed."
-            exit 1
-          fi
+          mkdir -p .trivycache
+
+          trivy image ledgerbase:${{ github.sha }} \
+            --cache-dir .trivycache \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --ignorefile .trivyignore \
+            --format sarif \
+            --output trivy-results.sarif
+
+          trivy image ledgerbase:${{ github.sha }} \
+            --cache-dir .trivycache \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --ignorefile .trivyignore \
+            --format json \
+            --output trivy-results.json
+
+      - name: Run Trivy Filesystem + IaC + Secrets Scan
+        run: |
+          mkdir -p trivy-fs
+
+          trivy fs . \
+            --cache-dir .trivycache \
+            --exit-code 0 \
+            --ignore-unfixed \
+            --ignorefile .trivyignore \
+            --format table \
+            --scanners vuln,secret,config \
+            --output trivy-fs/fs-scan.txt
+
+      - name: Validate outputs
+        run: |
+          test -f trivy-results.sarif || { echo "SARIF output not found"; exit 1; }
+          test -f trivy-results.json || { echo "JSON output not found"; exit 1; }
 
       - name: Count HIGH/CRITICAL issues in SARIF
         id: count
         run: |
-          count=$(jq '[.runs[].results[] | select(.level == "error" or .level == "warning")] | length' trivy-results.sarif || echo "0")
-          if [ -z "$count" ]; then
-           echo "::error::Failed to parse SARIF file. Ensure it is correctly formatted."
-            exit 1
-          fi
+          count=$(jq '[.runs[].results[] | select(.level == "error" or .level == "warning")] | length' trivy-results.sarif 2>/dev/null || echo "0")
           echo "Total HIGH/CRITICAL issues: $count"
           echo "vulns=$count" >> $GITHUB_OUTPUT
 
@@ -84,12 +93,19 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
-      - name: Upload JSON artifact
+      - name: Upload JSON artifact (includes enriched metadata)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-json
           path: trivy-results.json
+
+      - name: Upload FS/IaC/Secrets scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs-scan
+          path: trivy-fs
 
       - name: Fail job if high-severity vulnerabilities found
         if: steps.count.outputs.vulns != '0'
@@ -119,3 +135,4 @@ jobs:
         if: always()
         run: |
           rm -f trivy-results.sarif trivy-results.json
+          rm -rf trivy-fs
