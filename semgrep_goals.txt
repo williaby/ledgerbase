@@ -1,0 +1,140 @@
+
+# Semgrep Structure Organization and Requirements
+
+This document outlines the purpose and usage of the structured Semgrep configuration within the WC Repo Framework template.
+
+---
+
+## 1. Purpose of the `semgrep/` Directory
+
+The primary goal of the `semgrep/` directory at the project root is to provide scaffolding for organizing Semgrep rules based on the type or context of the code being scanned.
+
+As projects grow, applying the same set of static analysis rules across vastly different code sections (e.g., web API endpoints vs. internal library utilities vs. command-line scripts) can be inefficient or lead to noisy results.
+
+This structure allows for potentially running Semgrep with different, more relevant rule configurations against specific parts of your codebase, leading to more targeted and actionable findings.
+
+---
+
+## 2. Directory Structure
+
+The template creates the following subdirectories within `semgrep/`:
+
+- **`semgrep/api/`**:
+  Intended to hold Semgrep configurations (`semgrep.yml`) and custom rules specifically tailored for scanning web API code (e.g., Flask, FastAPI, Django endpoints).
+  Rules here would typically focus on:
+  - Web vulnerabilities (OWASP Top 10)
+  - Insecure handling of requests/responses
+  - Authentication/authorization issues
+
+- **`semgrep/cli/`**:
+  Intended for configurations and custom rules relevant to command-line interface code.
+  This might include checks for:
+  - Insecure argument handling
+  - Unsafe system calls
+  - Specific patterns relevant to CLI tools
+
+- **`semgrep/lib/`**:
+  Intended for configurations and custom rules applicable to general-purpose library code (e.g., utility functions, core business logic).
+  Rules here would focus on:
+  - General Python security best practices
+  - Potential bugs
+  - Maintainability issues
+
+---
+
+## 3. Placeholder Configuration Files (`semgrep.yml`)
+
+Each subdirectory (`api/`, `cli/`, `lib/`) contains a placeholder `semgrep.yml` file. These files serve as starting points and currently include references to robust, general-purpose rulesets from the Semgrep Registry:
+
+- **`p/python`**:
+  A broad collection of rules covering security, correctness, and best practices for Python. Included in all placeholders.
+
+- **`r/python.owasp-top-ten`**:
+  Specifically included in `semgrep/api/semgrep.yml`, this ruleset targets vulnerabilities commonly found in web applications, aligning with the OWASP Top 10.
+
+### Requirements:
+These registry rulesets require no setup other than having Semgrep installed and internet access during the scan for Semgrep to download them (or using `semgrep download-rulesets` beforehand).
+
+---
+
+## 4. Adding Custom Rules
+
+The main purpose of this structure is to facilitate adding your own custom rules later. You can add rules directly into the relevant `semgrep.yml` file under the `rules:` key, following the standard Semgrep rule syntax.
+
+### Example structure within a `semgrep.yml` file:
+```yaml
+rules:
+  # Include rulesets from the registry
+  - ruleset: p/python
+  # - ruleset: r/some-other-ruleset
+
+  # Add your custom rules here:
+  - id: my-custom-rule-id
+    patterns:
+      - pattern: some_insecure_pattern(...)
+    message: "Describe why this pattern is problematic."
+    languages: [python]
+    severity: WARNING # ERROR, WARNING, INFO
+```
+
+---
+
+## 5. Integration with CI/CD
+
+There are two main ways to use this structure in your CI workflow (`.github/workflows/ci.yml` or reusable scan workflow):
+
+### Option A (Default/Simple Start):
+Run Semgrep once using a single configuration (either a root `.semgrep.yml` or one of the subdirectory configs if most applicable) against the entire codebase. The standard Semgrep action often auto-detects configurations.
+
+#### Example step in `ci.yml` (using Semgrep Action):
+```yaml
+- name: Run Semgrep Scan (Auto-detect config)
+  uses: returntocorp/semgrep-action@v1
+  with:
+    generateSarif: "true"
+```
+
+### Option B (Targeted Scanning - Future):
+Run the Semgrep action multiple times, each time targeting a specific source code directory with its corresponding configuration file.
+
+#### Example steps in `ci.yml` (requires Semgrep CLI installed or use script):
+```yaml
+- name: Scan API Code
+  run: semgrep ci --config semgrep/api/semgrep.yml --sarif --output sarif/semgrep-api.sarif src/{{cookiecutter.package_name}}/api/ || true
+
+- name: Scan CLI Code
+  run: semgrep ci --config semgrep/cli/semgrep.yml --sarif --output sarif/semgrep-cli.sarif src/{{cookiecutter.package_name}}/cli/ || true
+
+- name: Scan Lib Code
+  run: semgrep ci --config semgrep/lib/semgrep.yml --sarif --output sarif/semgrep-lib.sarif src/{{cookiecutter.package_name}}/lib/ || true
+```
+
+This provides more granular results but increases CI complexity and runtime.
+
+---
+
+## 6. Ignoring Files (`.semgrepignore`)
+
+A root `.semgrepignore` file is included in the template for globally ignoring files or directories (like tests, virtual environments, generated code) from all Semgrep scans.
+
+You can also add `.semgrepignore` files within the `semgrep/api/`, etc., directories if you need context-specific ignores, although this is less common.
+
+---
+
+## Requirements Summary:
+
+1. **Semgrep Installation**:
+   Semgrep needs to be installed either locally or within the CI environment (the `returntocorp/semgrep-action` handles this in CI).
+
+2. **Configuration Files**:
+   Valid `.semgrep.yml` files within the relevant directories (placeholders provided).
+
+3. **(Optional) Custom Rules**:
+   Understanding of Semgrep rule syntax if writing custom rules.
+
+4. **(Optional) CI Adjustment**:
+   Modifications to the CI workflow if implementing targeted scanning (Option B).
+
+---
+
+This structured approach provides a scalable way to manage Semgrep rules as your project grows and develops different types of code components.
