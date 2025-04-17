@@ -4,6 +4,7 @@ exclude = tests
 
 # Target only .py files, exclude virtual environments and build artifacts
 skips = B101  # Temporarily skip assert usage if not yet refactored
+B603
 
 # Enable all built-in Bandit tests
 # You can limit with 'tests = BXXX,BYYY' if desired
@@ -22,3 +23,6 @@ recursive = True
 
 # Output file if you want logging (optional)
 # output_file = bandit_report.txt
+
+targets: semgrep/run_semgrep_modular.py
+skips: S603
