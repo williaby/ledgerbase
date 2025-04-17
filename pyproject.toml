@@ -84,7 +84,8 @@ exclude = [
 known-first-party = ["ledgerbase"]
 combine-as-imports = true
 
-
+[tool.ruff.per-file-ignores]
+"annotation_spec.md" = ["E501"]
 
 
 #[tool.mypy]
