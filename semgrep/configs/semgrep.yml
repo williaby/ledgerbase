@@ -1,0 +1,3 @@
+rules:
+  - ruleset: r/semgrep-misconfigurations
+  - ruleset: r/secrets

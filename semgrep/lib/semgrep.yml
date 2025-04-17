@@ -1,0 +1,5 @@
+rules:
+  - ruleset: r/python.secure-defaults
+  - ruleset: r/python.security-audit
+  - ruleset: r/r2c-best-practices
+  - ruleset: r/secrets

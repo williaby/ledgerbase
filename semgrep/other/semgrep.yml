@@ -1,0 +1,3 @@
+rules:
+  - ruleset: r/secrets
+  - ruleset: r/gitleaks

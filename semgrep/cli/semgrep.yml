@@ -1,0 +1,5 @@
+rules:
+  - ruleset: r/python.bandit
+  - ruleset: r/python.cwe-top-25
+  - ruleset: r/r2c-best-practices
+  - ruleset: r/secrets

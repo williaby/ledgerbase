@@ -1,0 +1,4 @@
+rules:
+  - ruleset: r/github-actions
+  - ruleset: r/semgrep-misconfigurations
+  - ruleset: r/secrets

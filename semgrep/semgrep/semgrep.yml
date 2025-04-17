@@ -1,0 +1,4 @@
+rules:
+  - ruleset: r/semgrep-misconfigurations
+  - ruleset: r/semgrep-rule-ci
+  - ruleset: r/semgrep-rule-lints

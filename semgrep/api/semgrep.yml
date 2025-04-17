@@ -1,0 +1,6 @@
+rules:
+  - ruleset: r/python.flask
+  - ruleset: r/owasp-top-ten
+  - ruleset: r/sql-injection
+  - ruleset: r/xss
+  - ruleset: r/secrets

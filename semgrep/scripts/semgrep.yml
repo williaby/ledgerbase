@@ -1,0 +1,4 @@
+rules:
+  - ruleset: r/python.bandit
+  - ruleset: r/bash.shellcheck
+  - ruleset: r/secrets
