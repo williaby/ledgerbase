@@ -1,0 +1,24 @@
+# .hadolint.yaml
+# Stricter configuration for Hadolint Dockerfile linter
+# See https://github.com/hadolint/hadolint#configure
+
+# Do not ignore any rules by default - address or explicitly ignore specific lines in Dockerfile if needed
+# ignored:
+#   - DLxxxx # Example: DL3006 (if absolutely needed with justification)
+
+# Specify trusted registries to avoid warnings about unofficial base images
+# Add your company's private registry if applicable
+trustedRegistries:
+  - docker.io
+  - ghcr.io
+  # - your-private-registry.com
+
+# Set the failure threshold to 'warning'. Any rule violation reported as 'error' or 'warning'
+# will cause Hadolint to exit with a non-zero status code, failing CI checks.
+# Options: error | warning | info | style | ignore
+failure-threshold: warning
+
+# You can still override per Dockerfile path if necessary, but try to keep base config strict.
+# override:
+#   Dockerfile.dev:
+#     failure-threshold: info # Be less strict for dev Dockerfiles maybe?

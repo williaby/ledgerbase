@@ -1,0 +1,87 @@
+// .markdownlint.jsonc
+// Stricter configuration for markdownlint-cli2
+// See https://github.com/DavidAnson/markdownlint-cli2#configuration
+// Rules: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+{
+  // MD001: Heading levels should only increment by one level at a time
+  "MD001": true,
+  // MD003: Heading style (set to 'atx' - ### Heading)
+  "MD003": { "style": "atx" },
+  // MD004: Unordered list style (set to 'dash' - consistent use of '-')
+  "MD004": { "style": "dash" },
+  // MD007: Unordered list indentation (set to 2 spaces)
+  "MD007": { "indent": 2 },
+  // MD009: Trailing spaces (strict: 0 trailing spaces allowed)
+  "MD009": { "br_spaces": 0, "list_item_empty_lines": false, "strict": true },
+  // MD010: Hard tabs
+  "MD010": true,
+  // MD012: Multiple consecutive blank lines
+  "MD012": { "maximum": 1 },
+  // MD013: Line length (set to 88 characters, matching Ruff/Black)
+  "MD013": {
+    "line_length": 120,
+    "heading_line_length": 120, // Allow slightly shorter for headings if preferred
+    "code_blocks": false, // Do not enforce in code blocks
+    "tables": false, // Do not enforce in tables
+    "headings": false // Do not enforce for headings themselves (use heading_line_length)
+  },
+  // MD014: Dollar signs used before commands without showing output (be careful with this one)
+  "MD014": false, // Often creates false positives
+  // MD018: No space after hash on atx style heading
+  "MD018": true,
+  // MD019: Multiple spaces after hash on atx style heading
+  "MD019": true,
+  // MD022: Headings should be surrounded by blank lines
+  "MD022": { "lines_above": 1, "lines_below": 1 },
+  // MD024: Multiple headings with the same content (allow if in different sections)
+  "MD024": { "allow_different_nesting": true },
+  // MD025: Multiple top-level headings in the same document (ensure only one H1)
+  "MD025": { "level": 1, "front_matter_title_regex": "^\\s*title\\s*[:=]" },
+  // MD026: Trailing punctuation in heading
+  "MD026": { "punctuation": ".,;:!?" },
+  // MD027: Multiple spaces after blockquote symbol
+  "MD027": true,
+  // MD028: Blank line inside blockquote
+  "MD028": true,
+  // MD029: Ordered list item prefix (style: 'ordered')
+  "MD029": { "style": "ordered" },
+  // MD030: Spaces after list markers
+  "MD030": { "ul_single": 1, "ol_single": 1, "ul_multi": 1, "ol_multi": 1 },
+  // MD031: Fenced code blocks should be surrounded by blank lines
+  "MD031": { "list_items": false },
+  // MD032: Lists should be surrounded by blank lines
+  "MD032": true,
+  // MD033: Inline HTML (disable by default for stricter Markdown, enable specific tags if needed)
+  "MD033": { "allowed_elements": ["img", "br"] }, // Allow only images and line breaks initially
+  // MD034: Bare URL used
+  "MD034": true,
+  // MD036: Emphasis used instead of a heading
+  "MD036": { "punctuation": ".,;:!?" },
+  // MD037: Spaces inside emphasis markers
+  "MD037": true,
+  // MD038: Spaces inside code span elements
+  "MD038": true,
+  // MD039: Spaces inside link text
+  "MD039": true,
+  // MD040: Fenced code blocks should have a language specified
+  "MD040": true,
+  // MD041: First line in a file should be a top-level heading
+  "MD041": true, // Enforce H1 as first line
+  // MD046: Code block style (require 'fenced' ``` blocks)
+  "MD046": { "style": "fenced" },
+  // MD047: Files should end with a single newline character
+  "MD047": true,
+  // MD048: Code fence style (require backticks)
+  "MD048": { "style": "backtick" },
+  // MD050: Code block indentation (require 0 indent for fenced blocks)
+  "MD050": {"style": "consistent" },
+  // Accepts both * and ** as long as usage is consistent
+  "MD051": true,
+  // MD052: Reference links and images should use alphabetical labels
+  "MD052": true,
+  // MD053: Link definitions should be needed
+  "MD053": true
+
+  // Globs for ignoring files can still be added if needed
+  // "globs": [ "!node_modules" ]
+}
