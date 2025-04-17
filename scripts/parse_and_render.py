@@ -27,18 +27,24 @@ TEMPLATE_MAPPING = {
 DEFAULT_TEMPLATE = "script_template.rst.j2"
 
 
-def main():
+def main() -> None:
+    """Parse the input file, extract metadata, and render an .rst file using a Jinja2 template."""  # noqa: E501
     parser = argparse.ArgumentParser(
-        description="Render .rst from a single annotated file"
+        description="Render .rst from a single annotated file",
     )
     parser.add_argument(
-        "input_file", type=str, help="Path to the annotated source file"
+        "input_file",
+        type=str,
+        help="Path to the annotated source file",
     )
     parser.add_argument(
         "-o",
         "--output-dir",
         type=str,
-        help="(Optional) Override output directory. Defaults to category-mapped location.",
+        help=(
+            "(Optional) Override output directory. Defaults to "
+            "category-mapped location."
+        ),
     )
     args = parser.parse_args()
 
@@ -50,10 +56,10 @@ def main():
     metadata = parse_header_metadata(input_path)
     if not metadata or "name" not in metadata or "description" not in metadata:
         print(
-            "❌ Error: File is missing required header metadata (`name`, `description`)."
+            "❌ Error: File is missing required header metadata "
+            "(`name`, `description`).",
         )
         return
-
     category = metadata.get("category", "misc")
     output_dir = (
         Path(args.output_dir)
