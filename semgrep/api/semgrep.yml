@@ -1,3 +1,16 @@
+# name = semgrep.yml
+# description = Semgrep configuration for API applying predefined security and linting rulesets.
+# category = api
+# usage = Used by CI pipeline to scan API source files for security flaws and bad practices.
+# behavior = Applies Flask, OWASP Top 10, and injection-focused rulesets to API endpoints.
+# inputs = API source files (*.py)
+# outputs = terminal output, optional SARIF report via CLI
+# dependencies = Semgrep CLI
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = security, compliance, api, flask
+# changelog = Initial annotation added to align with metadata specification.
+
 rules:
   - ruleset: r/python.flask
   - ruleset: r/owasp-top-ten

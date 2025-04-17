@@ -1,3 +1,16 @@
+# name = semgrep.yml
+# description = Semgrep configuration for scanning test files for secrets and Python unittest issues.
+# category = test
+# usage = Used to validate test code hygiene and prevent credential leaks in test assets.
+# behavior = Detects hardcoded secrets and improper test constructs in unittest modules.
+# inputs = test suite files (*.py)
+# outputs = CLI logs, CI results
+# dependencies = Semgrep CLI
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = test, secrets, unittest
+# changelog = Added metadata headers; included rules for secrets and unit test validation.
+
 rules:
   - ruleset: r/secrets
   - ruleset: r/python.unittest

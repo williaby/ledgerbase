@@ -1,3 +1,16 @@
+# name = semgrep.yml
+# description = Semgrep configuration for scanning Python and shell scripts for security issues and secret leaks.
+# category = util
+# usage = Used to lint standalone scripts for unsafe patterns and secret exposure.
+# behavior = Applies Python and shell security checks along with secret detection.
+# inputs = scripts/*.py, scripts/*.sh
+# outputs = CLI results, CI logs
+# dependencies = Semgrep CLI, Bandit, ShellCheck
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = scripts, shell, python, secrets, bandit
+# changelog = Applied annotation spec; added rules for Bandit, ShellCheck, and secrets.
+
 rules:
   - ruleset: r/python.bandit
   - ruleset: r/bash.shellcheck

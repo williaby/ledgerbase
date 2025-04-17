@@ -1,3 +1,16 @@
+# name = semgrep.yml
+# description = Semgrep configuration for generic files with focus on secrets and credential exposure.
+# category = util
+# usage = Run manually or via CI to detect secrets in miscellaneous or uncategorized files.
+# behavior = Scans non-core files for accidental exposure of secrets using standard detection rules.
+# inputs = general-purpose source files (e.g., logs, exports, text)
+# outputs = console output, logs
+# dependencies = Semgrep CLI
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = misc, secrets, gitleaks, utility
+# changelog = Initial annotated metadata added for general-purpose scanning.
+
 rules:
   - ruleset: r/secrets
   - ruleset: r/gitleaks

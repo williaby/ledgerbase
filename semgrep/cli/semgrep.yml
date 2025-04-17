@@ -1,3 +1,16 @@
+# name = semgrep.yml
+# description = Semgrep configuration for CLI component security scanning.
+# category = cli
+# usage = Used to lint CLI-related Python code for security and coding standards using Semgrep.
+# behavior = Applies security and best practice rulesets to CLI modules.
+# inputs = CLI source code modules
+# outputs = console output, optional SARIF via CLI wrapper
+# dependencies = Semgrep CLI
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = cli, security, semgrep
+# changelog = Added metadata header for annotation compliance; applied CLI-specific rulesets.
+
 rules:
   - ruleset: r/python.bandit
   - ruleset: r/python.cwe-top-25

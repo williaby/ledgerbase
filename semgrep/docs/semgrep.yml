@@ -1,3 +1,16 @@
+# name = semgrep.yml
+# description = Semgrep configuration to detect secrets and exposed credentials in documentation files.
+# category = dev
+# usage = Used to scan Markdown and related files for exposed secrets or sensitive tokens.
+# behavior = Flags hardcoded secrets or credentials accidentally committed in documentation.
+# inputs = Markdown, RST, and text documentation files
+# outputs = scan results via console or CI logs
+# dependencies = Semgrep CLI
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = docs, secrets, gitleaks
+# changelog = Initial metadata header added; secrets and gitleaks scanning enabled.
+
 rules:
   - ruleset: r/secrets
   - ruleset: r/gitleaks
