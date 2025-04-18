@@ -1,82 +1,97 @@
+# .github/workflows/deploy.yml
+# name = deploy.yml  # noqa: E265
+# description = Deploys LedgerBase to Unraid self-hosted runner: builds, backs up, and runs Docker Compose
+# category = cd  # noqa: E265
+# usage = Trigger on push to main or version tag, or manual dispatch to deploy changes
+# behavior = Checks out code; validates secrets; builds/pushes images; backs up data & images; deploys via Docker Compose
+# inputs = triggers: push(main, tags v*.*.*), workflow_dispatch; secrets: GHCR_PAT, none  # noqa: E265
+# outputs = New Docker image deployed; backups created  # noqa: E265
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # noqa: E265
+# author = Byron Williams  # noqa: E265
+# last_modified = 2025-04-17  # noqa: E265
+# tags = cd, deployment, backup  # noqa: E265
+# changelog = Pinned all action SHAs; added full metadata header; clarified triggers  # noqa: E265
+
 name: Deploy to Unraid
 
 on:
-    push:
-        branches: [ main ]
-        tags:
-            - 'v*.*.*'
-    workflow_dispatch:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch: {}
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-    deploy:
-        name: Build, Backup, Deploy LedgerBase
-        runs-on: [ self-hosted, ledgerbase, deployment ] # Ensure runner with this label exists
+  deploy:
+    name: Build, Backup, Deploy LedgerBase
+    runs-on: [ self-hosted, ledgerbase, deployment ]
 
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-              with:
-                egress-policy: audit
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: audit
 
-            -   name: Checkout code
-                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-            -   name: Validate GHCR_PAT Secret
-                run: |
-                    if [ -z "${{ secrets.GHCR_PAT }}" ]; then
-                      echo "❌ Missing GHCR_PAT secret!"
-                      exit 1
-                    fi
+      - name: Validate GHCR_PAT Secret
+        run: |
+          if [ -z "${{ secrets.GHCR_PAT }}" ]; then
+            echo "❌ Missing GHCR_PAT secret!"
+            exit 1
+          fi
 
-            -   name: Log in to GHCR
-                run: |
-                    echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u williaby --password-stdin || { echo "❌ Docker login failed"; exit 1; }
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u williaby --password-stdin || { echo "❌ Docker login failed"; exit 1; }
 
-            -   name: Determine Version
-                id: vars
-                run: |
-                    echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+      - name: Determine Version
+        id: vars
+        run: |
+          echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
-            -   name: Build Docker Image
-                run: |
-                    docker build -t ghcr.io/williaby/ledgerbase:latest \
-                                 -t ghcr.io/williaby/ledgerbase:${{ steps.vars.outputs.version }} . || { echo "❌ Build failed"; exit 1; }
+      - name: Build Docker Image
+        run: |
+          docker build -t ghcr.io/williaby/ledgerbase:latest \
+                       -t ghcr.io/williaby/ledgerbase:${{ steps.vars.outputs.version }} . || { echo "❌ Build failed"; exit 1; }
 
-            -   name: Push Docker Image
-                run: |
-                    docker push ghcr.io/williaby/ledgerbase:latest || exit 1
-                    docker push ghcr.io/williaby/ledgerbase:${{ steps.vars.outputs.version }} || exit 1
+      - name: Push Docker Image
+        run: |
+          docker push ghcr.io/williaby/ledgerbase:latest || exit 1
+          docker push ghcr.io/williaby/ledgerbase:${{ steps.vars.outputs.version }} || exit 1
 
-            -   name: Create Backup Directory
-                run: mkdir -p backups
+      - name: Create Backup Directory
+        run: mkdir -p backups
 
-            -   name: Cleanup Old Backups (keep last 5)
-                run: |
-                    ls -tp backups/ledgerbase-* | grep -v '/$' | tail -n +6 | xargs -r rm --
+      - name: Cleanup Old Backups (keep last 5)
+        run: |
+          ls -tp backups/ledgerbase-* | grep -v '/$' | tail -n +6 | xargs -r rm --
 
-            -   name: Backup Persistent Volume
-                run: |
-                    docker volume inspect ledgerbase_data >/dev/null 2>&1 || { echo "❌ Volume not found!"; exit 1; }
+      - name: Backup Persistent Volume
+        run: |
+          docker volume inspect ledgerbase_data >/dev/null 2>&1 || { echo "❌ Volume not found!"; exit 1; }
 
-                    TIMESTAMP=$(LC_ALL=C date +"%Y%m%d-%H%M%S")
-                    docker run --rm \
-                      -v ledgerbase_data:/data \
-                      -v $PWD/backups:/backup \
-                      alpine \
-                      tar czf /backup/ledgerbase-data-$TIMESTAMP.tar.gz -C /data . || { echo "❌ Volume backup failed"; exit 1; }
+          TIMESTAMP=$(LC_ALL=C date +"%Y%m%d-%H%M%S")
+          docker run --rm \
+            -v ledgerbase_data:/data \
+            -v $PWD/backups:/backup \
+            alpine \
+            tar czf /backup/ledgerbase-data-$TIMESTAMP.tar.gz -C /data . || { echo "❌ Volume backup failed"; exit 1; }
 
-            -   name: Backup Docker Image
-                run: |
-                    TIMESTAMP=$(LC_ALL=C date +"%Y%m%d-%H%M%S")
-                    docker save ghcr.io/williaby/ledgerbase:latest | gzip > backups/ledgerbase-image-$TIMESTAMP.tar.gz || { echo "❌ Image backup failed"; exit 1; }
+      - name: Backup Docker Image
+        run: |
+          TIMESTAMP=$(LC_ALL=C date +"%Y%m%d-%H%M%S")
+          docker save ghcr.io/williaby/ledgerbase:latest | gzip > backups/ledgerbase-image-$TIMESTAMP.tar.gz || { echo "❌ Image backup failed"; exit 1; }
 
-            -   name: Deploy with Docker Compose
-                run: |
-                    if docker compose version >/dev/null 2>&1; then
-                      docker compose pull && docker compose up -d --remove-orphans
-                    else
-                      docker-compose pull && docker-compose up -d --remove-orphans
-                    fi
+      - name: Deploy with Docker Compose
+        run: |
+          if docker compose version >/dev/null 2>&1; then
+            docker compose pull && docker compose up -d --remove-orphans
+          else
+            docker-compose pull && docker-compose up -d --remove-orphans
+          fi
