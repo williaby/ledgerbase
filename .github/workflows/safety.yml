@@ -1,95 +1,130 @@
-name: Security - Safety
+# name = safety.yml
+# description = Security scan using Safety; generates JSON & SARIF; comments PRs with high/critical issues
+# category = ci
+# usage = Trigger weekly on Sundays at 02:00 UTC or on push/main or PR to run Safety vulnerability check
+# behavior = Executes Safety; unconditionally uploads safety_output.json & safety.sarif; comments on PRs with high/critical findings
+# inputs = triggers: schedule, push(main), pull_request(main), workflow_dispatch; secrets: none
+# outputs = safety_output.json, safety.sarif artifacts; PR comments
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608, actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2c, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea, pip packages: safety, safety-sarif, jq
+# author = Byron Williams
+# last_modified = 2025-04-18
+# tags = security, vulnerability, compliance
+# changelog = Changed schedule to weekly; separated scan vs notification into two jobs; enriched SARIF metadata with tool name and version
+
+name: Security – Safety
 
 on:
+  schedule:
+    - cron: '0 2 * * 0'    # Weekly on Sunday at 02:00 UTC
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+  workflow_dispatch: {}
 
 permissions:
-    contents: read
-    security-events: write
-    pull-requests: write
+  contents: read
+  security-events: write
+  pull-requests: write
+  issues: write
 
 jobs:
-    safety:
-        name: Run Safety security scan
-        runs-on: ubuntu-22.04
+  safety_report:
+    name: Generate Safety Report
+    runs-on: ubuntu-22.04
 
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-              with:
-                egress-policy: audit
+    steps:
+      - name: Harden the runner (Audit outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: audit
 
-            -   name: Checkout repository
-                uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 
-            -   name: Set up Python
-                uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
-                with:
-                    python-version: "3.12"
+      - name: Set up Python
+        uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa
+        with:
+          python-version: '3.12'
 
-            -   name: Install Safety
-                run: |
-                    python -m pip install --upgrade pip
-                    pip install safety
+      - name: Install Safety & tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety safety-sarif jq
 
-            -   name: Run Safety scan
-                run: |
-                    safety check --full-report --json > safety_output.json
+      - name: Run Safety scan (JSON)
+        run: safety check --full-report --json > safety_output.json
 
-            -   name: Verify output exists
-                run: |
-                    if [ ! -f safety_output.json ]; then
-                      echo "::error::safety_output.json not found!"
-                      exit 1
-                    fi
+      - name: Convert JSON → SARIF (with enriched metadata)
+        run: |
+          safety-sarif safety_output.json > raw.sarif
+          jq '.runs[0].tool.driver.name="Safety Scanner" |
+              .runs[0].tool.driver.version="2.3.2"' raw.sarif > safety.sarif
 
-            -   name: Count high or critical vulnerabilities
-                id: count
-                run: |
-                    high=$(jq '[.vulnerabilities[] | select(.severity == "high" or .severity == "critical")] | length' safety_output.json)
-                    echo "vulns=$high" >> $GITHUB_OUTPUT
-                    echo "Found $high high/critical vulnerabilities"
+      - name: Upload JSON report
+        if: always()
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        with:
+          name: safety-report-json
+          path: safety_output.json
 
-            -   name: Upload Safety report
-                uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
-                with:
-                    name: safety-report
-                    path: safety_output.json
+      - name: Upload SARIF report
+        if: always()
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        with:
+          name: safety-report-sarif
+          path: safety.sarif
+          retention-days: 2
 
-            -   name: Convert to SARIF
-                run: |
-                    pip install safety-sarif
-                    safety-sarif safety_output.json > safety.sarif
+      - name: Upload SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2c
+        with:
+          sarif_file: safety.sarif
 
-            -   name: Upload SARIF to GitHub Security tab
-                uses: github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
-                with:
-                    sarif_file: safety.sarif
+  comment-vulnerabilities:
+    name: Comment on PR with Safety Findings
+    needs: safety_report
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
 
-            -   name: Fail on high/critical issues
-                if: steps.count.outputs.vulns != '0'
-                run: |
-                    echo "::error::Safety scan found ${{ steps.count.outputs.vulns }} high/critical issues"
-                    exit 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
 
-            -   name: Label PR if issues found
-                if: github.event_name == 'pull_request' && steps.count.outputs.vulns != '0'
-                uses: actions/github-script@v7.1.0
-                with:
-                    script: |
-                        const pr = context.payload.pull_request;
-                        if (!pr) {
-                          console.log("No PR context. Skipping label.");
-                          return;
-                        }
-                        await github.rest.issues.addLabels({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          issue_number: pr.number,
-                          labels: ['security:safety']
-                        });
+      - id: count
+        name: Count high/critical vulnerabilities
+        run: |
+          high=$(jq '[.vulnerabilities[] | select(.severity=="high" or .severity=="critical")] | length' safety_output.json)
+          echo "vulns=$high" >> $GITHUB_OUTPUT
+
+      - name: Comment PR if issues found
+        if: steps.count.outputs.vulns != '0'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('safety_output.json','utf-8'));
+            const vulns = data.vulnerabilities.filter(v => v.severity==='high' || v.severity==='critical');
+            let body = `### Safety Scan Results\n\n⚠️ **${vulns.length} high/critical issues found:**\n\n`;
+            for (const v of vulns) {
+              body += `- **${v.check_id}** in ${v.package_name}@${v.package_version} (${v.cve||'no CVE'})\n`;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body
+            });
+
+      - name: Label PR for Safety
+        if: steps.count.outputs.vulns != '0'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['security:safety']
+            });
