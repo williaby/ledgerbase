@@ -1,0 +1,234 @@
+# name = ci.yml
+# description = Continuous Integration workflow orchestrating lint, security, testing, and SBOM generation for LedgerBase :noqa E501
+# category = ci
+# usage = Trigger on push, pull_request, or workflow_dispatch to run the CI pipeline
+# behavior = Prepares environment; runs lint, security scans (Bandit, Safety, GitGuardian App, ggshield, TruffleHog, Checkov placeholder, Semgrep); executes test matrix with coverage & Codecov upload; builds Docker image; runs Trivy vulnerability scan; generates & validates CycloneDX SBOM; uploads artifacts :noqa E501
+# inputs = triggers: push(main,develop), pull_request(main,develop), workflow_dispatch; secrets: GITGUARDIAN_API_KEY, CODECOV_TOKEN :noqa E501
+# outputs = SARIF reports under sarif/, coverage HTML per Python version, CycloneDX SBOM file, SBOM & coverage artifacts :noqa E501
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/cache@5a3ec84eff668545956fd18022155c47e93e2684, pipx, poetry, nox, ggshield, trufflehog, @microsoft/sarif-multitool, run_semgrep_modular.py, aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c542438004d9, docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb, docker/build-push-action@94d1a7b1c965ba50a494e7a73d1840a4df4719a5, github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47, codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 :noqa E501
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = ci, security, testing, sbom, secrets
+# changelog = Unified SARIF uploads; integrated ggshield & TruffleHog; added placeholder for Checkov; pinned all action SHAs; added Codecov upload :noqa E501
+
+name: CI Workflow
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  security-events: write
+  id-token: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Prepare runner & cache deps
+    runs-on: ubuntu-latest
+    outputs:
+      python-version: ${{ steps.setup-python.outputs.python-version }}
+    steps:
+      - name: Harden runner (audit outbound)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry & Nox
+        run: pipx install --force poetry nox
+
+      - name: Cache Poetry venv
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: .venv
+          key: poetry-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-
+
+  lint:
+    name: Lint (Ruff, MyPy, Black, Hadolint)
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: poetry install --with dev --sync
+
+      - name: Run combined lint session
+        run: poetry run nox -s lint_all_combined -p ${{ needs.setup.outputs.python-version }}
+
+  security_scan:
+    name: Security & Secret Scans
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure sarif/ exists
+        run: mkdir -p sarif
+
+      - name: Install dependencies
+        run: poetry install --with dev --sync
+
+      - name: Run Bandit (SARIF)
+        run: poetry run nox -s bandit -p ${{ needs.setup.outputs.python-version }}
+
+      - name: Run Safety (SARIF)
+        run: poetry run nox -s safety -p ${{ needs.setup.outputs.python-version }}
+
+      - name: GitGuardian App check
+        # GitGuardian App integration enforces secret policy on PRs
+
+      - name: Install GitGuardian CLI (ggshield)
+        run: python -m pip install --upgrade ggshield
+
+      - name: Run ggshield secret scan (SARIF)
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+        run: |
+          ggshield scan repo \
+            --format sarif \
+            --output sarif/ggshield.sarif
+
+      - name: Install TruffleHog
+        run: python -m pip install --upgrade trufflehog
+
+      - name: Run TruffleHog secrets scan (JSON)
+        run: |
+          trufflehog filesystem \
+            --config trufflehog.toml \
+            --format json \
+            . > trufflehog-results.json
+
+      - name: Convert TruffleHog JSON → SARIF
+        run: |
+          npm install -g @microsoft/sarif-multitool
+          sarif-multitool convert \
+            trufflehog-results.json \
+            --output sarif/trufflehog.sarif
+
+      # - name: Run Checkov IaC scan (placeholder)
+      #   run: echo "TODO: integrate Checkov IaC scan here"
+
+      - name: Run Semgrep (modular SARIFs)
+        run: python run_semgrep_modular.py --verbose
+
+      - name: Upload all SARIF to Security tab
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
+        with:
+          sarif_file: sarif
+
+  test:
+    name: Test & Coverage [Python ${{ matrix.python-version }}]
+    needs: security_scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.9', '3.10', '3.11', '3.12' ]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry venv
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: .venv
+          key: poetry-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies (if cache miss)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install --with dev --sync
+
+      - name: Run tests
+        run: poetry run nox -s tests -p ${{ matrix.python-version }}
+
+      - name: Generate coverage report
+        run: |
+          poetry run coverage xml
+          poetry run coverage html -d htmlcov-${{ matrix.python-version }}
+
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: htmlcov-${{ matrix.python-version }}
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+
+  build_scan_sbom:
+    name: Build, Scan Image & Generate SBOM
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Setup Buildx & cache
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb
+
+      - name: Build image for scan
+        uses: docker/build-push-action@94d1a7b1c965ba50a494e7a73d1840a4df4719a5
+        with:
+          context: .
+          load: true
+          push: false
+          tags: local-build/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy vulnerability scan (SARIF)
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c542438004d9
+        with:
+          image-ref: local-build/${{ github.repository }}:${{ github.sha }}
+          format: sarif
+          output: sarif/trivy-vuln.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+
+      - name: Generate SBOM (CycloneDX)
+        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c542438004d9
+        with:
+          image-ref: local-build/${{ github.repository }}:${{ github.sha }}
+          format: cyclonedx
+          output: image-sbom.cdx.json
+
+      - name: Validate SBOM
+        run: |
+          wget -qO cyclonedx https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.27.1/cyclonedx-linux-x64 :noqa E501
+          chmod +x cyclonedx
+          ./cyclonedx validate --input-file image-sbom.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          name: sbom
+          path: image-sbom.cdx.json
