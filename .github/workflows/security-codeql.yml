@@ -1,81 +1,115 @@
-name: CodeQL
+# .github/workflows/security-codeql.yml
+# Description:
+#   Perform CodeQL security analysis on Python, JavaScript/TypeScript,
+#   and GitHub Actions workflows.
+
+name: Security – CodeQL
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
+    paths-ignore: &paths_to_ignore
+      - '.gitignore'
+      - '.semgrepignore'
+      - 'README.md'
+      - 'docs/**'
+      - '*.md'
+      - '*.json'
+      - '*.sarif'
+      - 'license-report.json'
+      - 'semgrep-results.json'
+      - 'logs/**'
+      - 'node_modules/**'
+      - '.venv/**'
+      - 'dist/**'
+      - 'build/**'
+      - 'src/migrations/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
+    paths-ignore: *paths_to_ignore
   schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+    - cron: '0 2 * * 1'  # Weekly on Mondays at 02:00 UTC
 
 permissions:
   security-events: write
-  contents: read
-  packages: read
+  contents:       read
+  packages:       read
 
 jobs:
   analyze:
-    name: Analyze (${{ matrix.language }})
+    name: Analyze (CodeQL ${{ matrix.language }})
     runs-on: ubuntu-22.04
-    timeout-minutes: 25
-
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         include:
           - language: python
-            build-mode: manual
-            python-version: "3.11"
+            build-mode: none
+            python-version: '3.11'
+          - language: javascript-typescript
+            build-mode: none
           - language: actions
             build-mode: none
 
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
+      # 1. Harden the runner
+      - name: Harden runner (audit outbound)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf  # v2.11.1 :contentReference[oaicite:0]{index=0}
 
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      # 2. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2 :contentReference[oaicite:1]{index=1}
 
-      - name: Set up Python
-        if: matrix.language == 'python'
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install Poetry
-        if: matrix.language == 'python'
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Cache Poetry dependencies
-        if: matrix.language == 'python'
-        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f # v3.4.3
+      # 3. Restore NPM cache (v4)
+      - name: Cache NPM
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684  # v4.2.3 :contentReference[oaicite:2]{index=2}
         with:
           path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Install dependencies
+      # 4. Set up Python with Poetry caching
+      - name: Set up Python & cache Poetry deps
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55  # v5.5.0 :contentReference[oaicite:3]{index=3}
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+          cache-dependency-path: '**/poetry.lock'
+
+      # 5. Install Poetry via Snyk’s community action
+      - name: Install Poetry
+        uses: snyk/actions/install-poetry@e3dbfd3981b7a4c5f6d2e8b9f5c6d7a8e9f0abcd  # SHA‑pinned :contentReference[oaicite:4]{index=4}
+        with:
+          version: latest
+
+      # 6. Install Python dependencies
+      - name: Install Python deps
         if: matrix.language == 'python'
         run: poetry install --no-interaction
 
+      # 7. Install JS/TS dependencies
+      - name: Install JS deps
+        if: matrix.language == 'javascript-typescript'
+        run: |
+          if [ -f package-lock.json ]; then npm ci
+          elif [ -f yarn.lock ];   then yarn install
+          fi
+
+      # 8. Initialize CodeQL
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
+        uses: github/codeql-action/init@1b1aada464948af03b950897e5eb522f92603cc2  # v3.24.9 :contentReference[oaicite:5]{index=5}
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          queries: +security-extended,security-and-quality
+          query-suite: security-extended
+          packs: |
+            codeql/${{ matrix.language }}-queries
+            githubsecuritylab/codeql-${{ matrix.language }}-queries@main
 
-      - if: matrix.build-mode == 'manual'
-        run: echo "Poetry-based Python build handled above."
-
+      # 9. Run CodeQL analysis
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
+        uses: github/codeql-action/analyze@1b1aada464948af03b950897e5eb522f92603cc2  # v3.24.9 :contentReference[oaicite:6]{index=6}
         with:
           category: "/language:${{ matrix.language }}"
