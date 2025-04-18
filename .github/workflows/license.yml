@@ -1,99 +1,106 @@
+# .github/workflows/license.yml
+# name = license.yml  # noqa: E265
+# description = License compliance checks via Nox session and PR comments on violations
+# category = ci  # noqa: E265
+# usage = Trigger weekly on Sundays at 02:00 UTC, on push/main, or on PR to run license checks
+# behavior = Runs Nox license session; comments on PRs with violations; uploads report artifacts
+# inputs = triggers: schedule, push(main), pull_request(main), workflow_dispatch; secrets: none  # noqa: E265
+# outputs = license-report.json, disallowed.txt artifacts; PR comments
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, poetry, nox  # noqa: E265
+# author = Byron Williams  # noqa: E265
+# last_modified = 2025-04-17  # noqa: E265
+# tags = security, compliance, license  # noqa: E265
+# changelog = Changed schedule to weekly; pinned all action SHAs; added full annotation header  # noqa: E265
+
 name: License Compliance
 
 on:
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly on Sunday at 02:00 UTC
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+  workflow_dispatch: {}
 
 permissions:
-    contents: read
-    pull-requests: write
+  contents: read
+  pull-requests: write
 
 jobs:
-    license:
-        name: Run License Checks
-        runs-on: ubuntu-latest
+  license:
+    name: Run License Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: audit
 
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-              with:
-                egress-policy: audit
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-            -   name: Checkout repository
-                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Python
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
+        with:
+          python-version: "3.12"
 
-            -   name: Set up Python
-                uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
-                with:
-                    python-version: "3.12"
+      - name: Install Nox & Poetry export plugin
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry nox poetry-plugin-export
 
-            -   name: Install Nox
-                run: |
-                    python -m pip install --upgrade pip
-                    pip install nox
+      - name: Export dev dependencies
+        run: poetry export --only dev --without-hashes --format=requirements.txt > dev-requirements.txt
 
-            -   name: Export dev dependencies
-                run: |
-                    pip install poetry
-                    poetry self add poetry-plugin-export
-                    poetry export --only dev --without-hashes --format=requirements.txt > dev-requirements.txt
+      - name: Run Nox license session
+        run: nox -s license
 
-            -   name: Run Nox license session
-                run: nox -s license
+  comment-violations:
+    name: Comment on PR with License Violations
+    needs: license
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: audit
 
-    comment-violations:
-        name: Comment on PR with License Violations
-        needs: license
-        if: github.event_name == 'pull_request'
-        runs-on: ubuntu-latest
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-              with:
-                egress-policy: audit
+      - name: Check for disallowed licenses
+        id: check
+        run: |
+          if [[ -f disallowed.txt ]]; then
+            count=$(wc -l < disallowed.txt)
+            echo "violations=$count" >> "$GITHUB_OUTPUT"
+          else
+            echo "violations=0" >> "$GITHUB_OUTPUT"
 
-            -   name: Checkout repository
-                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Comment PR if violations exist
+        if: steps.check.outputs.violations != '0'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const fs = require('fs');
+            const violations = fs.readFileSync('disallowed.txt', 'utf-8').trim();
+            const count = violations.split('\n').length;
+            const comment = `### License Scan Results\n\n⚠️ **${count} license violations found:**\n\n\`\`\`\n${violations}\n\`\`\``;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: comment
+            });
 
-            -   name: Check for disallowed licenses
-                id: check
-                run: |
-                    if [[ -f disallowed.txt ]]; then
-                      count=$(wc -l < disallowed.txt)
-                      echo "violations=$count" >> "$GITHUB_OUTPUT"
-                    else
-                      echo "violations=0" >> "$GITHUB_OUTPUT"
-                    fi
-
-            -   name: Comment PR if violations exist
-                if: steps.check.outputs.violations != '0'
-                uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-                with:
-                    script: |
-                        const fs = require('fs');
-                        if (fs.existsSync('./disallowed.txt')) {
-                          const violations = fs.readFileSync('./disallowed.txt', 'utf-8').trim();
-                          const count = violations.split('\n').length;
-                          const comment = `### License Scan Results\n\n⚠️ **${count} license violations found:**\n\n\`\`\`\n${violations}\n\`\`\``;
-                          await github.rest.issues.createComment({
-                            owner: context.repo.owner,
-                            repo: context.repo.repo,
-                            issue_number: context.payload.pull_request.number,
-                            body: comment,
-                          });
-                        }
-
-            -   name: Upload license report
-                if: always()
-                uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
-                with:
-                    name: license-report
-                    path: |
-                        license-report.json
-                        disallowed.txt
-                    retention-days: 2
+      - name: Upload license report
+        if: always()
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        with:
+          name: license-report
+          path: |
+            license-report.json
+            disallowed.txt
+          retention-days: 2
