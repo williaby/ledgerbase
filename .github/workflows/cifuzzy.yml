@@ -1,0 +1,69 @@
+# name = cifuzz.yml
+# description = Fuzz testing workflow leveraging CIFuzz (OSS‑Fuzz) to detect hard‑to‑find bugs in LedgerBase :noqa E501
+# category = ci
+# usage = Trigger on push to main/develop, pull_request, or manual dispatch to run fuzz targets :noqa E501
+# behavior = Sets up environment; builds fuzzers; runs fuzzing; uploads crash artifacts; generates SARIF; placeholder for Checkov IaC scan :noqa E501
+# inputs = triggers: push(main,develop), pull_request(main,develop), workflow_dispatch; secrets: none :noqa E501
+# outputs = Crash artifacts under out/artifacts; SARIF report under sarif/cifuzz.sarif
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@6882c22b3d159d4a8c7656e0061d6570a036b0e5, google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@6882c22b3d159d4a8c7656e0061d6570a036b0e5, actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808, github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 :noqa E501
+# author = Byron Williams
+# last_modified = 2025-04-17
+# tags = ci, fuzzing, security
+# changelog = Initial CIFuzz workflow
+
+name: CIFuzz Workflow
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  fuzz:
+    name: Build & Run Fuzzers
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Harden runner (audit outbound)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Build Fuzzers
+        id: build
+        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@6882c22b3d159d4a8c7656e0061d6570a036b0e5
+        with:
+          oss-fuzz-project-name: 'ledgerbase'
+
+      - name: Run Fuzzers
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@6882c22b3d159d4a8c7656e0061d6570a036b0e5
+        with:
+          oss-fuzz-project-name: 'ledgerbase'
+          fuzz-seconds: 600
+          output-sarif: true
+
+      - name: Upload crash artifacts
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        if: failure() && steps.build.outcome == 'success'
+        with:
+          name: cifuzz-artifacts
+          path: out/artifacts
+
+      # - name: Convert Checkov IaC scan (placeholder)
+      #   run: echo "TODO: integrate Checkov IaC scan here"
+
+      - name: Upload CIFuzz SARIF
+        if: always() && steps.build.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
+        with:
+          sarif_file: sarif/cifuzz.sarif
