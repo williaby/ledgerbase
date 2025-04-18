@@ -1,11 +1,20 @@
+# .github/dependabot.yml
+# name = dependabot.yml  # noqa: E265
+# description = Automated dependency update configuration via Dependabot
+# category = ci  # noqa: E265
+# usage = Schedule weekly updates for multiple ecosystems via Dependabot
+# behavior = Opens pull requests to update dependencies for pip, Docker, GitHub Actions, npm, and lockfiles
+# inputs = Dependabot config fields; no secrets required  # noqa: E265
+# outputs = Pull requests with updated dependency versions  # noqa: E265
+# dependencies = none  # noqa: E265
+# author = Byron Williams  # noqa: E265
+# last_modified = 2025-04-17  # noqa: E265
+# tags = dependencies, automation  # noqa: E265
+# changelog = Initial Dependabot configuration  # noqa: E265
 version: 1
 updates:
-
-  ################################
-  # Python (Poetry - backend / tools)
-  ################################
   - package-ecosystem: "pip"
-    directory: "/"  # assumes pyproject.toml is at repo root
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "sunday"
@@ -24,9 +33,6 @@ updates:
       include: "scope"
     rebase-strategy: "auto"
 
-  ################################
-  # Docker (e.g., Dockerfile.dev, Dockerfile.production)
-  ################################
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -39,11 +45,8 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  ################################
-  # GitHub Actions
-  ################################
   - package-ecosystem: "github-actions"
-    directory: "/"  # workflows live in .github/workflows
+    directory: "/"
     schedule:
       interval: "weekly"
     labels: ["dependencies", "github-actions"]
@@ -51,11 +54,8 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  ################################
-  # npm / node (for markdownlint-cli, etc.)
-  ################################
   - package-ecosystem: "npm"
-    directory: "/tools"  # adjust if your package.json is in a subfolder
+    directory: "/tools"
     schedule:
       interval: "weekly"
     groups:
@@ -66,9 +66,6 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  ################################
-  # Optional: lockfile-only updates (e.g., keep poetry.lock or package-lock.json fresh)
-  ################################
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
@@ -79,7 +76,11 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  - package-ecosystem: docker
-    directory: /src/flask
+  - package-ecosystem: "docker"
+    directory: "/src/flask"
     schedule:
-      interval: daily
+      interval: "daily"
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore"
+      include: "scope"
