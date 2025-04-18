@@ -1,13 +1,22 @@
-# Dependency Review Action
-#
-# This Action will scan dependency manifest files that change as part of a Pull Request,
-# surfacing known-vulnerable versions of the packages declared or updated in the PR.
-# Once installed, if the workflow run is marked as required,
-# PRs introducing known-vulnerable packages will be blocked from merging.
-#
-# Source repository: https://github.com/actions/dependency-review-action
+# .github/workflows/dependency-review.yml
+# name = dependency-review.yml  # noqa: E265
+# description = Scans dependency changes in pull requests and blocks known-vulnerable versions
+# category = ci  # noqa: E265
+# usage = Trigger on pull_request to review dependencies via GitHub Dependency Review Action
+# behavior = Flags vulnerable dependencies in PRs; blocks merge if required
+# inputs = GitHub pull_request event payload; no secrets  # noqa: E265
+# outputs = GitHub check results for dependency safety  # noqa: E265
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/dependency-review-action@67d4f4bd7a9b17a0db54d2a7519187c65e339de8  # noqa: E265
+# author = Byron Williams  # noqa: E265
+# last_modified = 2025-04-17  # noqa: E265
+# tags = security, dependencies  # noqa: E265
+# changelog = Pinned all action SHAs; added annotation header  # noqa: E265
+
 name: 'Dependency Review'
-on: [pull_request]
+
+on:
+  pull_request:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -17,11 +26,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress-policy: audit
 
-      - name: 'Checkout Repository'
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: 'Dependency Review'
-        uses: actions/dependency-review-action@67d4f4bd7a9b17a0db54d2a7519187c65e339de8 # v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@67d4f4bd7a9b17a0db54d2a7519187c65e339de8

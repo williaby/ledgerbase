@@ -1,73 +1,67 @@
-name: Daily CI Health Check
+# .github/workflows/daily-check.yml
+# name = daily-check.yml  # noqa: E265
+# description = Weekly CI health check: runs core sessions, merges SARIF, labels PRs as needed
+# category = ci  # noqa: E265
+# usage = Trigger weekly on Sundays at 02:00 UTC, or on push/PR/dispatch
+# behavior = Generates session matrix; runs security, dev, lint, test sessions; merges SARIF files; labels PRs
+# inputs = triggers: schedule, push, pull_request, workflow_dispatch; secrets: none  # noqa: E265
+# outputs = merged-results.sarif in Security tab; PR labels
+# dependencies = ./.github/workflows/templates/generate-matrix.yml, ./.github/workflows/templates/pre-commit.yml, ./.github/workflows/templates/dev-checks.yml, lint-matrix.yml, test-matrix.yml, step-security/harden-runner, actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # noqa: E265
+# author = Byron Williams  # noqa: E265
+# last_modified = 2025-04-17  # noqa: E265
+# tags = ci, healthcheck, sarif  # noqa: E265
+# changelog = Changed schedule to weekly; pinned all third-party action SHAs; updated metadata headers  # noqa: E265
+
+name: Weekly CI Health Check
 
 on:
+  schedule:
+    - cron: '0 2 * * 0'  # Run weekly on Sunday at 02:00 UTC
   push:
   pull_request:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+  workflow_dispatch: {}
 
 jobs:
-  # ------------------------------
-  # Generate Session Matrix
-  # ------------------------------
   generate-matrix:
-    uses: ./.github/workflows/generate-matrix.yml
+    uses: ./.github/workflows/templates/generate-matrix.yml
 
-  # ------------------------------
-  # Run Security Tools via Nox (if still applicable)
-  # ------------------------------
   security-checks:
     needs: generate-matrix
     uses: ./.github/workflows/security-checks.yml
     with:
       sessions: ${{ needs.generate-matrix.outputs.sessions }}
 
-  # ------------------------------
-  # DEVELOPMENT CHECKS
-  # ------------------------------
   pre-commit:
     uses: ./.github/workflows/pre-commit.yml
 
   dev-checks:
     uses: ./.github/workflows/dev-checks.yml
 
-  # ------------------------------
-  # Lint & Test Matrix (Split)
-  # ------------------------------
   lint-matrix:
     uses: ./.github/workflows/lint-matrix.yml
     with:
-      sessions: '["ruff", "mypy", "black"]'
+      sessions: '["ruff","mypy","black"]'
 
   test-matrix:
     uses: ./.github/workflows/test-matrix.yml
     with:
       session: "tests"
 
-  # ------------------------------
-  # Final Summary and PR Labeling
-  # ------------------------------
   summary:
     name: CI Status Summary
     runs-on: ubuntu-22.04
     if: always()
-    needs:
-      - security-checks
-      - pre-commit
-      - dev-checks
-      - lint-matrix
-      - test-matrix
+    needs: [security-checks, pre-commit, dev-checks, lint-matrix, test-matrix]
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress-policy: audit
 
       - name: Print CI Summary
         run: |
           echo "----- CI STATUS SUMMARY -----"
-          echo "Workflow: daily-check.yml"
+          echo "Workflow: weekly-check.yml"
           echo "Timestamp (UTC): $(date -u)"
           echo "Note: Review individual job results for any failures."
 
@@ -77,7 +71,7 @@ jobs:
           npm install -g @microsoft/sarif-multitool jq
 
       - name: Download SARIF artifacts
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e
         with:
           path: merged
 
@@ -91,7 +85,7 @@ jobs:
 
       - name: Upload Merged SARIF to GitHub Security Tab
         if: ${{ hashFiles('merged-results.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
         with:
           sarif_file: merged-results.sarif
 
@@ -107,7 +101,7 @@ jobs:
 
       - name: Label PR if Security Issues Found
         if: github.event_name == 'pull_request' && steps.check_sarif.outputs.issue_count != '0'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         with:
           script: |
             github.issues.addLabels({
