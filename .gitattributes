@@ -1,4 +1,30 @@
-* text=auto
+# name = .gitattributes
+# description = Git configuration file that specifies attributes for paths
+# category = dev
+# usage = Used by Git to determine how to handle different file types
+# behavior = Configures line ending normalization, marks files as generated or vendored, and collapses binary assets
+# inputs = none
+# outputs = none
+# dependencies = Git
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# changelog = Initial version
+
 *.py text eol=lf
 *.sh text eol=lf
 *.md text eol=lf
+* text=auto eol=lf
+
+
+# ── Hide build artifacts & bundles ──────────────────────────────────────
+dist/**           linguist-generated=true
+build/**          linguist-generated=true
+public/js/**      linguist-generated=true
+
+# ── Treat lockfiles & vendor deps as “vendor” ────────────────────────────
+*.lock            linguist-vendored=true
+vendor/**         linguist-vendored=true
+
+# ── Optionally collapse large data or binary assets ────────────────────
+*.png             linguist-generated=true
+*.jpg             linguist-generated=true
