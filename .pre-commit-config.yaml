@@ -1,4 +1,21 @@
+# name = .pre-commit-config.yaml
+# description = Configuration for pre-commit hooks: linting, security scans, formatting, and code health checks
+# category = ci
+# usage = Automatically run on git commit and push to enforce code standards and security policies
+# behavior = Defines repositories and hooks to run (e.g., ruff, black, bandit, semgrep, pip-audit, custom scripts)
+# inputs = Staged files, pipeline triggers (commit, push)
+# outputs = Modified files (via fixes), hook exit codes indicating pass/fail
+# dependencies = pre-commit framework, ruff, black, mypy, bandit, semgrep, pip-audit, nox
+# author = Byron Williams
+# last_modified = 2025-04-19
+# tags = ci, automation, security, linting, scanning
+# changelog = Updated semgrep hook to unified .semgrep.yml; replaced modular script with nox-semgrep
+
+default_language_version:
+  python: python3.11
+
 default_stages: [commit]
+
 exclude: |
   ^(
     \.venv/
@@ -16,20 +33,23 @@ exclude: |
   )/
 
 repos:
+  # ----------------------------
+  # Python code quality tools
+  # ----------------------------
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.4.3
+    rev: d119aaff6891558b6eaf52518386871d1d267131  # pragma: allowlist secret # pinned rev for ruff :contentReference[oaicite:2]{index=2}&#8203;:contentReference[oaicite:3]{index=3}
     hooks:
       - id: ruff
         name: ruff (lint and fix)
         args: ["--fix"]
 
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 8a737e727ac5ab2f1d4cf5876720ed276dc8dc4b # pragma: allowlist secret
     hooks:
       - id: black
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+    rev: f40886d54c729f533f864ed6ce584e920feb0af7 # pragma: allowlist secret
     hooks:
       - id: mypy
         additional_dependencies:
@@ -38,52 +58,76 @@ repos:
           - pydantic
 
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.3
+    rev: 8ff25e07e487f143571cc305e56dd0253c60bc7b # pragma: allowlist secret
     hooks:
       - id: bandit
 
+  # ----------------------------
+  # General file and security checks
+  # ----------------------------
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # pragma: allowlist secret
     hooks:
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-      - id: debug-statements
-      - id: fix-byte-order-marker
-      - id: name-tests-test
-      - id: requirements-txt-fixer
+      - id: check-yaml               # validate YAML syntax
+      - id: end-of-file-fixer       # ensure newline at end of file
+      - id: trailing-whitespace      # remove extra whitespace
+      - id: debug-statements        # prevent leftover debug code
+      - id: fix-byte-order-marker   # strip BOMs
+      - id: name-tests-test         # enforce test file naming
+      - id: requirements-txt-fixer  # normalize requirements.txt
 
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
+    rev: 01886c8a910c64595c47f186ca1ffc0b77fa5458 # pragma: allowlist secret
     hooks:
-      - id: detect-secrets
+      - id: detect-secrets           # catch hardcoded credentials
         args: ["--baseline", ".secrets.baseline"]
 
+  # ----------------------------
+  # Markdown & documentation linter
+  # ----------------------------
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: 586c3ea3f51230da42bab657c6a32e9e66c364f0 # pragma: allowlist secret
     hooks:
       - id: markdownlint
         name: markdownlint
         entry: markdownlint
         language: system
         types: [markdown]
+        args:
+          - --disable
+          - MD013  # disable line-length for tables
+          - MD051  # disable unordered-list indent
 
-  - repo: https://github.com/PyCQA/doc8
-    rev: v1.1.1
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: ff671d6a030a3141634793e6d1e8909ab6091830  # pragma: allowlist secret # latest as of April 2025
     hooks:
-      - id: doc8
-        args: ["--max-line-length=120", "--ignore=D001"]
+      - id: sphinx-lint
+
+
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.16.3
     hooks:
-      - id: gitleaks
+      - id: gitleaks                 # detect sensitive info in git history
 
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
+    rev: 38980559e3a605691d6579f96222c30778e5a69e # pragma: allowlist secret
     hooks:
-      - id: shellcheck
+      - id: shellcheck              # lint shell scripts
 
+
+  # ----------------------------
+  # Dependency audit
+  # ----------------------------
+  - repo: https://github.com/pypa/pip-audit
+    rev: 89ba95983281980506b662fb08cea634d75907c5 # pragma: allowlist secret
+    hooks:
+      - id: pip-audit
+        stages: [push]              # run on CI push only
+
+  # ----------------------------
+  # Local custom hooks
+  # ----------------------------
   - repo: local
     hooks:
       - id: validate-env-prod-sops
@@ -93,20 +137,36 @@ repos:
         files: ^\.env\.prod\.sops\.yaml$
 
       - id: forbid-new-env-prod
-        name: forbid-env-prod-commits
+        name: Forbid .env.prod commits
         entry: bash -c 'grep -q "SNYK_TOKEN" $1 && echo "❌ Committing .env.prod with secrets is forbidden." && exit 1 || exit 0'
         language: system
         types: [file]
         files: ^\.env\.prod$
 
-      - id: generate-script-docs
-        name: Generate script documentation
-        entry: python scripts/generate_script_docs.py
-        language: system
-        pass_filenames: false
+      - id: validate-file-headers
+        name: Validate file header metadata
+        entry: python scripts/validate_file_headers.py
+        language: python
+        additional_dependencies:
+          - pydantic
+          - pathspec
+        files: '\.(py|sh|ya?ml|toml)$'
 
-      - id: check-script-docs-freshness
-        name: Check scripts.md is up to date
-        entry: bash -c 'git diff --exit-code docs/scripts.md || (echo "docs/scripts.md is out of date. Run generate_script_docs.py." && exit 1)'
-        language: system
+      - id: nox-license
+        name: Nox ➟ License Report
+        language: python
+        additional_dependencies:
+          - poetry
+          - nox
+        entry: poetry run nox -s license_report
         pass_filenames: false
+        stages: [commit, push]
+
+      -   id: nox-semgrep-ci
+          name: Nox ➟ Semgrep (diff only)
+          language: python
+          additional_dependencies:
+            - nox
+          entry: nox -rs semgrep_ci
+          pass_filenames: false
+          stages: [commit, push]

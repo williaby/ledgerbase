@@ -1,6 +1,18 @@
-name: Nox Matrix Test
+# name = nox-template-matrix.yml
+# description = Reusable matrix workflow for running named Nox sessions across multiple Python versions
+# category = security
+# usage = invoke via `uses: ./.github/workflows/nox-template-matrix.yml` with inputs `session` and optional `python-version`
+# behavior = Executes a specified Nox session in parallel across a Python version matrix on a hardened runner
+# inputs = session (string), python-version (stringified JSON list of Python versions)
+# outputs = Logs for each Nox session and exit codes
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608, actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa, actions/cache@5a3ec84eff668545956fd18022155c47e93e2684, jq, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea, nox
+# author = Byron Williams
+# last_modified = 2025-04-19
+# tags = ci, matrix, security, automation
+# changelog = - Stored session name in environment variable for safe interpolation
+#             - Wrapped session invocation in quotes to prevent injection
 
-# This is a reusable matrix workflow for running named Nox sessions.
+name: Nox Matrix Test
 
 on:
   workflow_call:
@@ -66,5 +78,8 @@ jobs:
         run: python -m pip install --upgrade nox
 
       - name: Run Nox session
-
-        run: nox -s ${{ inputs.session }}
+        env:
+          SESSION: ${{ inputs.session }}
+        run: |
+          # Safely invoke the specified Nox session
+          nox -s "$SESSION"

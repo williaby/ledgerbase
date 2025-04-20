@@ -1,6 +1,17 @@
-name: Nox Task
+# name = nox-template.yml
+# description = Reusable GitHub Actions template for running a single Nox session securely
+# category = security
+# usage = invoke via `uses: ./.github/workflows/nox-template.yml` with inputs `sessions` and optional `python-version`
+# behavior = Executes specified nox sessions in a hardened runner environment with caching
+# inputs = sessions (string), python-version (string)
+# outputs = Nox session logs and exit codes
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608, actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa, actions/cache@5a3ec84eff668545956fd18022155c47e93e2684, nox
+# author = Byron Williams
+# last_modified = 2025-04-19
+# tags = ci, security, automation
+# changelog = Updated to store sessions in environment variable for secure interpolation
 
-# This is a reusable template for running a single nox session on a fixed Python version.
+name: Nox Task
 
 on:
   workflow_call:
@@ -18,7 +29,7 @@ permissions:
 
 jobs:
   nox-single:
-    name: Run nox -s ${{ inputs.session }}
+    name: Run nox sessions (${{ inputs.sessions }})
     runs-on: ubuntu-latest
 
     steps:
@@ -49,6 +60,11 @@ jobs:
       - name: Install Nox
         run: python -m pip install --upgrade nox
 
-      - name: Run nox -s ${{ inputs.session }}
+      - name: Run Nox sessions
+        env:
+          SESSIONS: ${{ inputs.sessions }}
         run: |
-            echo "${{ inputs.sessions }}" | xargs -n1 echo "-s" | xargs nox
+          # Iterate over each session and invoke nox safely
+          for session in $SESSIONS; do
+            nox -s "$session"
+          done

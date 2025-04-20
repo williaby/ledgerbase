@@ -8,8 +8,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Add Poetry to path for all layers
 ENV PATH="${POETRY_HOME}/bin:$PATH"
 
-RUN groupadd -r appuser && useradd --no-log-init -r -s /bin/bash -g appuser appuser
-
 WORKDIR /app
 
 # Install Poetry and dependencies
@@ -25,6 +23,11 @@ RUN poetry install --no-root
 
 COPY . .
 
+# Create a non-root user for security best practices
+# Using a non-root user helps limit the potential impact of container vulnerabilities
+RUN groupadd -r appuser && useradd --no-log-init -r -s /bin/bash -g appuser appuser
+
+# Set proper ownership and switch to non-root user
 RUN chown -R appuser:appuser /app
 USER appuser
 
