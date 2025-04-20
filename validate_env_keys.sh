@@ -7,7 +7,17 @@
 
 set -e
 
-REQUIRED_KEYS=("DATABASE_URL" "SNYK_TOKEN" "POSTGRES_USER" "POSTGRES_PASSWORD")
+REQUIRED_VARS=(
+  POSTGRES_DB
+  SNYK_TOKEN
+  POSTGRES_USER
+  POSTGRES_PASSWORD
+  SEMGREP_APP_TOKEN
+  SEMGREP_DEPLOYMENT_ID
+  CODECOV_TOKEN
+  AIKIDO_API_TOKEN
+)
+
 MISSING_KEYS=()
 
 DECRYPTED=$(sops -d .env.prod.sops.yaml 2>/dev/null || echo "")
@@ -17,7 +27,7 @@ if [[ -z "$DECRYPTED" ]]; then
   exit 1
 fi
 
-for KEY in "${REQUIRED_KEYS[@]}"; do
+for KEY in "${REQUIRED_VARS[@]}"; do
   if ! echo "$DECRYPTED" | grep -q "^$KEY="; then
     MISSING_KEYS+=("$KEY")
   fi

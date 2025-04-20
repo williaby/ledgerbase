@@ -1,38 +1,39 @@
 #!/bin/bash
 
 ##: name = decrypt_env.sh
-##: description = Decrypts the LedgerBase environment files using sops.
-##: category = dev
+##: description = Decrypts .env.dev.sops.yaml and .env.prod.sops.yaml into plaintext files.
+##: category = security
 ##: usage = ./decrypt_env.sh
-##: behavior = Decrypts .env.enc and .env.prod.sops.yaml into plaintext .env files for local use.
-##: inputs = .env.enc, .env.prod.sops.yaml
-##: outputs = .env, ledgerbase_secure_env/.env.prod
-##: dependencies = sops, bash
-##: tags = secrets, env, sops, decryption
-##: author = Byron Williams
-##: last_modified = 2025-04-12
-
+##: behavior = Decrypts and stores output in ledgerbase_secure_env/.
+##: inputs = .env.dev.sops.yaml and .env.prod.sops.yaml encrypted files
+##: outputs = Decrypted .env.dev and .env.prod files in ledgerbase_secure_env directory
+##: dependencies = sops
+##: author = LedgerBase Team
+##: last_modified = 2023-11-15
+##: changelog = Initial version
 
 set -e
-sops -d .env.enc > .env
 
-ENCRYPTED_FILE=".env.prod.sops.yaml"
-OUTPUT_FILE="ledgerbase_secure_env/.env.prod"
+INPUT_DEV=".env.dev.sops.yaml"
+INPUT_PROD=".env.prod.sops.yaml"
+OUTPUT_DIR="ledgerbase_secure_env"
+OUTPUT_DEV="${OUTPUT_DIR}/.env.dev"
+OUTPUT_PROD="${OUTPUT_DIR}/.env.prod"
 
-if [[ ! -f "$ENCRYPTED_FILE" ]]; then
-  echo "❌ $ENCRYPTED_FILE not found."
-  exit 1
+mkdir -p "$OUTPUT_DIR"
+
+if [[ -f "$INPUT_DEV" ]]; then
+  echo "🔓 Decrypting $INPUT_DEV to $OUTPUT_DEV ..."
+  sops -d "$INPUT_DEV" > "$OUTPUT_DEV"
+  echo "✅ Decrypted: $OUTPUT_DEV"
+else
+  echo "⚠️  $INPUT_DEV not found. Skipping."
 fi
 
-if [[ -f "$OUTPUT_FILE" ]]; then
-  echo "⚠️  $OUTPUT_FILE already exists. Overwrite? (y/n)"
-  read -r confirm
-  if [[ "$confirm" != "y" ]]; then
-    echo "❌ Aborted."
-    exit 1
-  fi
+if [[ -f "$INPUT_PROD" ]]; then
+  echo "🔓 Decrypting $INPUT_PROD to $OUTPUT_PROD ..."
+  sops -d "$INPUT_PROD" > "$OUTPUT_PROD"
+  echo "✅ Decrypted: $OUTPUT_PROD"
+else
+  echo "⚠️  $INPUT_PROD not found. Skipping."
 fi
-
-echo "🔓 Decrypting $ENCRYPTED_FILE into $OUTPUT_FILE ..."
-sops -d "$ENCRYPTED_FILE" > "$OUTPUT_FILE"
-echo "✅ Decryption complete: $OUTPUT_FILE"

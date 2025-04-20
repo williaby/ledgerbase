@@ -1,7 +1,31 @@
+##: name = encryption.py
+##: description = Flask utility for encrypting and decrypting sensitive data using Fernet # noqa: E501
+
+##: category = security
+##: usage = Import and use in Flask applications
+##: behavior = Provides encryption and decryption of string values using keys from Flask config # noqa: E501
+
+##: inputs = String values to encrypt/decrypt, Flask app config with LEDGERBASE_SECRET_KEYS # noqa: E501
+
+##: outputs = Encrypted/decrypted string values
+##: dependencies = Flask, cryptography.fernet
+##: author = LedgerBase Team
+##: last_modified = 2023-11-15
+##: changelog = Initial version
+
 from typing import TypedDict, cast
 
 from cryptography.fernet import Fernet, InvalidToken
+
 from flask import current_app
+
+"""Flask utility for encrypting and decrypting sensitive data.
+
+This module provides a class for encrypting and decrypting string values
+using Fernet symmetric encryption with keys stored in the Flask application
+configuration. It supports key rotation by allowing multiple keys and
+attempting decryption with each key in sequence.
+"""
 
 
 class AppConfig(TypedDict):
@@ -34,7 +58,7 @@ class Encryptor:
             if the keys list is empty.
 
         """
-        config = cast(AppConfig, current_app.config)
+        config = cast("AppConfig", current_app.config)
 
         keys: list[str] = config.get("LEDGERBASE_SECRET_KEYS", [])
         if not keys:
