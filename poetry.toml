@@ -1,3 +1,15 @@
+# name = poetry.toml
+# description = Poetry configuration file for project dependency management
+# category = maintainability
+# usage = Referenced automatically by Poetry when running poetry commands
+# behavior = Controls Poetry's behavior for virtualenvs, installation, and caching
+# inputs = none
+# outputs = Creates and configures .venv directory
+# dependencies = Poetry package manager
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# changelog = Initial version
+
 [virtualenvs]
 # Store virtualenv inside the project for easier control and visibility
 in-project = true

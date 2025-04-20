@@ -1,10 +1,29 @@
+##: name = security.py
+##: description = Flask security utilities for HTTP headers, rate limiting, and logging
+##: category = security
+##: usage = Import and use in Flask applications
+##: behavior = Enhances Flask app security with headers, rate limiting, and logging
+##: inputs = Flask application instance
+##: outputs = Secured Flask application with headers, rate limiting, and logging
+##: dependencies = Flask, flask_limiter
+##: author = LedgerBase Team
+##: last_modified = 2023-11-15
+##: changelog = Initial version
+
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from flask import Flask, Response
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+from flask import Flask, Response
+
+"""Flask security utilities for enhancing application security.
+
+This module provides functions to add security headers to HTTP responses,
+configure rate limiting for routes, and set up logging for Flask applications.
+"""
 
 
 def apply_secure_headers(app: Flask) -> None:

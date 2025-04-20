@@ -1,22 +1,21 @@
-# .github/workflows/license.yml
-# name = license.yml  # noqa: E265
+# name = license.yml
 # description = License compliance checks via Nox session and PR comments on violations
-# category = ci  # noqa: E265
+# category = security
 # usage = Trigger weekly on Sundays at 02:00 UTC, on push/main, or on PR to run license checks
-# behavior = Runs Nox license session; comments on PRs with violations; uploads report artifacts
-# inputs = triggers: schedule, push(main), pull_request(main), workflow_dispatch; secrets: none  # noqa: E265
+# behavior = Runs Nox license_report session; comments on PRs with violations; uploads report artifacts
+# inputs = triggers: schedule, push(main), pull_request(main), workflow_dispatch; secrets: none
 # outputs = license-report.json, disallowed.txt artifacts; PR comments
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, poetry, nox  # noqa: E265
-# author = Byron Williams  # noqa: E265
-# last_modified = 2025-04-17  # noqa: E265
-# tags = security, compliance, license  # noqa: E265
-# changelog = Changed schedule to weekly; pinned all action SHAs; added full annotation header  # noqa: E265
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, poetry, nox
+# author = Byron Williams
+# last_modified = 2025-04-18
+# tags = security, compliance, license
+# changelog = Switched to license_report session; unconditional report upload; fixed continue‑on‑error behavior
 
 name: License Compliance
 
 on:
   schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 02:00 UTC
+    - cron: '0 2 * * 0'
   push:
     branches: [ "main" ]
   pull_request:
@@ -25,14 +24,15 @@ on:
 
 permissions:
   contents: read
+  issues: write
   pull-requests: write
 
 jobs:
-  license:
-    name: Run License Checks
+  license_report:
+    name: Generate & Archive License Report
     runs-on: ubuntu-latest
     steps:
-      - name: Harden the runner (Audit all outbound calls)
+      - name: Harden the runner (Audit outbound calls)
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress-policy: audit
@@ -50,19 +50,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry nox poetry-plugin-export
 
-      - name: Export dev dependencies
-        run: poetry export --only dev --without-hashes --format=requirements.txt > dev-requirements.txt
+      - name: Run license_report session
+        run: nox -s license_report
 
-      - name: Run Nox license session
-        run: nox -s license
+      - name: Upload license report artifacts
+        if: always()
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        with:
+          name: license-report
+          path: |
+            license-report.json
+            disallowed.txt
+          retention-days: 2
 
   comment-violations:
     name: Comment on PR with License Violations
-    needs: license
+    needs: license_report
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Harden the runner (Audit all outbound calls)
+      - name: Harden the runner (Audit outbound calls)
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress-policy: audit
@@ -78,6 +85,7 @@ jobs:
             echo "violations=$count" >> "$GITHUB_OUTPUT"
           else
             echo "violations=0" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Comment PR if violations exist
         if: steps.check.outputs.violations != '0'
@@ -94,13 +102,3 @@ jobs:
               issue_number: context.payload.pull_request.number,
               body: comment
             });
-
-      - name: Upload license report
-        if: always()
-        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
-        with:
-          name: license-report
-          path: |
-            license-report.json
-            disallowed.txt
-          retention-days: 2

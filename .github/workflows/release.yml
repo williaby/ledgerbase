@@ -1,0 +1,39 @@
+# name = release.yml
+# description = GitHub workflow that automates the release process using semantic-release
+# category = automation
+# usage = Automatically triggered when code is pushed to the main branch
+# behavior = Determines the next version number based on commit messages, creates a new release, and publishes to PyPI
+# inputs = GitHub and PyPI tokens
+# outputs = New GitHub release and PyPI package
+# dependencies = semantic-release, poetry
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# changelog = Initial version
+
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Run Semantic‑Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYPI_TOKEN:   ${{ secrets.PYPI_TOKEN }}
+        run: semantic-release publish

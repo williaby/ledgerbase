@@ -1,0 +1,16 @@
+# name = .gitguardian.yaml
+# description = Configuration file for GitGuardian secret scanning
+# category = security
+# usage = Used by GitGuardian to prevent false positives in secret scanning
+# behavior = Excludes known public keys from being flagged as secrets
+# inputs = Repository files
+# outputs = none
+# dependencies = GitGuardian
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# changelog = Initial version
+
+matches:
+  - path: SECURITY.md
+    match: "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+    reason: "This is a public GPG key, not a secret"

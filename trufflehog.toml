@@ -1,3 +1,16 @@
+# name = trufflehog.toml
+# description = Configuration file for TruffleHog secret scanning tool
+# category = security
+# usage = Used with TruffleHog to detect secrets and sensitive information in code
+# behavior = Defines regex patterns and rules for secret detection
+# inputs = Source code repositories
+# outputs = Detection results of potential secrets
+# dependencies = TruffleHog
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# tags = security, scanning, secrets
+# changelog = Initial version
+
 [[rules]]
 description = "Generic High Entropy String"
 regex = '''[a-zA-Z0-9_]{32,}'''

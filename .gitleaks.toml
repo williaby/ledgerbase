@@ -1,0 +1,19 @@
+# name = .gitleaks.toml
+# description = Configuration file for Gitleaks to prevent leaking sensitive information
+# category = security
+# usage = Used by Gitleaks tool to scan for secrets
+# behavior = Prevents false positives for known public keys
+# inputs = Repository files
+# outputs = none
+# dependencies = Gitleaks
+# author = LedgerBase Team
+# last_modified = 2025-04-20
+# changelog = Adjusted allowlist format for gitleaks v8+
+# tags = security, secrets
+
+[allowlist]
+  # Allow the PGP public‑key block in SECURITY.md
+  regexes = [
+    '''-----BEGIN PGP PUBLIC KEY BLOCK-----.*?-----END PGP PUBLIC KEY BLOCK-----'''
+  ]
+  paths = ["SECURITY.md"]

@@ -1,0 +1,17 @@
+# name = .trufflehog.toml
+# description = Configuration file for TruffleHog secret scanning exceptions
+# category = security
+# usage = Used with TruffleHog to define exceptions for secret scanning
+# behavior = Prevents false positives by allowing specific patterns in designated files
+# inputs = Source code repositories
+# outputs = Exception rules for TruffleHog scanner
+# dependencies = TruffleHog
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# tags = security, scanning, exceptions
+# changelog = Initial version
+
+[[allow]]
+  description = "Allow public GPG key in SECURITY.md"
+  path = "SECURITY.md"
+  regex = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
