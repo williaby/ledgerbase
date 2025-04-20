@@ -27,20 +27,20 @@ Each source file (.py, .sh, .yml, .toml, etc.) **MUST** begin with structured me
 All fields listed below are **mandatory**. If a field does not apply, use `none`
 explicitly to preserve structure and enable tooling.
 
-| Field          | Required | Description                                              | Example                                                   |
-|----------------|----------|----------------------------------------------------------|-----------------------------------------------------------|
-| name           | ✅ Yes   | File name or logical identifier.                         | ##: name = run_semgrep_modular.py                         |
-| description    | ✅ Yes   | Summary of the file's primary purpose and functionality. | ##: description = Parallelized modular Semgrep runner     |
-| category       | ✅ Yes   | Grouping keyword (ci, dev, api, cli, lib, util, test).   | ##: category = ci                                         |
-| usage          | ✅ Yes   | Usage instructions for scripts or CLIs.                  | ##: usage = python run_script.py [--verbose]              |
-| behavior       | ✅ Yes   | High-level behavior or side effects.                     | ##: behavior = Emits SARIF reports                        |
-| inputs         | ✅ Yes   | Key input files, env vars, or params.                    | ##: inputs = source code folders                          |
-| outputs        | ✅ Yes   | Key outputs or side effects.                             | ##: outputs = sarif/*.sarif                               |
-| dependencies   | ✅ Yes   | External libraries or tools.                             | ##: dependencies = Semgrep CLI                            |
-| author         | ✅ Yes   | Primary maintainer.                                      | ##: author = Your Name                                    |
-| last_modified  | ✅ Yes   | Last modification date (YYYY-MM-DD).                     | ##: last_modified = {% now 'utc', '%Y-%m-%d' %}           |
-| tags           | ⬜ Optional   | Keywords for grouping/searching.                         | ##: tags = security, automation                           |
-| changelog      | ✅ Yes   | Historical context or versioning notes.                  | ##: changelog = Initial version, Added new validation     |
+| Field          | Required | Description                                              | Example                                               |
+|----------------|----------|----------------------------------------------------------|-------------------------------------------------------|
+| name           | ✅ Yes   | File name or logical identifier.                         | ##: name = run_semgrep_modular.py                     |
+| description    | ✅ Yes   | Summary of the file's primary purpose and functionality. | ##: description = Parallelized modular Semgrep runner |
+| category       | ✅ Yes   | Grouping keyword (security, correctness, best-practice, performance, maintainability, or portability.).   | ##: category = security                               |
+| usage          | ✅ Yes   | Usage instructions for scripts or CLIs.                  | ##: usage = python run_script.py [--verbose]          |
+| behavior       | ✅ Yes   | High-level behavior or side effects.                     | ##: behavior = Emits SARIF reports                    |
+| inputs         | ✅ Yes   | Key input files, env vars, or params.                    | ##: inputs = source code folders                      |
+| outputs        | ✅ Yes   | Key outputs or side effects.                             | ##: outputs = sarif/*.sarif                           |
+| dependencies   | ✅ Yes   | External libraries or tools.                             | ##: dependencies = Semgrep CLI                        |
+| author         | ✅ Yes   | Primary maintainer.                                      | ##: author = Your Name                                |
+| last_modified  | ✅ Yes   | Last modification date (YYYY-MM-DD).                     | ##: last_modified = {% now 'utc', '%Y-%m-%d' %}       |
+| tags           | ⬜ Optional   | Keywords for grouping/searching.                         | ##: tags = security, automation                       |
+| changelog      | ✅ Yes   | Historical context or versioning notes.                  | ##: changelog = Initial version, Added new validation |
 
 > **Note:** All metadata fields are required. Use `none` if a specific field does not apply.
 > This ensures uniformity and supports automation and documentation tooling.

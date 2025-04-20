@@ -1,0 +1,44 @@
+# name = wtd.yml
+# description = GitHub workflow that generates AI-powered summaries of pull requests using What The Diff
+# category = automation
+# usage = Automatically triggered on pull request events (opened, reopened, synchronize)
+# behavior = Generates a summary of changes in the PR and posts it as a comment, skipping bot-authored PRs and ignoring specified paths
+# inputs = Pull request changes
+# outputs = AI-generated PR summary comment
+# dependencies = What-The-Diff CLI, GitHub token
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# changelog = Initial version
+
+name: 📝 What The Diff PR Summary
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths-ignore:
+      - 'dist/**'
+      - 'build/**'
+      - 'vendor/**'
+      - '*.lock'
+      - '*.png'
+      - '*.jpg'
+
+jobs:
+  generate-summary:
+    runs-on: ubuntu-latest
+    # Skip any PR whose author login ends with "[bot]"
+    if: "!endsWith(github.event.pull_request.user.login, '[bot]')"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install What‑The‑Diff CLI
+        run: npm install -g @beyondcode/what-the-diff-cli
+
+      - name: Generate PR summary
+        run: |
+          what-the-diff \
+            --github-token ${{ secrets.GITHUB_TOKEN }} \
+            --owner ${{ github.repository_owner }} \
+            --repo ${{ github.event.repository.name }} \
+            --pr-number ${{ github.event.pull_request.number }}
