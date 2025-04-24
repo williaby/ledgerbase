@@ -8,9 +8,11 @@
 ##: outputs = HTTP error responses (JSON or HTML)
 ##: dependencies = Flask, marshmallow
 ##: author = Byron Williams
-##: last_modified = 2025-04-19
+##: last_modified = 2025-04-24
 ##: tags = error handling, api, flask
-##: changelog = - Refactored to support Python 3.9 typing; replaced `X | Y` with `typing.Union` # noqa: E501
+##: changelog =
+#   - Parameter for 404 handler renamed to `_error: NotFound` to satisfy linting
+#   - Removed `Any` import and ANN401 warnings fixed
 
 """Module defining and registering Flask error handlers.
 
@@ -21,6 +23,7 @@ based on the client's Accept header.
 
 
 from marshmallow import ValidationError
+from werkzeug.exceptions import InternalServerError, NotFound
 
 from flask import Flask, Response, current_app, jsonify, render_template, request
 
@@ -31,15 +34,13 @@ def _wants_json() -> bool:
     return best == "application/json"
 
 
-def handle_validation_error(error: ValidationError) -> tuple[Response | str, int]:
+def handle_validation_error(
+    error: ValidationError,
+) -> Response | str | tuple[Response | str, int]:
     """Handle marshmallow validation errors by returning JSON or HTML 422 responses.
 
     Args:
         error (ValidationError): The validation error instance.
-
-    Returns:
-        Tuple[Union[Response, str], int]: A JSON response with error messages
-        or an HTML template and the HTTP status code.
 
     """
     if _wants_json():
@@ -47,12 +48,13 @@ def handle_validation_error(error: ValidationError) -> tuple[Response | str, int
     return render_template("422.html", errors=error.messages), 422
 
 
-def handle_not_found() -> tuple[Response | str, int]:
+def handle_not_found(
+    _error: NotFound,
+) -> Response | str | tuple[Response | str, int]:
     """Handle 404 Not Found errors by returning JSON or HTML 404 responses.
 
-    Returns:
-        Tuple[Union[Response, str], int]: A JSON response with an error message
-        or an HTML template and the HTTP status code.
+    Args:
+        _error (NotFound): The exception instance (unused).
 
     """
     if _wants_json():
@@ -60,15 +62,13 @@ def handle_not_found() -> tuple[Response | str, int]:
     return render_template("404.html"), 404
 
 
-def handle_internal_error(error: Exception) -> tuple[Response | str, int]:
+def handle_internal_error(
+    error: Exception,
+) -> Response | str | tuple[Response | str, int]:
     """Handle unhandled exceptions by logging and returning JSON or HTML 500 responses.
 
     Args:
         error (Exception): The exception instance.
-
-    Returns:
-        Tuple[Union[Response, str], int]: A JSON response with an error message
-        or an HTML template and the HTTP status code.
 
     """
     current_app.logger.exception("Unhandled exception occurred: %s", error)
@@ -78,12 +78,7 @@ def handle_internal_error(error: Exception) -> tuple[Response | str, int]:
 
 
 def register_error_handlers(app: Flask) -> None:
-    """Register error handlers on the Flask application.
-
-    Args:
-        app (Flask): The Flask application instance.
-
-    """
+    """Register error handlers on the Flask application."""
     app.register_error_handler(ValidationError, handle_validation_error)
-    app.register_error_handler(404, handle_not_found)
-    app.register_error_handler(500, handle_internal_error)
+    app.register_error_handler(NotFound, handle_not_found)
+    app.register_error_handler(InternalServerError, handle_internal_error)
