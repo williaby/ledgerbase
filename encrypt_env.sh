@@ -13,8 +13,10 @@
 ##: changelog = Initial version
 
 set -e
-
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 KEY_ID="9360A8293F1430EB3E88B99CB2C95364612BFFDF"
+-----END PGP PUBLIC KEY BLOCK-----
+
 SECURE_DIR="ledgerbase_secure_env"
 
 DEV_ENV="${SECURE_DIR}/.env.dev"

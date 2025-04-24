@@ -51,7 +51,7 @@ status-summary.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/ci/status
 dev-checks.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/ci/dev-checks.yml
 lint-matrix.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/ci/lint-matrix.yml
 pre-commit.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/ci/pre-commit.yml
-daily-check.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/ci/daily-check.yml
+weekly-check.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/ci/weekly-check.yml
 docker-template.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/templates/docker-template.yml
 python-template-pip.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/templates/python-template-pip.yml
 nox-template-matrix.yml,.yml,#,/home/byron/dev/ledgerbase/.github/workflows/templates/nox-template-matrix.yml

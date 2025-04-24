@@ -72,7 +72,8 @@ todo_include_todos = True
 
 # -- Templates and exclude patterns ---------------------------------
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store","reports/json/*",
+                    "reports/sarif/*"]
 html_static_path = ["_static"]
 
 # -- HTML output options --------------------------------------------
