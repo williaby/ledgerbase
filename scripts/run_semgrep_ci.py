@@ -10,7 +10,7 @@ def main() -> None:
     try:
         poetry = "poetry"
         nox = "nox"
-        subprocess.run(  # nosec: B603 # noqa: S603
+        subprocess.run(  # nosec: B603
             [poetry, "run", nox, "-s", "semgrep_ci"],
             check=True,
         )

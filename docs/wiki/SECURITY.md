@@ -81,4 +81,4 @@ LedgerBase handles sensitive financial data, so we follow best practices to prot
 
 ---
 
-_If you have any questions, suggestions, or notice potential security vulnerabilities, please create an Issue or contact the project maintainers._
+*If you have any questions, suggestions, or notice potential security vulnerabilities, please create an Issue or contact the project maintainers.*

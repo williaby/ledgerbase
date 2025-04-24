@@ -13,27 +13,27 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 
 jobs:
-  release:
-    name: Semantic Release
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
+    release:
+        name: Semantic Release
+        runs-on: ubuntu-22.04
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: 3.11
 
-      - name: Install dependencies
-        run: poetry install --with dev
+            - name: Install dependencies
+              run: poetry install --with dev
 
-      - name: Run Semantic‑Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYPI_TOKEN:   ${{ secrets.PYPI_TOKEN }}
-        run: semantic-release publish
+            - name: Run Semantic‑Release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+              run: semantic-release publish

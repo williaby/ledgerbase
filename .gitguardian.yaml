@@ -11,6 +11,6 @@
 # changelog = Initial version
 
 matches:
-  - path: SECURITY.md
-    match: "-----BEGIN PGP PUBLIC KEY BLOCK-----"
-    reason: "This is a public GPG key, not a secret"
+    - path: SECURITY.md
+      match: "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+      reason: "This is a public GPG key, not a secret"

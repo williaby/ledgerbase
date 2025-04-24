@@ -28,7 +28,7 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        subprocess.run(  # noqa: S603 # nosec: B603
+        subprocess.run(  # nosec: B603
             [
                 poetry_path,
                 "run",

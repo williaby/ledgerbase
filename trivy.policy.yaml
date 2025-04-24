@@ -1,21 +1,21 @@
 version: 1
 
 ignoreConfigs:
-  - id: AVX001
-    paths:
-      - "**/settings/dev.env"
-    reason: "Development-only debug mode"
+    - id: AVX001
+      paths:
+          - "**/settings/dev.env"
+      reason: "Development-only debug mode"
 
-  - id: GIT_CHECKOUT
-    paths:
-      - "Dockerfile"
-    reason: "SHA pinning not applicable to pip install/git clone patterns used in base image"
+    - id: GIT_CHECKOUT
+      paths:
+          - "Dockerfile"
+      reason: "SHA pinning not applicable to pip install/git clone patterns used in base image"
 
 ignoreSecrets:
-  - ruleID: GITLEAKS_GENERIC_SECRET
-    file: "ledgerbase_secure_env/.env.prod"
-    reason: "False positive or encrypted secret via SOPS"
+    - ruleID: GITLEAKS_GENERIC_SECRET
+      file: "ledgerbase_secure_env/.env.prod"
+      reason: "False positive or encrypted secret via SOPS"
 
-  - ruleID: SHA1_SECRET
-    file: "src/legacy_scripts/convert.py"
-    reason: "Legacy compatibility checksum for archived data"
+    - ruleID: SHA1_SECRET
+      file: "src/legacy_scripts/convert.py"
+      reason: "Legacy compatibility checksum for archived data"

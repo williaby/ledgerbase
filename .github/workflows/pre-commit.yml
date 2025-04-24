@@ -15,16 +15,16 @@
 name: Pre-Commit
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch: {}
-  schedule:
-    - cron: '0 2 * * 0'  # Weekly on Sunday at 02:00 UTC
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+    workflow_dispatch: {}
+    schedule:
+        - cron: "0 2 * * 0" # Weekly on Sunday at 02:00 UTC
 
 jobs:
-  pre-commit:
-    uses: ./.github/workflows/templates/nox-template.yml
-    with:
-      sessions: "pre-commit"
+    pre-commit:
+        uses: ./.github/workflows/templates/nox-template.yml
+        with:
+            sessions: "pre-commit"

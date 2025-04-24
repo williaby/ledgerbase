@@ -68,3 +68,6 @@ src/migrations/
 trivy-image.json
 trivy-fs.json
 sbom.cdx.json
+
+# Ignore specific directories
+/styles/

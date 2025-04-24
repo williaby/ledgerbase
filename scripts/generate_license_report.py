@@ -57,7 +57,7 @@ def main() -> None:
     cmd_args = [poetry_cmd, "run", nox_cmd, "-s", "license_report"]
 
     try:
-        result = subprocess.run(  # nosec B603 # noqa: S603
+        result = subprocess.run(  # nosec B603
             cmd_args,
             check=False,
             capture_output=False,

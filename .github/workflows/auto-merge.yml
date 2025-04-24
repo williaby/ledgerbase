@@ -1,9 +1,9 @@
 # .github/workflows/auto-merge.yml
 # name = auto-merge.yml  # noqa: E265
-# description = Automatically approve and merge Dependabot pull requests when labeled
+# description = Automatically approve and merge renovate pull requests when labeled
 # category = ci  # noqa: E265
-# usage = Trigger on Dependabot pull request events (opened, labeled, synchronize)
-# behavior = Approves and auto-merges PRs created by dependabot[bot]
+# usage = Trigger on renovate pull request events (opened, labeled, synchronize)
+# behavior = Approves and auto-merges PRs created by renovate[bot]
 # inputs = GitHub pull_request event payload; secrets: GITHUB_TOKEN  # noqa: E265
 # outputs = PR merged status  # noqa: E265
 # dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, gh CLI  # noqa: E265
@@ -12,36 +12,36 @@
 # tags = automation, dependabot  # noqa: E265
 # changelog = Pinned runner hardening action SHA; added full metadata header  # noqa: E265
 
-name: Dependabot Auto-Merge
+name: Renovate Auto-Merge
 
 on:
-  pull_request:
-    types: [opened, labeled, synchronize]
+    pull_request:
+        types: [opened, labeled, synchronize]
 
 permissions:
-  contents: write
-  pull-requests: write
+    contents: write
+    pull-requests: write
 
 jobs:
-  auto-merge:
-    if: github.actor == 'dependabot[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-        with:
-          egress-policy: audit
+    auto-merge:
+        if: github.actor == 'renovate[bot]'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Harden the runner (Audit all outbound calls)
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+              with:
+                  egress-policy: audit
 
-      - name: Approve the PR
-        run: |
-          gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Approve the PR
+              run: |
+                  gh pr review --approve "$PR_URL"
+              env:
+                  PR_URL: ${{ github.event.pull_request.html_url }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge
-        run: |
-          gh pr merge --auto --merge "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Enable auto-merge
+              run: |
+                  gh pr merge --auto --merge "$PR_URL"
+              env:
+                  PR_URL: ${{ github.event.pull_request.html_url }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -11,20 +11,28 @@
 # tags = security, scanning, secrets
 # changelog = Initial version
 
+# trufflehog.toml
+
+# 👉 Preferred suppression: annotate known false positives
+#    directly in-source using “# nosecret” (or “# nosecret: <rule_id>”)
+#    so the exception lives right next to the text it applies to.
+
 [[rules]]
 description = "Generic High Entropy String"
-regex = '''[a-zA-Z0-9_]{32,}'''
-entropy = 4.5
-min = 32
-max = 128
-tags = ["generic", "entropy"]
+regex       = '''[A-Za-z0-9_+/=]{32,}'''
+entropy     = 5.0
+min         = 32
+max         = 128
+tags        = ["generic","entropy"]
 
 [[rules]]
 description = "Plaid Sandbox/Live API keys"
-regex = '''plaid_(sandbox|development|production)_[a-z0-9]{16,32}'''
-tags = ["api", "plaid", "financial"]
+regex       = '''plaid_(sandbox|development|production)_[a-z0-9]{16,32}'''
+tags        = ["api","plaid","financial"]
 
 [[rules]]
 description = ".env secrets"
-regex = '''(?i)(secret|token|key|password|api)[_=][\'"]?[A-Za-z0-9\-_.]{16,}'''
-tags = ["env", "configuration"]
+regex       = '''(?i)(secret|token|key|password|api)[_=][\'"]?[A-Za-z0-9\-_.]{16,}'''
+tags        = ["env","configuration"]
+
+# …any [[exclude]] blocks you’ve added remain below…

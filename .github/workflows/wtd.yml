@@ -13,32 +13,32 @@
 name: 📝 What The Diff PR Summary
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-    paths-ignore:
-      - 'dist/**'
-      - 'build/**'
-      - 'vendor/**'
-      - '*.lock'
-      - '*.png'
-      - '*.jpg'
+    pull_request:
+        types: [opened, reopened, synchronize]
+        paths-ignore:
+            - "dist/**"
+            - "build/**"
+            - "vendor/**"
+            - "*.lock"
+            - "*.png"
+            - "*.jpg"
 
 jobs:
-  generate-summary:
-    runs-on: ubuntu-latest
-    # Skip any PR whose author login ends with "[bot]"
-    if: "!endsWith(github.event.pull_request.user.login, '[bot]')"
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    generate-summary:
+        runs-on: ubuntu-latest
+        # Skip any PR whose author login ends with "[bot]"
+        if: "!endsWith(github.event.pull_request.user.login, '[bot]')"
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-      - name: Install What‑The‑Diff CLI
-        run: npm install -g @beyondcode/what-the-diff-cli
+            - name: Install What‑The‑Diff CLI
+              run: npm install -g @beyondcode/what-the-diff-cli
 
-      - name: Generate PR summary
-        run: |
-          what-the-diff \
-            --github-token ${{ secrets.GITHUB_TOKEN }} \
-            --owner ${{ github.repository_owner }} \
-            --repo ${{ github.event.repository.name }} \
-            --pr-number ${{ github.event.pull_request.number }}
+            - name: Generate PR summary
+              run: |
+                  what-the-diff \
+                    --github-token ${{ secrets.GITHUB_TOKEN }} \
+                    --owner ${{ github.repository_owner }} \
+                    --repo ${{ github.event.repository.name }} \
+                    --pr-number ${{ github.event.pull_request.number }}

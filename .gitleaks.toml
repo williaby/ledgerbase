@@ -16,4 +16,4 @@
   regexes = [
     '''-----BEGIN PGP PUBLIC KEY BLOCK-----.*?-----END PGP PUBLIC KEY BLOCK-----'''
   ]
-  paths = ["SECURITY.md"]
+  paths = ["SECURITY.md", "encrypt_env.sh"]

@@ -2,16 +2,15 @@ name: Dev Checks
 
 on:
     push:
-        branches: [ main ]
+        branches: [main]
     pull_request:
-        branches: [ main ]
+        branches: [main]
     workflow_dispatch:
-      inputs:
-        session:
-          description: "Nox session to run (one at a time)"
-          required: true
-          default: "lint typecheck gen_script_docs"
-
+        inputs:
+            session:
+                description: "Nox session to run (one at a time)"
+                required: true
+                default: "lint typecheck gen_script_docs"
 
 jobs:
     matrix:
@@ -23,21 +22,21 @@ jobs:
             - name: Harden the runner (Audit all outbound calls)
               uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
               with:
-                egress-policy: audit
+                  egress-policy: audit
 
-            -   name: Checkout
-                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+            - name: Checkout
+              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-            -   name: Install yq
-                run: |
-                    sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
-                    sudo chmod +x /usr/bin/yq
+            - name: Install yq
+              run: |
+                  sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+                  sudo chmod +x /usr/bin/yq
 
-            -   name: Extract Python version array
-                id: load
-                run: |
-                    versions=$(yq e '.python-versions' .github/workflows/templates/python-version-matrix.yml -o=json)
-                    echo "versions=$versions" >> "$GITHUB_OUTPUT"
+            - name: Extract Python version array
+              id: load
+              run: |
+                  versions=$(yq e '.python-versions' .github/workflows/templates/python-version-matrix.yml -o=json)
+                  echo "versions=$versions" >> "$GITHUB_OUTPUT"
 
     dev-checks:
         name: Nox Dev Checks
@@ -48,5 +47,5 @@ jobs:
 
         uses: ./.github/workflows/templates/nox-template.yml
         with:
-          python-version: ${{ matrix.python-version }}
-          sessions: ${{ inputs.session }}
+            python-version: ${{ matrix.python-version }}
+            sessions: ${{ inputs.session }}

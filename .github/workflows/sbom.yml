@@ -1,11 +1,10 @@
-name: Security - SBOM
+# .github/workflows/sbom.yml
+name: Security – SBOM
 
 on:
   push:
   pull_request:
-  schedule:
-    - cron: '0 3 * * *'  # Run daily at 3 AM UTC
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -13,49 +12,36 @@ permissions:
 
 jobs:
   sbom:
-    runs-on: ubuntu-latest
+    name: Generate & Validate SBOM
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2.11.1
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress-policy: audit
 
-      - name: Cache Trivy DB
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/trivy
-          key: trivy-db-${{ runner.os }}-${{ hashFiles('**/Dockerfile') }}
-          restore-keys: |
-            trivy-db-${{ runner.os }}-
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Install Trivy
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install Trivy & wget
         run: |
           sudo apt-get update && sudo apt-get install -y wget
-          wget -qO trivy.tar.gz https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.52.1_Linux-64bit.tar.gz
-          tar -xf trivy.tar.gz
-          sudo mv trivy /usr/local/bin/
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
 
-      - name: Build Docker image for SBOM generation
-        run: docker build -t ledgerbase:${{ github.sha }} .
+      - name: Install Nox
+        run: python -m pip install --upgrade pip nox
 
-      - name: Generate SBOM (CycloneDX format)
-        run: |
-          trivy image ledgerbase:${{ github.sha }} \
-            --format cyclonedx \
-            --output sbom.cdx.json
+      - name: Run SBOM Validate via Nox
+        run: nox -s sbom_validate
 
-      - name: Validate CycloneDX SBOM
-        run: |
-          wget -q https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.24.0/cyclonedx-linux-x64 -O cyclonedx
-          chmod +x cyclonedx
-          ./cyclonedx validate --input-file sbom.cdx.json
-
-      - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v3
         with:
           name: sbom-cyclonedx
-          path: sbom.cdx.json
+          path: docs/generated/sbom/sbom.cdx.json
+          retention-days: 7

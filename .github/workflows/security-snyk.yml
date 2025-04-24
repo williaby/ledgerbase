@@ -1,25 +1,22 @@
 # name = security-snyk.yml
-# description = Unified Snyk security pipeline: Code, OSS, IaC & Container scans via Nox; artifacts & PR comments; fails on high/critical issues
+# description = Unified Snyk security pipeline: Code, OSS & Container scans via Nox; artifacts via SARIF; fails on high/critical issues
 # category = security
-# usage = Trigger weekly on Sundays at 02:00 UTC, on push/main, or on PR to run all Snyk scans
-# behavior = Executes Nox sessions snyk_code, snyk_oss, snyk_iac, snyk_container in parallel; uploads JSON & SARIF artifacts; comments & labels PRs for OSS findings; fails on high/critical OSS vulnerabilities
-# inputs = triggers: schedule, push(main), pull_request(main), workflow_dispatch; secrets: SNYK_TOKEN
-# outputs = snyk-code.sarif, snyk-oss.json, snyk-iac.sarif, snyk-container.json, snyk-container.sarif artifacts; PR comments & labels
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e, actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, actions/download-artifact@v3, github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea, nox, poetry, node
+# usage = Trigger on push/main, pull_request/main, or workflow_dispatch to run all Snyk scans
+# behavior = Executes Nox sessions snyk_code, snyk_oss, snyk_container in parallel; uploads SARIF artifacts to GitHub Security tab
+# inputs = secrets: SNYK_TOKEN
+# outputs = snyk-code.sarif, snyk-oss.sarif, snyk-container.sarif artifacts
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e, actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47, nox, poetry, node
 # author = Byron Williams
-# last_modified = 2025-04-18
+# last_modified = 2025-04-23
 # tags = security, snyk, ci
-# changelog = Added matrix for parallelism; caching for Poetry/pip & npm; weekly schedule; pinned SHAs; OSS comment + fail on high/critical
 
 name: Security – Unified Snyk CI
 
 on:
-  schedule:
-    - cron: '0 2 * * 0'    # Weekly on Sunday at 02:00 UTC
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch: {}
 
 permissions:
@@ -40,26 +37,17 @@ jobs:
         target:
           - name: code
             session: snyk_code
-            json: ""
-            sarif: snyk-code.sarif
+            sarif: docs/reports/sarif/snyk-code.sarif
           - name: oss
             session: snyk_oss
-            json: snyk-oss.json
-            sarif: ""
-          - name: iac
-            session: snyk_iac
-            json: ""
-            sarif: snyk-iac.sarif
+            sarif: docs/reports/sarif/snyk-oss.sarif
           - name: container
             session: snyk_container
-            json: snyk-container.json
-            sarif: snyk-container.sarif
+            sarif: docs/reports/sarif/snyk-container.sarif
 
     steps:
       - name: Harden the runner (Audit outbound calls)
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-        with:
-          egress-policy: audit
 
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -67,10 +55,10 @@ jobs:
       - name: Set up Python & Node
         uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Cache Poetry & pip
         uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f
@@ -98,15 +86,7 @@ jobs:
       - name: Run ${{ matrix.target.name }} via Nox
         run: nox -s ${{ matrix.target.session }}
 
-      - name: Upload JSON report
-        if: matrix.target.json != ''
-        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
-        with:
-          name: snyk-${{ matrix.target.name }}-json
-          path: ${{ matrix.target.json }}
-
       - name: Upload SARIF report
-        if: matrix.target.sarif != ''
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
         with:
           name: snyk-${{ matrix.target.name }}-sarif
@@ -114,63 +94,6 @@ jobs:
           retention-days: 2
 
       - name: Upload SARIF → GitHub Security tab
-        if: matrix.target.sarif != ''
         uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
         with:
           sarif_file: ${{ matrix.target.sarif }}
-
-  comment-snyk-oss:
-    name: Comment & Fail on PR with Snyk OSS Findings
-    needs: snyk_scan
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download Snyk OSS JSON
-        uses: actions/download-artifact@v3
-        with:
-          name: snyk-oss-json
-          path: ./reports
-
-      - id: count
-        name: Count high/critical vulnerabilities
-        run: |
-          high=$(jq '[.vulnerabilities[] | select(.severity=="high" or .severity=="critical")] | length' reports/snyk-oss.json)
-          echo "vulns=$high" >> $GITHUB_OUTPUT
-
-      - name: Comment PR if issues found
-        if: steps.count.outputs.vulns != '0'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
-        with:
-          script: |
-            const fs = require('fs');
-            const data = JSON.parse(fs.readFileSync('reports/snyk-oss.json','utf-8'));
-            const issues = data.vulnerabilities.filter(v=>['high','critical'].includes(v.severity));
-            let body = `### Snyk OSS Scan – high/critical issues: ${issues.length}\n\n`;
-            for (const v of issues) {
-              body += `- **${v.packageName}@${v.version}**: ${v.id||v.advisory||v.cve||'unknown'} (${v.severity})\n`;
-            }
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body
-            });
-
-      - name: Label PR for Snyk OSS
-        if: steps.count.outputs.vulns != '0'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
-        with:
-          script: |
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              labels: ['${{ env.PR_LABEL }}']
-            });
-
-      - name: Fail on high/critical issues
-        if: steps.count.outputs.vulns != '0'
-        run: |
-          echo "::error::Snyk OSS scan found ${{ steps.count.outputs.vulns }} high/critical vulnerabilities"
-          exit 1

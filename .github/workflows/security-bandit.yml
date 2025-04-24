@@ -1,116 +1,105 @@
 name: Bandit Security Scan
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 permissions:
-  contents: read
-  security-events: write
-  actions: read
+    contents: read
+    security-events: write
+    actions: read
 
 jobs:
-  bandit:
-    uses: ./.github/workflows/templates/nox-template.yml
-    with:
-      python-version: "3.11"
-      sessions: "bandit"
-
-  review-findings:
-    name: Upload SARIF and Annotate PR
-    needs: bandit
-    if: success() && github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+    bandit:
+        uses: ./.github/workflows/templates/nox-template.yml
         with:
-          egress-policy: audit
+            python-version: "3.11"
+            sessions: "bandit_scan"
 
-      - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+    review-findings:
+        name: Upload SARIF and Annotate PR
+        needs: bandit
+        if: success() && github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
 
-      - name: Install SARIF tools
-        run: |
-          pip install sarif-tools || { echo "Failed to install SARIF tools"; exit 1; }
+        steps:
+            - name: Harden the runner (Audit all outbound calls)
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              with:
+                  egress-policy: audit
 
-      - name: Convert Bandit JSON to SARIF
-        run: |
-          if [ -f bandit-report.json ]; then
-            cp bandit-report.json bandit-report.json.bak
-            bandit2sarif bandit-report.json --output bandit-report.sarif
-          else
-            echo "No Bandit JSON report found. Proceeding without SARIF conversion."
-          fi
+            - name: Checkout
+              uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
-      - name: Upload SARIF to GitHub Security tab
-        run: |
-          if [ -f bandit-report.sarif ] && [ -s bandit-report.sarif ]; then
-            echo "Uploading SARIF file to GitHub Security tab..."
-          else
-            echo "No valid SARIF file found to upload."
-            exit 1
-          fi
-        uses: github/codeql-action/upload-sarif@b8d3b6e8af63cde30bdc382c0bc28114f4346c88 # v2.28.1
-        with:
-          sarif_file: bandit-report.sarif
+            - name: Install SARIF tools
+              run: |
+                  pip install sarif-tools || { echo "Failed to install SARIF tools"; exit 1; }
 
-      - name: Summarize Bandit Results in PR
-        uses: actions/github-script@v7.1.0
-        with:
-          script: |
-            const fs = require('fs');
-            let summary = '';
-            if (fs.existsSync('bandit-report.json')) {
-              const results = JSON.parse(fs.readFileSync('bandit-report.json', 'utf-8'));
-              const high = results.results.filter(r => r.issue_severity === "HIGH").length;
-              const medium = results.results.filter(r => r.issue_severity === "MEDIUM").length;
-              const low = results.results.filter(r => r.issue_severity === "LOW").length;
-              summary = `### 🛡️ Bandit Scan Summary\n\n- HIGH: ${high}\n- MEDIUM: ${medium}\n- LOW: ${low}`;
-            } else {
-              summary = "No Bandit results found.";
-            }
+            - name: Upload SARIF to GitHub Security tab
+              run: |
+                  if [ -f bandit-report.sarif ] && [ -s bandit-report.sarif ]; then
+                    echo "Uploading SARIF file to GitHub Security tab..."
+                  else
+                    echo "No valid SARIF file found to upload."
+                    exit 1
+                  fi
+              uses: github/codeql-action/upload-sarif@b8d3b6e8af63cde30bdc382c0bc28114f4346c88 # v2.28.1
+              with:
+                  sarif_file: docs/reports/sarif/bandit.sarif
 
-            const retry = async (fn, retries = 3, delay = 1000) => {
-              try {
-                return await fn();
-              } catch (err) {
-                if (retries > 0) {
-                  await new Promise(resolve => setTimeout(resolve, delay));
-                  return retry(fn, retries - 1, delay * 2);
-                } else {
-                  throw err;
-                }
-              }
-            };
+            - name: Summarize Bandit Results in PR
+              uses: actions/github-script@v7.1.0
+              with:
+                  script: |
+                      const fs = require('fs');
+                      let summary = '';
+                      if (fs.existsSync('bandit-report.json')) {
+                        const results = JSON.parse(fs.readFileSync('bandit-report.json', 'utf-8'));
+                        const high = results.results.filter(r => r.issue_severity === "HIGH").length;
+                        const medium = results.results.filter(r => r.issue_severity === "MEDIUM").length;
+                        const low = results.results.filter(r => r.issue_severity === "LOW").length;
+                        summary = `### 🛡️ Bandit Scan Summary\n\n- HIGH: ${high}\n- MEDIUM: ${medium}\n- LOW: ${low}`;
+                      } else {
+                        summary = "No Bandit results found.";
+                      }
 
-            await retry(() => github.rest.issues.createComment({
-              issue_number: context.payload.pull_request.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: summary
-            }));
+                      const retry = async (fn, retries = 3, delay = 1000) => {
+                        try {
+                          return await fn();
+                        } catch (err) {
+                          if (retries > 0) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            return retry(fn, retries - 1, delay * 2);
+                          } else {
+                            throw err;
+                          }
+                        }
+                      };
 
-      - name: Label PR on Bandit Findings
-        if: always()
-        uses: actions/github-script@v7.1.0
-        with:
-          script: |
-            const fs = require('fs');
-            if (fs.existsSync('bandit-report.json')) {
-              const results = JSON.parse(fs.readFileSync('bandit-report.json', 'utf-8'));
-              const highSeverity = results.results.filter(r => r.issue_severity === "HIGH").length;
-              if (highSeverity > 0) {
-                await github.rest.issues.addLabels({
-                  issue_number: context.payload.pull_request.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  labels: ['status:security-failed']
-                });
-              }
-            }
+                      await retry(() => github.rest.issues.createComment({
+                        issue_number: context.payload.pull_request.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        body: summary
+                      }));
+
+            - name: Label PR on Bandit Findings
+              if: always()
+              uses: actions/github-script@v7.1.0
+              with:
+                  script: |
+                      const fs = require('fs');
+                      if (fs.existsSync('bandit-report.json')) {
+                        const results = JSON.parse(fs.readFileSync('bandit-report.json', 'utf-8'));
+                        const highSeverity = results.results.filter(r => r.issue_severity === "HIGH").length;
+                        if (highSeverity > 0) {
+                          await github.rest.issues.addLabels({
+                            issue_number: context.payload.pull_request.number,
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            labels: ['status:security-failed']
+                          });
+                        }
+                      }

@@ -14,64 +14,62 @@
 name: Security – Semgrep via Nox
 
 on:
-  schedule:
-    - cron: '0 2 * * 0'     # Sunday 02:00 UTC
-  push:
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - '.semgrep.yml'
-  pull_request:
+    push:
+        paths:
+            - "src/**"
+            - "tests/**"
+            - "semgrep.yml"
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
 
 env:
-  SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-  SEMGREP_DEPLOYMENT_ID: ${{ secrets.SEMGREP_DEPLOYMENT_ID }}
+    SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+    SEMGREP_DEPLOYMENT_ID: ${{ secrets.SEMGREP_DEPLOYMENT_ID }}
 
 jobs:
-  semgrep:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@...
+    semgrep:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Harden runner
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
 
-      - name: Checkout code
-        uses: actions/checkout@...
+            - name: Checkout code
+              uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('poetry.lock','requirements.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
+            - name: Cache pip
+              uses: actions/cache@v3
+              with:
+                  path: ~/.cache/pip
+                  key: ${{ runner.os }}-pip-${{ hashFiles('poetry.lock','requirements.txt') }}
+                  restore-keys: ${{ runner.os }}-pip-
 
-      - name: Cache Nox venvs
-        uses: actions/cache@v3
-        with:
-          path: .nox
-          key: ${{ runner.os }}-nox-${{ hashFiles('noxfile.py') }}
-          restore-keys: ${{ runner.os }}-nox-
+            - name: Cache Nox venvs
+              uses: actions/cache@v3
+              with:
+                  path: .nox
+                  key: ${{ runner.os }}-nox-${{ hashFiles('noxfile.py') }}
+                  restore-keys: ${{ runner.os }}-nox-
 
-      - name: Setup Python
-        uses: actions/setup-python@...
-        with:
-          python-version: '3.11'
+            - name: Setup Python
+              uses: actions/setup-python@...
+              with:
+                  python-version: "3.11"
 
-      - name: Install Nox
-        run: python -m pip install --upgrade pip && pip install nox
+            - name: Install Nox
+              run: python -m pip install --upgrade pip && pip install nox
 
-      - name: Run Semgrep
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            nox -s semgrep-ci
-          else
-            nox -s semgrep-full
-          fi
+            - name: Run Semgrep (CI or full)
+              run: |
+                if [ "${{ github.event_name }}" = "pull_request" ]; then
+                  nox -s semgrep_ci
+                else
+                  nox -s semgrep_full
+                fi
 
-      - name: Upload SARIF (CI only)
-        if: github.event_name == 'pull_request'
-        uses: github/codeql-action/upload-sarif@...
-        with:
-          sarif_file: semgrep-ci.sarif
+            - name: Upload SARIF (CI only)
+              if: github.event_name == 'pull_request'
+              uses: github/codeql-action/upload-sarif@...
+              with:
+                  sarif_file: docs/reports/sarif/semgrep-ci.sarif
