@@ -1,0 +1,22 @@
+// name = .prettierrc
+// description = Configuration file for Prettier code formatting
+// category = maintainability
+// usage = Used automatically by Prettier when run in this project
+// behavior = Controls formatting rules for JavaScript, JSON, Markdown, and YAML files
+// inputs = JavaScript, JSON, Markdown, and YAML files
+// outputs = Formatted code files
+// dependencies = Prettier
+// author = Ledgerbase Team
+// last_modified = 2023-06-15
+// changelog = Initial version with basic configuration
+
+{
+  // wrap code at 88 columns to match Black/Ruff
+  "printWidth": 88,
+  // use 2 spaces per indent in Markdown/YAML
+  "tabWidth": 2,
+  // always wrap prose to the printWidth
+  "proseWrap": "always",
+  // use double‑quotes for strings
+  "singleQuote": false
+}
