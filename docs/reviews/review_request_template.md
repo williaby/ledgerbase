@@ -9,6 +9,7 @@ Thank you for helping review this issue implementation. This project has interna
 **LedgerBase** is a self-hosted financial management and budgeting system for a family of six. It ingests bank and credit card transactions, categorizes expenses using a custom vendor dictionary, and tracks budgets, savings goals, debt payments, and individual expenses by person.
 
 **Key Features**:
+
 - Transaction import from Plaid or CSV
 - Vendor pattern matching via regex
 - 2-level budget categories + rollover savings logic
@@ -43,6 +44,7 @@ Please evaluate the proposed code or solution using the following checklist:
 ## Optional Guidance for LLM Reviewers
 
 If using an AI reviewer (e.g., ChatGPT or Copilot), consider asking:
+
 - “Does the proposed function align with the described feature?”
 - “What potential bugs or edge cases should be addressed?”
 - “How could this code be made more testable or modular?”
@@ -59,6 +61,7 @@ If using an AI reviewer (e.g., ChatGPT or Copilot), consider asking:
 ---
 
 Once you’ve reviewed the submission, you may:
+
 - Approve the change
 - Suggest improvements
 - Flag blockers or concerns

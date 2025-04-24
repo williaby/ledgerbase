@@ -1,0 +1,31 @@
+{{ name }}
+{{ "=" * name|length }}
+
+**Description**: {{ description }}
+
+.. automodule:: {{ name[:-3] }}
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+{% if usage %}
+**Usage**::
+
+   {{ usage }}
+{% endif %}
+
+{% if behavior %}
+**Behavior**:
+{{ behavior }}
+{% endif %}
+
+{% if dependencies %}
+**Dependencies**:
+{% for dep in dependencies %}
+- {{ dep }}
+{% endfor %}
+{% endif %}
+----
+
+*Note:* This module should define `__all__` to ensure Sphinx can document it correctly.
+Consider also using docstrings on all public members for best results.

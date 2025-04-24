@@ -1,21 +1,25 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  web:
-    build: .
-    container_name: ledgerbase_web
-    command: flask run --host=0.0.0.0
-    volumes:
-      - .:/app
-    ports:
-      - "5000:5000"
-    env_file:
-      - ${ENV_FILE}
-    environment:
-      FLASK_ENV: ${FLASK_ENV:-development}
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    web:
+        build: .
+        container_name: ledgerbase_web
+        command: flask run --host=0.0.0.0
+        volumes:
+            - .:/app
+        ports:
+            - "5000:5000"
+        env_file:
+            - ${ENV_FILE}
+        environment:
+            FLASK_ENV: ${FLASK_ENV:-development}
+            DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5

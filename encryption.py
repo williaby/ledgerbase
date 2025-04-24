@@ -1,82 +1,116 @@
-from typing import cast
+##: name = encryption.py
+##: description = Flask utility for encrypting and decrypting sensitive data using Fernet # noqa: E501
+
+##: category = security
+##: usage = Import and use in Flask applications
+##: behavior = Provides encryption and decryption of string values using keys from Flask config # noqa: E501
+
+##: inputs = String values to encrypt/decrypt, Flask app config with LEDGERBASE_SECRET_KEYS # noqa: E501
+
+##: outputs = Encrypted/decrypted string values
+##: dependencies = Flask, cryptography.fernet
+##: author = LedgerBase Team
+##: last_modified = 2023-11-15
+##: changelog = Initial version
+
+from typing import TypedDict, cast
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from config_types import AppConfig
 from flask import current_app
 
-# Assuming AppConfig is a TypedDict or similar structure defined elsewhere
+"""Flask utility for encrypting and decrypting sensitive data.
+
+This module provides a class for encrypting and decrypting string values
+using Fernet symmetric encryption with keys stored in the Flask application
+configuration. It supports key rotation by allowing multiple keys and
+attempting decryption with each key in sequence.
+"""
+
+
+class AppConfig(TypedDict):
+    """TypedDict for Flask app configuration."""
+
+    LEDGERBASE_SECRET_KEYS: list[str]
+
+
+class DecryptionError(ValueError):
+    """Custom exception for decryption errors."""
+
+    DEFAULT_MESSAGE = "Decryption failed: Invalid token or unknown encryption key."
 
 
 class Encryptor:
-    # Add '-> None' return type hint for the __init__ method
+    """Encrypts and decrypts string values using Fernet keys from app config."""
+
+    CONFIG_ERROR_MSG = (
+        "Configuration error: 'LEDGERBASE_SECRET_KEYS' must be a non-empty "
+        "list in Flask config."
+    )
+
     def __init__(self) -> None:
-        """
-        Initializes the Encryptor with encryption keys from the app config.
+        """Initialize the Encryptor with encryption keys from the app config.
 
-        Raises:
-            ValueError: If no LEDGERBASE_SECRET_KEYS are found in the config
-                        or if the keys list is empty.
-        """
-        # current_app.config is Werkzeug's EnvironHeaders by default, but
-        # Flask populates it. Casting assumes config structure matches AppConfig.
-        config = cast(AppConfig, current_app.config)
+        Raises
+        ------
+        ValueError
+            If no LEDGERBASE_SECRET_KEYS are found in the config or
+            if the keys list is empty.
 
-        # Use .get() with a default empty list for safety
-        # Consider logging a warning if keys are missing
-        # instead of raising error immediately
-        # depending on whether encryption is optional.
+        """
+        config = cast("AppConfig", current_app.config)
+
         keys: list[str] = config.get("LEDGERBASE_SECRET_KEYS", [])
         if not keys:
-            # Make error message more specific
-            raise ValueError(
-                "Configuration error: 'LEDGERBASE_SECRET_KEYS' "
-                "must be a non-empty list in Flask config."
-            )
+            raise ValueError(self.CONFIG_ERROR_MSG)
 
-        # Store the compiled Fernet instances
-        # Ensure keys are bytes for Fernet
         self.primary_cipher: Fernet = Fernet(keys[0].encode("utf-8"))
         self.secondary_ciphers: list[Fernet] = [
             Fernet(k.encode("utf-8")) for k in keys[1:]
         ]
 
     def encrypt(self, value: str) -> str:
-        """Encrypts a string value using the primary key."""
-        # Ensure input string is encoded to bytes before encryption
+        """Encrypt a string value using the primary key.
+
+        Parameters
+        ----------
+        value : str
+            The string value to encrypt.
+
+        Returns
+        -------
+        str
+            The encrypted string.
+
+        """
         encrypted_bytes: bytes = self.primary_cipher.encrypt(value.encode("utf-8"))
-        # Decode the resulting bytes back to string for storage/transmission
         return encrypted_bytes.decode("utf-8")
 
     def decrypt(self, token: str) -> str:
-        """
-        Decrypts a token string using the primary key, falling back to secondary keys.
+        """Decrypt a token using the primary key, then fall back to secondary keys.
 
-        Args:
-            token: The encrypted string token.
+        Parameters
+        ----------
+        token : str
+            The encrypted string token.
 
-        Returns:
+        Returns
+        -------
+        str
             The original decrypted string.
 
-        Raises:
-            ValueError: If decryption fails with all known keys.
-        """
-        try:
-            # Encode the token string to bytes for decryption
-            decrypted_bytes: bytes = self.primary_cipher.decrypt(token.encode("utf-8"))
-            # Decode the resulting bytes back to the original string
-            return decrypted_bytes.decode("utf-8")
-        except InvalidToken:
-            # Only proceed to secondary keys if primary fails with InvalidToken
-            pass  # Explicitly show we are ignoring the primary failure here
+        Raises
+        ------
+        DecryptionError
+            If decryption fails with all known keys.
 
-        for cipher in self.secondary_ciphers:
+        """
+        for cipher in [self.primary_cipher, *self.secondary_ciphers]:
             try:
                 decrypted_bytes = cipher.decrypt(token.encode("utf-8"))
                 return decrypted_bytes.decode("utf-8")
             except InvalidToken:
-                # Continue to the next key if decryption fails
                 continue
 
-        # If all keys failed
-        raise ValueError("Decryption failed: Invalid token or unknown encryption key.")
+        error_message = DecryptionError.DEFAULT_MESSAGE
+        raise DecryptionError(error_message)

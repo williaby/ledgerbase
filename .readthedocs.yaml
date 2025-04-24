@@ -1,0 +1,33 @@
+# name = .readthedocs.yaml
+# description = Configuration file for Read the Docs documentation hosting service
+# category = docs
+# usage = Automatically used by Read the Docs when building documentation
+# behavior = Configures build environment, Sphinx settings, Python dependencies, and output formats
+# inputs = Project documentation files
+# outputs = HTML and PDF documentation published on Read the Docs
+# dependencies = Read the Docs, Sphinx
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# changelog = Initial version
+
+version: 2
+
+build:
+    os: ubuntu-22.04
+    tools:
+        python: "3.11"
+
+sphinx:
+    configuration: docs/source/conf.py
+
+python:
+    install:
+        - requirements: docs/requirements.txt
+
+formats:
+    - html
+    - pdf
+
+# build every tag as “stable” too
+projects:
+    stable: true

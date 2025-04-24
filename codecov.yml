@@ -1,18 +1,78 @@
+# name = codecov.yml
+# description = Configuration file for Codecov code coverage service
+# category = ci
+# usage = Automatically used by Codecov when analyzing code coverage
+# behavior = Configures coverage thresholds, ignored paths, and PR comment settings
+# inputs = Code coverage reports from test runs
+# outputs = Code coverage analysis and PR comments
+# dependencies = Codecov service
+# author = LedgerBase Team
+# last_modified = 2023-11-15
+# changelog = Initial version
+
+# ─────────── Top‑level Codecov controls ───────────
 codecov:
-  require_ci_to_pass: yes
+    # Only read config from main branch
+    strict_yaml_branch: main
+    # Wait for all CI checks (tests + coverage) before reporting
+    require_ci_to_pass: yes
 
+# ─────────── Coverage thresholds ───────────
 coverage:
-  status:
-    project:
-      default:
-        target: 85%
-        threshold: 2%
-    patch:
-      default:
-        target: 80%
-        threshold: 5%
+    status:
+        # Overall project coverage
+        project:
+            default:
+                target: 90% # Enforce ≥ 90% total coverage
+                threshold: 2% # Allow up to 2% drop from target
+        # Patch (PR) coverage
+        patch:
+            default:
+                target: 90% # New code must also be ≥ 90% covered
+                threshold: 5% # Allow 5% wiggle room on diffs
 
+# ─────────── Paths to ignore ───────────
+ignore:
+    - "__pycache__/**"
+    - "*.py[cod]"
+    - "*.pyo"
+    - "*.pyd"
+    - "*.so"
+    - ".env/**"
+    - ".venv/**"
+    - "env/**"
+    - "venv/**"
+    - ".vscode/**"
+    - ".idea/**"
+    - ".DS_Store"
+    - "Thumbs.db"
+    - "poetry.lock"
+    - "dist/**"
+    - "build/**"
+    - ".env"
+    - ".env.*"
+    - ".secrets"
+    - ".secrets.*"
+    - ".secrets.baseline"
+    - ".security.baseline"
+    - ".actrc"
+    - "*.age"
+    - "*.sops.yaml"
+    - "*.sops.json"
+    - "*.sops.env"
+    - "*.sarif"
+    - "*.json"
+    - "safety_output.txt"
+    - "semgrep-results.json"
+    - "license-report.json"
+    - "node_modules/**"
+    - "logs/**"
+    - "ledgerbase_secure_env/**"
+    - "src/migrations/**"
+    - ".git.bak/**" # Matches your .gitignore exactly :contentReference[oaicite:0]{index=0}
+
+# ─────────── PR comment settings ───────────
 comment:
-  layout: "reach, diff, flags, files"
-  behavior: default
-  require_changes: true
+    layout: "reach, diff, flags, files"
+    behavior: default
+    require_changes: true # Only post if coverage actually changes

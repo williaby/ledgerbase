@@ -1,0 +1,70 @@
+# name = nox-template.yml
+# description = Reusable GitHub Actions template for running a single Nox session securely
+# category = security
+# usage = invoke via `uses: ./.github/workflows/nox-template.yml` with inputs `sessions` and optional `python-version`
+# behavior = Executes specified nox sessions in a hardened runner environment with caching
+# inputs = sessions (string), python-version (string)
+# outputs = Nox session logs and exit codes
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608, actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa, actions/cache@5a3ec84eff668545956fd18022155c47e93e2684, nox
+# author = Byron Williams
+# last_modified = 2025-04-19
+# tags = ci, security, automation
+# changelog = Updated to store sessions in environment variable for secure interpolation
+
+name: Nox Task
+
+on:
+    workflow_call:
+        inputs:
+            sessions:
+                required: true
+                type: string
+            python-version:
+                required: false
+                type: string
+                default: "3.11"
+
+permissions:
+    contents: read
+
+jobs:
+    nox-single:
+        name: Run nox sessions (${{ inputs.sessions }})
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Harden the runner (Audit all outbound calls)
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              with:
+                  egress-policy: audit
+
+            - name: Checkout repository
+              uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+
+            - name: Set up Python ${{ inputs.python-version }}
+              uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
+              with:
+                  python-version: ${{ inputs.python-version }}
+
+            - name: Cache Poetry + pip + .nox
+              uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+              with:
+                  path: |
+                      ~/.cache/pypoetry
+                      ~/.cache/pip
+                      .nox
+                  key: ${{ runner.os }}-nox-${{ inputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nox-${{ inputs.python-version }}-
+
+            - name: Install Nox
+              run: python -m pip install --upgrade nox
+
+            - name: Run Nox sessions
+              env:
+                  SESSIONS: ${{ inputs.sessions }}
+              run: |
+                  # Iterate over each session and invoke nox safely
+                  for session in $SESSIONS; do
+                    nox -s "$session"
+                  done

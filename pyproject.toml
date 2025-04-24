@@ -1,3 +1,15 @@
+# name = pyproject.toml
+# description = Project configuration file for Poetry, linting, formatting, and build settings
+# category = dev
+# usage = Used by Poetry, Black, Ruff, and other tools for project configuration
+# behavior = Defines project metadata, dependencies, and tool configurations
+# inputs = none
+# outputs = none
+# dependencies = Poetry, Black, Ruff, MyPy, semantic-release
+# author = LedgerBase Team
+# last_modified = 2025-04-21 # Updated date
+# changelog = Added missing dev dependencies from noxfile
+
 [tool.poetry]
 name = "ledgerbase"
 version = "0.1.0"
@@ -9,87 +21,165 @@ packages = [{ include = "ledgerbase", from = "src" }]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
-Flask = "3.0.3"
-Flask-SQLAlchemy = "3.1.1"
-cryptography = "44.0.1"
-python-dotenv = "1.0.1"
-sentry-sdk = { extras = ["flask"], version = "2.25.1" }
-marshmallow = "3.21.2"
-Flask-Limiter = "3.5.0"
+Flask = "^3.1.0"
+Flask-SQLAlchemy = "^3.1.1"
+cryptography = "^44.0.2"
+python-dotenv = "^1.1.0"
+sentry-sdk = { extras = ["flask"], version = "^2.25.1" }
+marshmallow = "^3.21.2"
+Flask-Limiter = "^3.5.0"
 gunicorn = "^23.0.0"
-psycopg = { version = "3.1.18", extras = ["binary"] }
-python-dateutil = "2.9.0.post0"
-plaid-python = "^15.3.0"
-PyYAML = "6.0.1"
-jinja2 = "^3.1.6"
-
+psycopg = { version = "^3.1.18", extras = ["binary"] }
+python-dateutil = "^2.9.0.post0"
+plaid-python = "^30.0.0"
+PyYAML = "^6.0.1"
+jinja2 = ">=3.1.6,<3.2.0"
+nox = "^2025.2.9"
+requests = "^2.31.0"
+semgrep = "^1.119.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "8.2.0"
-pre-commit = "3.7.0"
-flake8 = "7.0.0"
-black = "24.4.2"
-isort = "5.13.2"
-mypy = "^1.9.0"
-bandit = "^1.7.8"
-types-requests = "^2.31.0.10"
+# Core testing & linting
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+ruff = "^0.11.7"
+mypy = "^1.15.0"
+pre-commit = "^4.2.0"
+sqlfluff = "^3.4.0"
 nox = "^2025.2.9"
+
+# Security scanning tools
+bandit = "^1.8.3"
+safety = "^3.4.0"
+
+# Security report formatters
+bandit-sarif-formatter = "^1.1.1"
+
+# Documentation tools
+sphinx = "^8.2.0"
+sphinxcontrib-plantuml = "^0.25"
+readthedocs-sphinx-search = "^0.3.2"
+sphinxcontrib-spelling = "^7.2"
+sphinx-lint = "^0.8"
+myst-parser = ">=4.0.1"
+furo = ">=2024.8.6"
+sphinx-copybutton = ">=0.5.2"
+sphinx-autodoc-typehints = ">=3.1.0"
+
+# Other dev utilities
+codespell = "^2.1"
+pip-licenses = "^4.4.0"
+python-semantic-release = "^9.21.0"
+twine = "^5.1.0"
+vulture = "^2.11"
+yamllint = "^1.35.1"
+types-requests = "^2.31.0.10"
 pathspec = "^0.12.1"
-pydantic = "^2.11.3"
-sphinx = "^8.2.3"
-doc8 = "^1.1.2"
-jinja2 = "^3.1.6"
+pydantic = "^2.9.0,<2.10.0"
+poetry-plugin-export = "^1.8.0"
 
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-skip-string-normalization = false
+[tool.ruff]
+# core formatter settings—no linter config here any more
+target-version = "py312"
+line-length    = 88
+fix            = true
+show-fixes     = true
 
-[tool.isort]
-profile = "black"
-line_length = 88
-combine_as_imports = true
-skip_gitignore = true
+[tool.ruff.format]
+quote-style         = "double"
+line-ending         = "auto"
+docstring-code-format = true
+indent-style        = "space"
 
-[tool.flake8]
-max-line-length = 120
+[tool.ruff.lint]
+# which error codes to check
+select = ["ALL"]
+
+# codes to suppress everywhere
+ignore = [
+  "D100",   # Missing docstring in public module
+  "D104",   # Missing docstring in public package
+  "D107",   # Missing docstring in __init__
+  "T201",   # print() used
+  "D203",   # 1 blank line required before class docstring
+  "D213",   # Multi-line docstring summary should start at the second line
+  "D205",   # Docstring under triple quotes should be on the same line
+  "D400",   # First line of docstringshould end with a period
+  "D401",   # First line of docstringshould be in imperative mood
+  "D415",   # First line of docstring should not be empty
+  "E265",   # Block comment should start with `# ` — suppressed due to metadata header usage
+  "S", # Suppress all security-related checks as Bandit run separately
+]
+
+# directories & files to skip entirely
 exclude = [
-    ".nox",
-    ".git",
-    "__pycache__",
-    "build",
-    "dist",
-    ".venv",
-    ".eggs",
-    "migrations",
-    "tests",
-]
-extend-ignore = [
-    "E203",  # whitespace before ':' — conflicts with Black
-    "W503",  # line break before binary operator — conflicts with Black
-    "B101",  # asserts are flagged by bandit, not flake8
-    "E501",  # optionally ignore long lines if Black is used
+  ".git",
+  ".nox",
+  ".venv",
+  "build",
+  "dist",
+  "migrations",
+  "__pycache__",
+  "tests",
+  ".git.bak",
 ]
 
+# file‑specific overrides
+[tool.ruff.lint.per-file-ignores]
+"annotation_spec.md" = ["E501"]
 
-#[tool.mypy]
-#python_version = "3.12"
-#warn_unused_configs = true
-#disallow_untyped_defs = true
-#disallow_incomplete_defs = true
-#no_implicit_optional = true
-#check_untyped_defs = true
-#ignore_missing_imports = true
-#namespace_packages = true
-#show_error_codes = true
-#strict_equality = true
+
+[tool.ruff.lint.isort]
+known-first-party  = ["ledgerbase"]
+combine-as-imports = true #
 
 [tool.mypy.requests]
-ignore_missing_imports = true
+ignore_missing_imports = true #
 
 [tool.mypy."flask.*"]
-ignore_missing_imports = true
+ignore_missing_imports = true #
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"] #
+build-backend = "poetry.core.masonry.api" #
+
+[tool.semantic_release]
+version_source = "tag"
+upload_to_pypi = true
+upload_to_git = true
+
+[tool.sqlfluff]
+# Dialect and Rules Configuration
+dialect = "postgres"
+# Using rule bundles (you can customize further)
+# See: https://docs.sqlfluff.com/en/stable/configuration.html#selecting-rules
+rules = "aliasing,ambiguous,capitalisation,convention,layout,naming,structure"
+# Exclude migration folders if necessary (adapt path if needed)
+exclude_rules = ""
+# exclude_paths = "migrations/" # Uncomment if needed
+
+# Formatting Configuration
+[tool.sqlfluff.format]
+# You can add specific formatting rules here if desired
+# Example:
+# spacing_before_equals = true
+# spacing_after_equals = true
+
+
+[tool.codespell]
+# Comma-separated list of words to ignore
+ignore-words-list = "ledgernase, PII, mycustomterm" # Add your words here
+
+# Comma-separated list of files/patterns to skip
+# skip = "*.css,*.js,./generated/*"
+
+# Optional: Path to a file containing words to ignore (one per line)
+# ignore-words-file = ".codespell_ignore_words.txt"
+
+# Optional: Path to a file containing words to treat as correct
+# dictionary-file = ".codespell_dictionary.txt"
+
+# Check filenames as well
+check-filenames = true
+# Check hidden files
+check-hidden = true

@@ -1,4 +1,21 @@
-default_stages: [ commit ]
+# name = .pre-commit-config.yaml
+# description = Configuration for pre-commit hooks: linting, security scans, formatting, and code health checks
+# category = ci
+# usage = Automatically run on git commit and push to enforce code standards and security policies
+# behavior = Defines repositories and hooks to run (e.g., ruff, mypy, bandit, semgrep, pip-audit, custom scripts)
+# inputs = Staged files, pipeline triggers (commit, push)
+# outputs = Modified files (via fixes), hook exit codes indicating pass/fail
+# dependencies = pre-commit framework, ruff, mypy, bandit, semgrep, pip-audit, nox
+# author = Byron Williams
+# last_modified = 2025-04-20
+# tags = ci, automation, security, linting, scanning
+# changelog = Converted all core hooks to system‑installed Poetry versions; removed heavy CI‑only hooks
+
+default_language_version:
+  python: python3.11
+
+default_stages: [commit]
+
 exclude: |
   ^(
     \.venv/
@@ -16,38 +33,80 @@ exclude: |
   )/
 
 repos:
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
+  # ┌───────────────────────────────────────────────────┐
+  # │ Local “system” hooks calling project-installed  │
+  # │ Poetry/Nox tools (exact versions from pyproject)│
+  # └───────────────────────────────────────────────────┘
+  - repo: local
     hooks:
-      - id: black
+      # --- Ruff Hook (Assuming you already fixed it like below) ---
+      - id: ruff
+        name: Ruff Check & Fix (project-installed)
+        entry: poetry run ruff check --fix --exit-non-zero-on-fix
+        language: system
+        types: [python]
+        pass_filenames: true # Ruff handles passed filenames well with check/format
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
+      # --- Mypy Hook (Updated to use Nox) ---
+      - id: mypy # Keep original ID or change to mypy-nox
+        name: Mypy (via Nox) # Updated name
+        entry: poetry run nox -rs mypy # Call the 'mypy' Nox session
+        language: system
+        types: [python]       # Keep this to optimize *when* the hook runs
+        pass_filenames: false # The Nox session defines targets (PACKAGE_DIR)
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.2.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8
-          - flake8-bandit
+      # --- Bandit Hook (Updated to use Nox) ---
+      - id: bandit # Keep original ID or change to bandit-nox
+        name: Bandit (via Nox) # Updated name
+        entry: poetry run nox -rs bandit_scan # Call the 'bandit_scan' Nox session
+        language: system
+        types: [python]       # Keep this to optimize *when* the hook runs
+        pass_filenames: false # The Nox session defines targets (PACKAGE_DIR)
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
-    hooks:
-      - id: mypy
-        additional_dependencies:
-          - Flask
-          - types-Flask
-          - pydantic
+      # --- Semgrep Hook (Keep as is - already uses Nox) ---
+      - id: semgrep
+        name: Semgrep (project‑installed)
+        entry: poetry run nox -rs semgrep_ci
+        language: system
+        pass_filenames: false # Nox session handles files
 
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.3
-    hooks:
-      - id: bandit
+      # --- Vulture Hook (Keep as is - already uses Nox) ---
+      - id: vulture
+        name: Vulture (project‑installed)
+        entry: poetry run nox -rs vulture
+        language: system
+        pass_filenames: false # Nox session handles files
 
+      # --- ShellCheck Hook (Keep as is - already uses Nox) ---
+      - id: shellcheck
+        name: ShellCheck (project‑installed)
+        entry: poetry run nox -rs shellcheck
+        language: system
+        pass_filenames: false # Nox session handles files
+
+      # --- Codespell Hook (Updated to use Nox via lint_other) ---
+      - id: codespell # Keep original ID or change to codespell-nox
+        name: Codespell (via Nox lint_other) # Updated name
+        entry: poetry run nox -rs lint_other # Call the 'lint_other' Nox session
+        language: system
+        # Decide which file changes should trigger the whole 'lint_other' session
+        # Option A: Trigger on changes to types linted by lint_other
+        types: [python, yaml, markdown] # Add other relevant types if needed
+        # Option B: Trigger on changes to specific files/patterns
+        # files: \\.(py|yaml|yml|md)$
+        pass_filenames: false # The Nox session defines targets
+
+      # --- Pip-Audit Hook (Keep as is, but consider migrating stage name) ---
+      - id: pip-audit
+        name: pip-audit (project‑installed)
+        entry: poetry run pip-audit
+        language: system
+        stages: [push] # Remember the warning: pre-commit migrate-config suggested
+        pass_filenames: false
+
+  # ┌───────────────────────────────────────────────────┐
+  # │ Standard file‑ and security‑hooks (external)     │
+  # └───────────────────────────────────────────────────┘
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -56,72 +115,62 @@ repos:
       - id: trailing-whitespace
       - id: debug-statements
       - id: fix-byte-order-marker
-      - id: name-tests-test
       - id: requirements-txt-fixer
 
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
+    rev: 01886c8a910c64595c47f186ca1ffc0b77fa5458 # pragma: allowlist secret
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
 
-  - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.9.1
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.16.3
     hooks:
-      - id: nbqa-black
-      - id: nbqa-isort
+      - id: gitleaks
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.44.0
+    rev: 586c3ea3f51230da42bab657c6a32e9e66c364f0 # pragma: allowlist secret
     hooks:
       - id: markdownlint
-        name: markdownlint
         entry: markdownlint
         language: system
-        types: [ markdown ]
-        additional_dependencies: [ ]
+        types: [markdown]
+        args:
+          - --disable
+          - MD013
+          - MD051
+          - --fix
 
-  - repo: https://github.com/PyCQA/doc8
-    rev: v1.1.1
-    hooks:
-      - id: doc8
-        args: ["--max-line-length=120", "--ignore=D001"]
-
+  # ┌───────────────────────────────────────────────────┐
+  # │ Your local custom validation scripts             │
+  # └───────────────────────────────────────────────────┘
   - repo: local
     hooks:
       - id: validate-env-prod-sops
         name: Validate Required Keys in .env.prod.sops.yaml
         entry: ./validate_env_keys.sh
-        language: system
+        language: script
         files: ^\.env\.prod\.sops\.yaml$
 
       - id: forbid-new-env-prod
-        name: forbid-env-prod-commits
-        entry: bash -c 'grep -q "SNYK_TOKEN" $1 && echo "❌ Committing .env.prod with secrets is forbidden." && exit 1 || exit 0'
+        name: Forbid .env.prod commits
+        entry: bash -c 'grep -q "SNYK_TOKEN" "$@" && echo "❌ Committing .env.prod with secrets is forbidden." && exit 1 || exit 0' --
         language: system
         types: [file]
         files: ^\.env\.prod$
 
-      - id: generate-script-docs
-        name: Generate script documentation
-        entry: python scripts/generate_script_docs.py
-        language: system
-        pass_filenames: false
+      # Manual conversion hook (won't run automatically)
+      - id: convert-headers
+        name: Convert legacy headers to YAML front-matter
+        entry: scripts/convert_headers.py
+        language: script
+        files: ^docs/.*\.md$
+        stages: [manual]
 
-      - id: check-script-docs-freshness
-        name: Check scripts.md is up to date
-        entry: bash -c 'git diff --exit-code docs/scripts.md || (echo "docs/scripts.md is out of date. Run generate_script_docs.py." && exit 1)'
-        language: system
-        pass_filenames: false
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.16.3
-    hooks:
-      - id: gitleaks
-  - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 3.0.0
-    hooks:
-      - id: shellcheck
-  - repo: https://github.com/pylint-dev/pylint
-    rev: v2.17.2
-    hooks:
-      - id: pylint
+      # Always-validate hook (runs on commit)
+      - id: check-front-matter
+        name: Validate YAML front-matter
+        entry: python scripts/check_front_matter.py
+        language: python
+        additional_dependencies:
+          - pyyaml

@@ -1,0 +1,48 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+.eggs/
+
+# Poetry virtualenvs
+.venv/
+
+# Git and Semgrep metadata
+.git/
+.gitignore
+.semgrep/
+.semgrepignore
+
+# Docker & build metadata
+Dockerfile
+docker-compose.yml
+docker-compose.override.yml
+
+# Cache & environment files
+*.log
+*.env
+.env.*
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS & Windows system files
+.DS_Store
+Thumbs.db
+
+# Docs and tests artifacts
+docs/_build/
+coverage/
+htmlcov/
+*.cover
+*.py,cover
+
+# Bytecode and test cache
+.cache/
+.tox/
+noxfile.py

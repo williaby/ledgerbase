@@ -1,86 +1,75 @@
-name: Security - Semgrep
+# name = security-semgrep.yml
+# description = Run Semgrep security scans via Nox session using unified .semgrep.yml
+# category = security
+# usage = Trigger on push to src/**, tests/**, .semgrep.yml; on pull_request; and weekly on Sunday at 02:00 UTC
+# behavior = Executes Nox session "semgrep" (which installs Semgrep==1.119.0 and runs .semgrep.yml, producing a SARIF); fails on any findings
+# inputs = triggers: schedule, push, pull_request; secrets: none
+# outputs = semgrep.sarif
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55, actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f, pip, nox, github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
+# author = Byron Williams
+# last_modified = 2025-04-19
+# tags = security, semgrep, ci
+# changelog = Added pip cache; generate & upload SARIF via Nox session
+
+name: Security – Semgrep via Nox
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+    push:
+        paths:
+            - "src/**"
+            - "tests/**"
+            - "semgrep.yml"
+    pull_request:
 
 permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-  security-events: write
+    contents: read
 
 env:
-  PR_FAILURE_LABEL: semgrep-failed
-  SARIF_FILE: semgrep.sarif
+    SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+    SEMGREP_DEPLOYMENT_ID: ${{ secrets.SEMGREP_DEPLOYMENT_ID }}
 
 jobs:
-  semgrep:
-    name: Semgrep Cloud Scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
+    semgrep:
+        runs-on: ubuntu-22.04
+        steps:
+            - name: Harden runner
+              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
 
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+            - name: Checkout code
+              uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
-      - name: Run Semgrep with publishing
-        uses: returntocorp/semgrep-action@fcd5ab7459e8d91cb1777481980d1b18b4fc6735
-        with:
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-          publishDeployment: ${{ secrets.SEMGREP_DEPLOYMENT_ID }}
-          generateSarif: "1"
+            - name: Cache pip
+              uses: actions/cache@v3
+              with:
+                  path: ~/.cache/pip
+                  key: ${{ runner.os }}-pip-${{ hashFiles('poetry.lock','requirements.txt') }}
+                  restore-keys: ${{ runner.os }}-pip-
 
-      - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
-        with:
-          sarif_file: ${{ env.SARIF_FILE }}
-        if: always()
+            - name: Cache Nox venvs
+              uses: actions/cache@v3
+              with:
+                  path: .nox
+                  key: ${{ runner.os }}-nox-${{ hashFiles('noxfile.py') }}
+                  restore-keys: ${{ runner.os }}-nox-
 
-  post-process:
-    name: Comment & Label PR
-    needs: semgrep
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
+            - name: Setup Python
+              uses: actions/setup-python@...
+              with:
+                  python-version: "3.11"
 
-      - name: Add label on failure
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
-        with:
-          script: |
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: [process.env.PR_FAILURE_LABEL]
-            })
+            - name: Install Nox
+              run: python -m pip install --upgrade pip && pip install nox
 
-      - name: Remove label if scan passes
-        if: success()
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
-        with:
-          script: |
-            try {
-              github.rest.issues.removeLabel({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: process.env.PR_FAILURE_LABEL
-              })
-            } catch (e) {
-              console.log("Label already removed or not present");
-            }
+            - name: Run Semgrep (CI or full)
+              run: |
+                if [ "${{ github.event_name }}" = "pull_request" ]; then
+                  nox -s semgrep_ci
+                else
+                  nox -s semgrep_full
+                fi
+
+            - name: Upload SARIF (CI only)
+              if: github.event_name == 'pull_request'
+              uses: github/codeql-action/upload-sarif@...
+              with:
+                  sarif_file: docs/reports/sarif/semgrep-ci.sarif

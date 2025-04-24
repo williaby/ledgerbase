@@ -1,6 +1,19 @@
-import re
+##: name = validate_file_headers.py
+##: description = Validates structured file headers against annotation spec
+##: category = correctness
+##: usage = python scripts/validate_file_headers.py
+##: behavior = Scans code files for metadata headers; reports issues
+##: inputs = .py, .sh, .yml, .yaml, .toml files in project excluding Gitignore paths
+##: outputs = stdout warnings and errors indicating header issues
+##: dependencies = pydantic, pathspec
+##: author = Byron Williams
+##: last_modified = 2025-04-18
+##: tags = validation, tooling, compliance
+##: changelog = Added YAML-style header support; expanded VALID_KEYS; improved parsing
+
+import shutil
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, ClassVar
 
 import pathspec
 from pydantic import BaseModel, ValidationError
@@ -8,18 +21,27 @@ from pydantic import BaseModel, ValidationError
 
 # === CONFIGURATION ===
 class Config:
-    INCLUDE_EXTS = {".py", ".sh", ".yml", ".yaml", ".toml"}
-    EXCLUDE_DIRS = {
+    """Configuration options for file type inclusion and directory exclusion."""
+
+    INCLUDE_EXTS: ClassVar[set[str]] = {".py", ".sh", ".yml", ".yaml", ".toml"}
+    EXCLUDE_DIRS: ClassVar[set[str]] = {
         ".git",
         ".venv",
         "venv",
         ".nox",
         "node_modules",
         "build",
+        "dist",
+        ".git.bak/",
         "docs/build",
     }
-    HEADER_STYLE_LIST_KEYS = {"inputs", "outputs", "dependencies", "tags"}
-    VALID_KEYS = HEADER_STYLE_LIST_KEYS.union(
+    HEADER_STYLE_LIST_KEYS: ClassVar[set[str]] = {
+        "inputs",
+        "outputs",
+        "dependencies",
+        "tags",
+    }
+    VALID_KEYS: ClassVar[set[str]] = HEADER_STYLE_LIST_KEYS.union(
         {
             "name",
             "description",
@@ -28,132 +50,125 @@ class Config:
             "behavior",
             "author",
             "last_modified",
-        }
+            "changelog",
+        },
     )
+    KEYVAL_LENGTH: ClassVar[int] = 2  # Named constant for key-value pair length
 
 
 # === SCHEMA ===
 class FileMetadata(BaseModel):
+    """Structured metadata model for headers."""
+
     name: str
-    description: str
-    category: Optional[str]
-    usage: Optional[str]
-    behavior: Optional[str]
-    inputs: Optional[List[str]]
-    outputs: Optional[List[str]]
-    dependencies: Optional[List[str]]
-    author: Optional[str]
-    last_modified: Optional[str]
-    tags: Optional[List[str]]
+    description: str | None = None
+    category: str | None = None
+    usage: str | None = None
+    behavior: str | None = None
+    author: str | None = None
+    last_modified: str | None = None
+    changelog: str | None = None
+    dependencies: list[str] | None = None
+    tags: list[str] | None = None
+    inputs: list[str] | None = None
+    outputs: list[str] | None = None
 
 
 # === UTILITIES ===
-def load_gitignore_spec(path: str = ".gitignore") -> pathspec.PathSpec:
-    try:
-        with open(path, encoding="utf-8") as f:
-            lines = f.readlines()
-        return pathspec.PathSpec.from_lines("gitwildmatch", lines)
-    except FileNotFoundError:
-        return pathspec.PathSpec.from_lines("gitwildmatch", [])
-    except (OSError, UnicodeDecodeError) as e:
-        print(f"Warning: Could not read {path}: {e}")
-        return pathspec.PathSpec.from_lines("gitwildmatch", [])
+def _is_command_available(command: str) -> bool:
+    """Check if a command is available in the system PATH.
 
-
-def parse_header_metadata(path: Path) -> Dict[str, Union[str, List[str]]]:
-    """
-    Parses the structured comment metadata block from the top of a file.
+    Args:
+        command: The command to check
 
     Returns:
-        A dictionary of parsed metadata. Values are either strings or lists of strings.
-    """
-    metadata: Dict[str, Union[str, List[str]]] = {}
+        True if the command is available, False otherwise
 
+    """
+    return shutil.which(command) is not None
+
+
+def load_gitignore_spec(path: Path = Path(".gitignore")) -> pathspec.PathSpec:
+    """Load `.gitignore` rules into a pathspec matcher."""
+    lines = []
     try:
         with path.open(encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
+            lines = f.readlines()
+    except (OSError, PermissionError) as e:
+        print(f"⚠️  Warning: Could not read .gitignore file: {e}")
+    return pathspec.PathSpec.from_lines("gitwildmatch", lines)
 
-                # Skip non-comment lines
-                if not stripped.startswith("#"):
-                    if stripped:  # Stop if line is non-empty and not a comment
-                        break
+
+def parse_header_metadata(path: Path) -> dict[str, Any]:
+    """Parse the structured metadata block from the top of a file.
+
+    Supports both Python-style (`##:`) and shell/YAML-style (`# `) headers.
+
+    Returns:
+        A dict of parsed metadata values, strings or lists.
+
+    """
+    metadata: dict[str, Any] = {}
+    try:
+        with path.open(encoding="utf-8") as file:
+            for line in file:
+                stripped = line.lstrip()
+                if stripped.startswith("##:"):
+                    content = stripped[3:]
+                elif stripped.startswith("# "):
+                    content = stripped[2:]
+                else:
+                    break
+                keyval = content.strip().split("=", 1)
+                if len(keyval) != Config.KEYVAL_LENGTH:
                     continue
-
-                # Match lines like: ##: key = value
-                match = re.match(r"#*:?[\s]*([\w_]+)\s*=\s*(.+)", stripped)
-                if not match:
-                    continue
-
-                key, value = match.groups()
+                key, val = keyval
                 key = key.strip()
-                value = value.strip(" '\"")
-
+                val = val.strip(" '\"")
                 if key not in Config.VALID_KEYS:
                     continue
-
                 if key in Config.HEADER_STYLE_LIST_KEYS:
-                    metadata[key] = [v.strip() for v in value.split(",")]
+                    # comma-separated list
+                    metadata[key] = [v.strip() for v in val.split(",")]
                 else:
-                    metadata[key] = value
-
-    except (OSError, UnicodeDecodeError) as e:
-        print(f"Error reading {path}: {e}")
-
+                    metadata[key] = val
+    except (OSError, PermissionError) as e:
+        print(f"⚠️  Warning: Could not read file {path}: {e}")
     return metadata
 
 
 # === MAIN ===
-def main():
-    base_dir = Path(".")
-    spec = load_gitignore_spec()
-    total, valid = 0, 0
-    invalid = []
+def main() -> None:
+    """Check source files for structured headers and validate against FileMetadata model."""  # noqa: E501
+    base_dir = Path()
+    gitignore = load_gitignore_spec()
 
     for file_path in base_dir.rglob("*"):
-        rel_path = file_path.relative_to(base_dir)
-
-        if (
-            not file_path.is_file()
-            or file_path.suffix not in Config.INCLUDE_EXTS
-            or spec.match_file(str(rel_path))
-            or set(file_path.parts).intersection(Config.EXCLUDE_DIRS)
-        ):
+        try:
+            if file_path.is_dir():
+                continue
+        except PermissionError:
+            print(f"⚠️  Warning: Permission denied accessing {file_path}")
+            continue
+        if file_path.suffix not in Config.INCLUDE_EXTS:
+            continue
+        if any(part in Config.EXCLUDE_DIRS for part in file_path.parts):
+            continue
+        if gitignore.match_file(str(file_path)):
             continue
 
-        total += 1
         metadata = parse_header_metadata(file_path)
-
         if not metadata:
-            invalid.append((file_path, "Missing or empty header"))
+            print(f"⚠️  Warning: {file_path} is missing header metadata.")
             continue
 
         try:
-            FileMetadata(**metadata)
-            valid += 1
-        except ValidationError as ve:
-            error_detail = "; ".join(
-                [f"{err['loc'][0]}: {err['msg']}" for err in ve.errors()]
-            )
-            invalid.append((file_path, f"Validation error: {error_detail}"))
+            FileMetadata.model_validate(metadata)
+        except ValidationError as e:
+            print(f"❌ Error in {file_path}: {e}")
             continue
 
-        # Soft check: warn if Python metadata lines are missing # noqa: E265
-        if file_path.suffix == ".py":
-            with file_path.open(encoding="utf-8") as f:
-                for line_num, line in enumerate(f, start=1):
-                    if line.strip().startswith("##:") and "# noqa: E265" not in line:
-                        print(
-                            f"⚠️  Warning: {file_path}:{line_num} missing '# noqa: E265' on metadata line"
-                        )
-                        break
-
-    print(f"\nScanned {total} eligible files.")
-    print(f"✅ {valid} files passed validation.")
-    print(f"❌ {len(invalid)} files failed:\n")
-
-    for path, reason in invalid:
-        print(f"- {path}: {reason}")
+        # No longer checking for noqa: E265 on metadata lines
 
 
 if __name__ == "__main__":

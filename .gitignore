@@ -62,3 +62,12 @@ src/migrations/
 
 # Backup / temp files
 .git.bak/
+
+# Trivy
+.trivyignore
+trivy-image.json
+trivy-fs.json
+sbom.cdx.json
+
+# Ignore specific directories
+/styles/

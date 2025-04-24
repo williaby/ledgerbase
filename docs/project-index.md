@@ -7,6 +7,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 ---
 
 ## Phase 1 – Core Infrastructure & Plaid ETL
+
 - [ ] #1 Initialize Docker Compose for PostgreSQL + Flask
 - [ ] #2 Define and Apply Initial Database Schema
 - [ ] #3 Implement Plaid API Integration for Wells Fargo
@@ -22,6 +23,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #82 Implement pre-commit hooks (black, flake8, isort)
 
 ## Phase 2 – Vendor Dictionary + Manual Categorization
+
 - [ ] #9 Create `vendors` and `vendor_patterns` tables
 - [ ] #10 Implement regex-based vendor matching
 - [ ] #11 Build unmatched vendor queue UI
@@ -35,6 +37,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #84 Version and track vendor dictionary changes over time
 
 ## Phase 3 – Budgeting System Core
+
 - [ ] #17 Create `budget_entries` schema
 - [ ] #18 Build budget entry UI
 - [ ] #19 Implement budget rollover and cloning logic
@@ -47,6 +50,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #72 Enable category locking and archival
 
 ## Phase 4 – Unmatched Vendor Queue and Review Dashboard
+
 - [ ] #25 Build unmatched vendor queue backend
 - [ ] #26 Create Flask route for review interface
 - [ ] #27 Add review UI for vendor and category suggestions
@@ -59,6 +63,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #71 Add full transaction_audit_log for lifecycle tracking
 
 ## Phase 5 – Business Expenses + Savings Logic
+
 - [ ] #33 Add business expense tagging
 - [ ] #34 Build UI for tagging reimbursable items
 - [ ] #35 Generate reimbursement report
@@ -69,6 +74,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #40 Document business + savings tagging logic
 
 ## Phase 6 – Reporting & Person-Level Insights
+
 - [ ] #41 Monthly budget vs. actual report
 - [ ] #42 Add filters: category, label, person, type
 - [ ] #43 Savings accumulation report
@@ -82,6 +88,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #80 Add optional Jupyter notebook container for ad hoc reporting
 
 ## Phase 7 – Admin Tools, Importers, and CLI Utilities
+
 - [ ] #49 CLI: CSV import by account
 - [ ] #50 Auto-detect institution format
 - [ ] #51 CLI: Vendor pattern manager
@@ -94,6 +101,7 @@ Each item corresponds to a GitHub issue. Replace `#X` with actual issue numbers 
 - [ ] #78 Create CLI tools for vendor approvals and report generation
 
 ## Phase 8 – Final UI Polish, Deployment, and Automation
+
 - [ ] #57 Refactor and style UI templates
 - [ ] #58 Create dashboard: budget + alerts
 - [ ] #59 Docker production environment setup

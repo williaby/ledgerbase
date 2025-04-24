@@ -1,0 +1,94 @@
+# ==============================================================================
+# name: custom-rules.yml
+# description: Custom Semgrep rules for LedgerBase project.
+#              Includes specific pattern checks and taint mode rules.
+# category: ci
+# usage: Used by Nox/pre-commit alongside '.semgrep.yml'.
+#        Run with: semgrep --config .semgrep.yml --config custom-rules.yml
+# behavior: Defines project-specific Semgrep rules.
+# last_modified: 2025-04-22
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Section 1: Custom Pattern Rules
+# ------------------------------------------------------------------------------
+# Add specific custom rules here that are NOT covered by the registry rulesets
+# in '.semgrep.yml' OR by Ruff (especially Ruff's S rules).
+rules:
+  # --- Custom Pattern Rules ---
+
+  - id: custom-insecure-subprocess
+    # Useful as a reminder even if registry/Ruff cover specific cases. [cite: 5]
+    pattern: subprocess.run(...)
+    message: Verify inputs to subprocess.run – user data must be sanitized if shell=True or input forms part of command.
+    severity: WARNING
+    metadata:
+        cwe: "CWE-78: OS Command Injection"
+        owasp: "A03:2021 Injection"
+    languages: [python]
+
+  - id: custom-raw-sql-query
+    # Keep this as a high-level check until taint analysis is robust. [cite: 10]
+    # Taint analysis (Section 2) provides much better detection for actual injection vulnerabilities.
+    pattern: $DB.execute(...) # Adjust $DB based on your actual DB variable/object (e.g., cursor, session)
+    message: Ensure queries are parameterized using the DB driver's mechanism. Raw or f-string formatted SQL passed to execute() is highly dangerous. Prefer ORM methods or parameterized queries.
+    severity: WARNING # Changed severity to WARNING as taint analysis should be the primary ERROR detector
+    metadata:
+        cwe: "CWE-89: SQL Injection"
+        owasp: "A03:2021 Injection"
+        note: "This is a basic pattern check. Enable and refine taint analysis rules below for proper SQLi detection."
+    languages: [python]
+
+  # DO NOT ADD custom rules for eval, exec, md5, yaml.load, pickle.load here
+  # if they are covered adequately by Ruff S rules or the registry packs in '.semgrep.yml'.
+
+
+# ------------------------------------------------------------------------------
+# Section 2: Custom Taint Mode Rules (Placeholder / Starting Point)
+# ------------------------------------------------------------------------------
+# Define rules to track data flow from untrusted sources to sensitive sinks.
+# These require careful definition based on your specific Flask application code.
+# --- Custom Taint Mode Rules ---
+
+  - id: flask-sqli-example-placeholder
+    # Placeholder based on previous analysis - **NEEDS REFINEMENT FOR YOUR CODEBASE**
+    mode: taint
+    message: |
+      Potential SQL Injection (Taint Analysis): Data from an HTTP request appears to flow into
+      a database execution sink without proper sanitization or parameterization.
+      Review the data flow and ensure safe database interaction (ORM usage or parameterization).
+    severity: ERROR
+    metadata:
+        cwe: "CWE-89: SQL Injection"
+        owasp: "A03:2021 Injection"
+        category: security
+        technology:
+          - flask
+          - sql
+        confidence: MEDIUM # Start with MEDIUM, increase confidence as rule is validated
+        description: "Tracks data from Flask request objects to potential raw SQL execution points."
+        likelihood: MEDIUM
+        impact: HIGH
+        reference: "Analysis and Recommendations for Flask Linting Tool Integration with Ruff"
+    languages: [python]
+    pattern-sources:
+      - pattern: request.args.get(...)
+      - pattern: request.args[...]
+      - pattern: request.form.get(...)
+      - pattern: request.form[...]
+      - pattern: request.values.get(...)
+      - pattern: request.values[...]
+      - pattern: request.get_json(...)
+      # Add other ways untrusted input enters your Flask app (e.g., headers, cookies if relevant)
+    pattern-sinks:
+      # Refine these based on your ACTUAL database library and execution methods
+      - pattern: $DB.execute("..." + $TAINTED + "...")
+      - pattern: $DB.execute(f"..." + {$TAINTED} + "...")
+      - pattern: $DB.execute(..., $TAINTED) # If positional args used unsafely
+      # - pattern: sqlalchemy.text("..." + $TAINTED + "...") # If using SQLAlchemy text() unsafely
+      # Add patterns for psycopg2, etc., if used directly with string formatting
+    # pattern-sanitizers:
+      # Define functions or methods that sanitize data for SQL context if necessary
+      # Example: - pattern: my_sql_sanitize(...)
+
+  # Add other custom taint rules here (e.g., for XSS, command injection) as you develop them.

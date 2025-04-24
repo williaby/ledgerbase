@@ -1,0 +1,37 @@
+# name = .taplo.toml
+# description = Configuration file for Taplo TOML linting and formatting
+# category = maintainability
+# usage = Used automatically by Taplo when run in this project
+# behavior = Controls formatting and linting rules for TOML files
+# inputs = TOML configuration files
+# outputs = Formatted TOML files and linting reports
+# dependencies = Taplo
+# author = Ledgerbase Team
+# last_modified = 2023-06-15
+# changelog = Initial version with basic configuration
+
+[format]
+# Use spaces for indentation (not tabs)
+indent_style               = "space"
+# Two‑space indentation for nested tables
+indent_size                = 2
+# Unix‑style line endings
+newline                    = "lf"
+# Remove any trailing whitespace
+trim_trailing_whitespace    = true
+# Ensure the file ends with a newline
+insert_final_newline       = true
+# Don’t add or remove blank lines between sections automatically
+section_newline            = false
+
+[lint]
+# Treat duplicate keys as errors
+duplicate_key              = "error"
+# Treat duplicate tables as errors
+duplicate_table            = "error"
+# Warn if keys aren’t sorted alphabetically
+sort_keys                  = "warning"
+# Warn on lines (in keys, values, comments) past 88 characters
+max_line_length            = 88
+# Warn on non‑standard bare keys (e.g. spaces or special chars)
+non_standard_key           = "warning"

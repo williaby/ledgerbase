@@ -1,76 +1,49 @@
-rules:
-    -   id: avoid-eval
-        pattern: eval(...)
-        message: "Avoid use of eval() – high risk of code injection."
-        severity: ERROR
-        metadata:
-            cwe: "CWE-95: Eval Injection"
-            owasp: "A03:2021 Injection"
-        languages: [ python ]
+# ==============================================================================
+# name: .semgrep.yml
+# description: Main Semgrep configuration - References registry rulesets only.
+#              Custom rules are defined in 'custom-rules.yml'.
+# category: ci
+# usage: Used by Nox/pre-commit. Run with: semgrep --config .semgrep.yml --config custom-rules.yml
+# behavior: Applies selected Semgrep registry rulesets (using 'p/' prefix).
+#           Intended to complement Ruff linting (esp. S rules).
+# last_modified: 2025-04-22
+# ==============================================================================
 
-    -   id: avoid-exec
-        pattern: exec(...)
-        message: "Avoid use of exec() – unsafe and hard to validate inputs."
-        severity: ERROR
-        metadata:
-            cwe: "CWE-78: OS Command Injection"
-            owasp: "A03:2021 Injection"
-        languages: [ python ]
+# ------------------------------------------------------------------------------
+# Section 1: Curated Registry Rulesets (Using 'p/' prefix)
+# ------------------------------------------------------------------------------
+# Leverages Semgrep-maintained rulesets identified in the original vetted config.
+# Redundant rulesets (like p/python.bandit) are commented out assuming
+# coverage from other tools like Ruff (S rules).
+include:
+  # 🐍 Python & Flask Security / Quality
+  - p/python.flask         # Flask specific security and best practices
+  # - p/python.bandit      # COMMENTED OUT: Assuming Ruff S rules provide sufficient Bandit coverage
+  - p/python.cwe-top-25    # Rules mapping to MITRE CWE Top 25
+  - p/python.security-audit # General Python security checks
+  - p/python.secure-defaults # Checks for insecure default settings
+  - p/r2c-best-practices   # General Python best practices from r2c (now Semgrep)
 
-    -   id: insecure-subprocess
-        pattern: subprocess.run(...)
-        message: "Verify inputs to subprocess.run – user data must be sanitized."
-        severity: WARNING
-        metadata:
-            cwe: "CWE-78"
-            owasp: "A03:2021"
-        languages: [ python ]
+  # 🔐 General Web Security Concepts
+  - p/owasp-top-ten      # Rules mapping to OWASP Top 10 vulnerabilities
+  - p/injection          # Focus on various injection types (SQLi, Command Injection, etc.)
+  - p/xss                # Focus on Cross-Site Scripting vulnerabilities
 
-    -   id: avoid-md5
-        pattern: hashlib.md5(...)
-        message: "Avoid MD5 – it is insecure and broken."
-        severity: WARNING
-        metadata:
-            cwe: "CWE-327: Use of Broken Cryptographic Algorithm"
-            owasp: "A02:2021 Cryptographic Failures"
-        languages: [ python ]
+  # 🔑 Secrets Detection
+  # Choose based on evaluation vs. TruffleHog/ggshield. p/secrets is broad.
+  - p/secrets            # General secrets detection patterns
+  # - p/gitleaks         # Gitleaks patterns (COMMENTED OUT: Potentially redundant w/ p/secrets + other tools)
 
-    -   id: yaml-load-without-loader
-        pattern: yaml.load(...)
-        message: "Avoid unsafe yaml.load – use yaml.safe_load instead."
-        severity: ERROR
-        metadata:
-            cwe: "CWE-502: Deserialization of Untrusted Data"
-            owasp: "A08:2021 Software and Data Integrity Failures"
-        languages: [ python ]
+  # ⚙️ Configuration Safety
+  - p/semgrep-misconfigurations # Checks for common misconfigurations
 
-    -   id: hardcoded-secrets
-        patterns:
-            -   pattern: $VAR = "..."
-            -   metavariable-pattern:
-                    metavariable: $VAR
-                    regex: (?i)(key|secret|token|password)
-        message: "Avoid hardcoded secrets – use environment variables or secret stores."
-        severity: ERROR
-        metadata:
-            cwe: "CWE-798: Use of Hard-coded Credentials"
-            owasp: "A07:2021 Identification and Authentication Failures"
-        languages: [ python ]
+  # 🐚 Shell script safety (if you check shell scripts)
+  - p/bash.shellcheck    # Integrates ShellCheck findings
 
-    -   id: raw-sql-query
-        pattern: cursor.execute(...)
-        message: "Ensure queries are parameterized – raw SQL may allow injection."
-        severity: ERROR
-        metadata:
-            cwe: "CWE-89: SQL Injection"
-            owasp: "A03:2021 Injection"
-        languages: [ python ]
+  # 🏗️ CI/CD & Semgrep Meta (Useful for rule development/maintenance)
+  - p/github-actions     # Security checks for GitHub Actions workflows
+  - p/semgrep-rule-ci    # Best practices for Semgrep rules themselves
+  - p/semgrep-rule-lints # Linting for Semgrep rules
 
-    -   id: pickle-load
-        pattern: pickle.load(...)
-        message: "Avoid pickle.load – can deserialize malicious input."
-        severity: ERROR
-        metadata:
-            cwe: "CWE-502"
-            owasp: "A08:2021"
-        languages: [ python ]
+# IMPORTANT: Custom rules are now in 'custom-rules.yml'
+# Run Semgrep with both configs: semgrep --config .semgrep.yml --config custom-rules.yml

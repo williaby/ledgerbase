@@ -1,22 +1,41 @@
 #!/bin/bash
 
 ##: name = encrypt_env.sh
-##: description = Encrypts the .env file into .env.enc using sops.
+##: description = Encrypts env.dev and env.prod files stored in ledgerbase_secure_env using sops.
+##: category = security
 ##: usage = ./encrypt_env.sh
-##: behavior = Uses sops to encrypt .env and stores the result in .env.enc.
+##: behavior = Encrypts dev and prod env files using GPG into .env.dev.sops.yaml and .env.prod.sops.yaml.
+##: inputs = ledgerbase_secure_env/.env.dev and ledgerbase_secure_env/.env.prod files
+##: outputs = .env.dev.sops.yaml and .env.prod.sops.yaml encrypted files
+##: dependencies = sops, gpg
+##: author = LedgerBase Team
+##: last_modified = 2023-11-15
+##: changelog = Initial version
 
 set -e
-sops -e .env > .env.enc
-
-ENV_FILE="ledgerbase_secure_env/.env.prod"
-ENCRYPTED_FILE=".env.prod.sops.yaml"
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 KEY_ID="9360A8293F1430EB3E88B99CB2C95364612BFFDF"
+-----END PGP PUBLIC KEY BLOCK-----
 
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "❌ $ENV_FILE not found."
-  exit 1
+SECURE_DIR="ledgerbase_secure_env"
+
+DEV_ENV="${SECURE_DIR}/.env.dev"
+PROD_ENV="${SECURE_DIR}/.env.prod"
+DEV_OUT=".env.dev.sops.yaml"
+PROD_OUT=".env.prod.sops.yaml"
+
+if [[ -f "$DEV_ENV" ]]; then
+  echo "🔐 Encrypting $DEV_ENV into $DEV_OUT ..."
+  sops --encrypt --pgp "$KEY_ID" "$DEV_ENV" > "$DEV_OUT"
+  echo "✅ $DEV_OUT written."
+else
+  echo "⚠️  $DEV_ENV not found. Skipping dev encryption."
 fi
 
-echo "🔐 Encrypting $ENV_FILE with GPG key: $KEY_ID ..."
-sops --encrypt --pgp "$KEY_ID" "$ENV_FILE" > "$ENCRYPTED_FILE"
-echo "✅ Encrypted file saved to $ENCRYPTED_FILE"
+if [[ -f "$PROD_ENV" ]]; then
+  echo "🔐 Encrypting $PROD_ENV into $PROD_OUT ..."
+  sops --encrypt --pgp "$KEY_ID" "$PROD_ENV" > "$PROD_OUT"
+  echo "✅ $PROD_OUT written."
+else
+  echo "⚠️  $PROD_ENV not found. Skipping prod encryption."
+fi

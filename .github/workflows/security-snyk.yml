@@ -1,12 +1,23 @@
-name: Security - Unified Snyk CI
+# name = security-snyk.yml
+# description = Unified Snyk security pipeline: Code, OSS & Container scans via Nox; artifacts via SARIF; fails on high/critical issues
+# category = security
+# usage = Trigger on push/main, pull_request/main, or workflow_dispatch to run all Snyk scans
+# behavior = Executes Nox sessions snyk_code, snyk_oss, snyk_container in parallel; uploads SARIF artifacts to GitHub Security tab
+# inputs = secrets: SNYK_TOKEN
+# outputs = snyk-code.sarif, snyk-oss.sarif, snyk-container.sarif artifacts
+# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e, actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47, nox, poetry, node
+# author = Byron Williams
+# last_modified = 2025-04-23
+# tags = security, snyk, ci
+
+name: Security – Unified Snyk CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+    branches: ["main"]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -15,161 +26,74 @@ permissions:
   security-events: write
 
 env:
-  JSON_FILE: snyk-results.json
-  SARIF_FILE: snyk-code.sarif
-  IAC_SARIF_FILE: snyk-iac.sarif
-  PR_FAILURE_LABEL: status:security-failed
+  PR_LABEL: status:security-failed
 
 jobs:
-  snyk-code:
-    name: Snyk Code Scan
+  snyk_scan:
+    name: Snyk Scan – ${{ matrix.target.name }}
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target:
+          - name: code
+            session: snyk_code
+            sarif: docs/reports/sarif/snyk-code.sarif
+          - name: oss
+            session: snyk_oss
+            sarif: docs/reports/sarif/snyk-oss.sarif
+          - name: container
+            session: snyk_container
+            sarif: docs/reports/sarif/snyk-container.sarif
+
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
+      - name: Harden the runner (Audit outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
-        with:
-          node-version: 20
-      - name: Set up Snyk CLI
-        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: Run Snyk Code scan and output SARIF
-        run: snyk code test --sarif > ${{ env.SARIF_FILE }}
-      - name: Upload Snyk Code SARIF
-        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
-        with:
-          sarif_file: ${{ env.SARIF_FILE }}
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-  snyk-oss:
-    name: Snyk Open Source (SCA) Scan
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
-
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
-        with:
-          node-version: 20
-      - uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
+      - name: Set up Python & Node
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
         with:
           python-version: "3.12"
-      -   name: Cache Poetry Dependencies
-          uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f # v3.4.3
-          with:
-              path: |
-                  ~/.cache/pypoetry
-                  ~/.cache/pip
-                  .venv
-              key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-              restore-keys: |
-                  ${{ runner.os }}-poetry-
-      - name: Install Python dependencies
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e
+        with:
+          node-version: "20"
+
+      - name: Cache Poetry & pip
+        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Cache npm
+        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install Nox & Poetry export plugin
         run: |
-          pip install poetry
-          poetry install --no-root
-      - name: Set up Snyk CLI
-        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: Snyk Open Source test (JSON for PR comments)
-        run: |
-          snyk test \
-            --all-projects \
-            --detection-depth=3 \
-            --json-file-output=${{ env.JSON_FILE }} \
-            || echo "Snyk scan completed with issues."
-      - name: Upload Snyk JSON results
-        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
-        with:
-          name: snyk-results
-          path: ${{ env.JSON_FILE }}
-      - name: Count vulnerabilities
-        id: scan
-        run: |
-          count=$(grep -c '"id"' "${{ env.JSON_FILE }}" || true)
-          echo "vulns=$count" >> "$GITHUB_OUTPUT"
-      - name: Comment on PR with Snyk findings
-        if: github.event_name == 'pull_request' && steps.scan.outputs.vulns != '0'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            const fs = require('fs');
-            let findings = 'No findings were generated.';
-            if (fs.existsSync('${{ env.JSON_FILE }}')) {
-              findings = fs.readFileSync('${{ env.JSON_FILE }}', 'utf8').trim();
-              if (findings.length > 6500) {
-                findings = findings.substring(0, 6400) + '\n...\n(Results truncated)';
-              }
-            }
-            const comment = `### 🔒 Snyk Security Audit Report\n\n\u0060\u0060\u0060json\n${findings}\n\u0060\u0060\u0060\nView full logs in the artifact attached above.`;
-            await github.rest.issues.createComment({
-              issue_number: context.payload.pull_request.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-      - name: Label PR on vulnerability findings
-        if: github.event_name == 'pull_request' && steps.scan.outputs.vulns != '0'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            await github.rest.issues.addLabels({
-              issue_number: context.payload.pull_request.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ['${{ env.PR_FAILURE_LABEL }}']
-            });
+          python -m pip install --upgrade pip
+          pip install nox poetry poetry-plugin-export
 
-  snyk-iac:
-    name: Snyk IaC Scan
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-        with:
-          egress-policy: audit
+      - name: Run ${{ matrix.target.name }} via Nox
+        run: nox -s ${{ matrix.target.session }}
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+      - name: Upload SARIF report
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
         with:
-          node-version: 20
-      - name: Set up Snyk CLI
-        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: Run IaC scan and output SARIF
-        run: snyk iac test --sarif > ${{ env.IAC_SARIF_FILE }} || echo "IaC scan completed with issues."
-      - name: Upload IaC SARIF
-        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
-        with:
-          sarif_file: ${{ env.IAC_SARIF_FILE }}
+          name: snyk-${{ matrix.target.name }}-sarif
+          path: ${{ matrix.target.sarif }}
+          retention-days: 2
 
-  snyk-container:
-    name: Snyk Container Scan
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+      - name: Upload SARIF → GitHub Security tab
+        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
         with:
-          egress-policy: audit
-
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Build Docker image
-        run: docker build -t ledgerbase:latest .
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
-        with:
-          node-version: 20
-      - name: Set up Snyk CLI
-        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: Monitor container image
-        run: snyk container monitor ledgerbase:latest --file=Dockerfile
+          sarif_file: ${{ matrix.target.sarif }}

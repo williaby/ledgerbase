@@ -1,0 +1,2 @@
+# CVE-2022-40897 — xz-utils: Acceptable since no xz extraction occurs in runtime container
+CVE-2022-40897

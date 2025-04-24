@@ -11,14 +11,21 @@ ENV PATH="$POETRY_HOME/bin:$PATH"
 # Set working directory
 WORKDIR /app
 
+# Create non-root user 'appuser'
+RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
+
 # Copy only necessary files for installing deps
 COPY pyproject.toml poetry.lock ./
 
 # Install dependencies without dev tools
 RUN poetry install --no-dev --no-interaction
 
-# Copy actual app code
+# Copy actual app code and change ownership
 COPY . .
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Run app
 CMD ["poetry", "run", "python", "-m", "app"]

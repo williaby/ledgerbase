@@ -1,65 +1,47 @@
-name: SBOM (CycloneDX)
+# .github/workflows/sbom.yml
+name: Security – SBOM
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 2 * * *'  # Run daily at 2 AM UTC
+  workflow_dispatch: {}
 
 permissions:
-    contents: read
-    security-events: write     # for SARIF upload to Security tab
-    actions: read
+  contents: read
+  security-events: write
 
 jobs:
-    sbom:
-        uses: .github/workflows/templates/nox-template-matrix.yml
+  sbom:
+    name: Generate & Validate SBOM
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-            session: "sbom"
+          egress-policy: audit
 
-    upload-sarif:
-        name: Upload SARIF to GitHub Security tab
-        needs: sbom
-        runs-on: ubuntu-latest
-        if: always()
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-              with:
-                egress-policy: audit
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-            -   name: Checkout code
-                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install Trivy & wget
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
 
-            -   name: Download SARIF from runner
-                run: |
-                    if [ ! -f sbom.sarif ]; then echo "Missing SARIF file"; exit 1; fi
+      - name: Install Nox
+        run: python -m pip install --upgrade pip nox
 
-            -   name: Upload SARIF to GitHub Security tab
-                uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
-                with:
-                    sarif_file: sbom.sarif
+      - name: Run SBOM Validate via Nox
+        run: nox -s sbom_validate
 
-    upload-json:
-        name: Archive CycloneDX JSON
-        needs: sbom
-        runs-on: ubuntu-latest
-        if: always()
-
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-              with:
-                egress-policy: audit
-
-            -   name: Checkout code
-                uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-            -   name: Upload CycloneDX JSON artifact
-                uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
-                with:
-                    name: sbom-cyclonedx-json
-                    path: sbom.json
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom-cyclonedx
+          path: docs/generated/sbom/sbom.cdx.json
+          retention-days: 7
