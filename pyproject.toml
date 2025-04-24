@@ -104,6 +104,9 @@ ignore = [
   "D203",   # 1 blank line required before class docstring
   "D213",   # Multi-line docstring summary should start at the second line
   "D205",   # Docstring under triple quotes should be on the same line
+  "D400",   # First line of docstringshould end with a period
+  "D401",   # First line of docstringshould be in imperative mood
+  "D415",   # First line of docstring should not be empty
   "E265",   # Block comment should start with `# ` — suppressed due to metadata header usage
   "S", # Suppress all security-related checks as Bandit run separately
 ]
