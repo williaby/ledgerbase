@@ -159,11 +159,18 @@ repos:
         types: [file]
         files: ^\.env\.prod$
 
-      - id: validate-file-headers
-        name: Validate file header metadata
-        entry: python scripts/validate_file_headers.py
+      # Manual conversion hook (won't run automatically)
+      - id: convert-headers
+        name: Convert legacy headers to YAML front-matter
+        entry: scripts/convert_headers.py
+        language: script
+        files: ^docs/.*\.md$
+        stages: [manual]
+
+      # Always-validate hook (runs on commit)
+      - id: check-front-matter
+        name: Validate YAML front-matter
+        entry: python scripts/check_front_matter.py
         language: python
         additional_dependencies:
-          - pydantic
-          - pathspec
-        files: '\\.(py|sh|ya?ml|toml)$'
+          - pyyaml

@@ -20,48 +20,51 @@ readme = "README.md"
 packages = [{ include = "ledgerbase", from = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-Flask = "^3.0.3"
+python = ">=3.11,<4.0"
+Flask = "^3.1.0"
 Flask-SQLAlchemy = "^3.1.1"
-cryptography = "^44.0.1"
-python-dotenv = "^1.0.1"
+cryptography = "^44.0.2"
+python-dotenv = "^1.1.0"
 sentry-sdk = { extras = ["flask"], version = "^2.25.1" }
 marshmallow = "^3.21.2"
 Flask-Limiter = "^3.5.0"
 gunicorn = "^23.0.0"
 psycopg = { version = "^3.1.18", extras = ["binary"] }
 python-dateutil = "^2.9.0.post0"
-plaid-python = "^15.3.0"
+plaid-python = "^30.0.0"
 PyYAML = "^6.0.1"
-jinja2 = ">=3.1.4,<3.2.0"
+jinja2 = ">=3.1.6,<3.2.0"
 nox = "^2025.2.9"
 requests = "^2.31.0"
 semgrep = "^1.119.0"
 
 [tool.poetry.group.dev.dependencies]
 # Core testing & linting
-pytest = "^8.2.0"
-pytest-cov = "^4.1.0"
-ruff = "^0.11.5"
-mypy = "^1.9.0"
-pre-commit = "^3.7.0"
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+ruff = "^0.11.7"
+mypy = "^1.15.0"
+pre-commit = "^4.2.0"
 sqlfluff = "^3.4.0"
 nox = "^2025.2.9"
 
 # Security scanning tools
-bandit = "^1.7.8"
-safety = "^3.2.0"
+bandit = "^1.8.3"
+safety = "^3.4.0"
 
 # Security report formatters
 bandit-sarif-formatter = "^1.1.1"
 
 # Documentation tools
-sphinx = "^7.2.6"
-sphinx-rtd-theme = "^1.3.0"
+sphinx = "^8.2.0"
 sphinxcontrib-plantuml = "^0.25"
 readthedocs-sphinx-search = "^0.3.2"
 sphinxcontrib-spelling = "^7.2"
 sphinx-lint = "^0.8"
+myst-parser = ">=4.0.1"
+furo = ">=2024.8.6"
+sphinx-copybutton = ">=0.5.2"
+sphinx-autodoc-typehints = ">=3.1.0"
 
 # Other dev utilities
 codespell = "^2.1"
@@ -72,9 +75,8 @@ vulture = "^2.11"
 yamllint = "^1.35.1"
 types-requests = "^2.31.0.10"
 pathspec = "^0.12.1"
-pydantic = "^2.11.3"
+pydantic = "^2.9.0,<2.10.0"
 poetry-plugin-export = "^1.8.0"
-
 
 [tool.ruff]
 # core formatter settings—no linter config here any more
