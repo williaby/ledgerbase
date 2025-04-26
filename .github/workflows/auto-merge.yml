@@ -1,16 +1,20 @@
-# .github/workflows/auto-merge.yml
-# name = auto-merge.yml  # noqa: E265
-# description = Automatically approve and merge renovate pull requests when labeled
-# category = ci  # noqa: E265
-# usage = Trigger on renovate pull request events (opened, labeled, synchronize)
-# behavior = Approves and auto-merges PRs created by renovate[bot]
-# inputs = GitHub pull_request event payload; secrets: GITHUB_TOKEN  # noqa: E265
-# outputs = PR merged status  # noqa: E265
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, gh CLI  # noqa: E265
-# author = Byron Williams  # noqa: E265
-# last_modified = 2025-04-17  # noqa: E265
-# tags = automation, dependabot  # noqa: E265
-# changelog = Pinned runner hardening action SHA; added full metadata header  # noqa: E265
+---
+# Front-Matter for GitHub Workflow
+
+title: "Renovate Auto-Merge"
+name: "auto-merge.yml"
+description: "Automatically approve and merge renovate pull requests when labeled"
+category: ci
+usage: "Trigger on renovate pull request events (opened, labeled, synchronize)"
+behavior: "Approves and auto-merges PRs created by renovate[bot]"
+inputs: "GitHub pull_request event payload; secrets: GITHUB_TOKEN" # pragma: allowlist secret
+outputs: "PR merged status"
+dependencies: "step-security/harden-runner@v2.12, gh CLI"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Converted to front-matter format according to annotation spec"
+tags: [automation, dependabot]
+---
 
 name: Renovate Auto-Merge
 
@@ -28,7 +32,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+              uses: step-security/harden-runner@v2.12
               with:
                   egress-policy: audit
 
