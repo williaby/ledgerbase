@@ -258,6 +258,22 @@ filecache = ["filelock (>=3.8.0)"]
 redis = ["redis (>=2.10.5)"]
 
 [[package]]
+name = "cachetools"
+version = "5.3.3"
+description = "Extensible memoizing collections and decorators"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "cachetools-5.3.3-py3-none-any.whl", hash = "sha256:626b3ce026e59487186ded0f82da5f078086eac21d69f9f5e18a486dc5c19a70"},
+]
+
+[package.source]
+type = "legacy"
+url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
+reference = "assured-oss"
+
+[[package]]
 name = "certifi"
 version = "2025.1.31"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -1226,6 +1242,34 @@ url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
 reference = "assured-oss"
 
 [[package]]
+name = "google-auth"
+version = "2.28.2"
+description = "Google Authentication Library"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "google_auth-2.28.2-py2.py3-none-any.whl", hash = "sha256:fd0fd5968572e920b15dc32ca25b720c788b030682a3c524aca8993c470cfc4d"},
+]
+
+[package.dependencies]
+cachetools = ">=2.0.0,<6.0"
+pyasn1-modules = ">=0.2.1"
+rsa = ">=3.1.4,<5"
+
+[package.extras]
+aiohttp = ["aiohttp (>=3.6.2,<4.0.0.dev0)", "requests (>=2.20.0,<3.0.0.dev0)"]
+enterprise-cert = ["cryptography (==36.0.2)", "pyopenssl (==22.0.0)"]
+pyopenssl = ["cryptography (>=38.0.3)", "pyopenssl (>=20.0.0)"]
+reauth = ["pyu2f (>=0.1.5)"]
+requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
+
+[package.source]
+type = "legacy"
+url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
+reference = "assured-oss"
+
+[[package]]
 name = "googleapis-common-protos"
 version = "1.70.0"
 description = "Common protobufs used in Google APIs"
@@ -1530,7 +1574,7 @@ version = "3.4.0"
 description = "Utility functions for Python class constructs"
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "jaraco.classes-3.4.0-py3-none-any.whl", hash = "sha256:f662826b6bed8cace05e7ff873ce0f9283b5c924470fe664fff1c2f00f581790"},
     {file = "jaraco.classes-3.4.0.tar.gz", hash = "sha256:47a024b51d0239c0dd8c8540c6c7f484be3b8fcf0b2d85c13825780d3b3f3acd"},
@@ -1549,7 +1593,7 @@ version = "0.9.0"
 description = "Low-level, pure Python DBus protocol wrapper."
 optional = false
 python-versions = ">=3.7"
-groups = ["dev"]
+groups = ["main", "dev"]
 markers = "sys_platform == \"linux\""
 files = [
     {file = "jeepney-0.9.0-py3-none-any.whl", hash = "sha256:97e5714520c16fc0a45695e5365a2e11b81ea79bba796e26f9f1d178cb182683"},
@@ -1692,7 +1736,7 @@ version = "24.3.1"
 description = "Store and access your passwords safely."
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "keyring-24.3.1-py3-none-any.whl", hash = "sha256:2b48084822080b37cd931f703b0956083d7184b313e1a6b10d9f586c143a1445"},
 ]
@@ -1713,6 +1757,28 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-ena
 type = "legacy"
 url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
 reference = "assured-oss"
+
+[[package]]
+name = "keyrings-google-artifactregistry-auth"
+version = "1.1.2"
+description = "Keyring backend for Google Auth tokens"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "keyrings.google-artifactregistry-auth-1.1.2.tar.gz", hash = "sha256:bd6abb72740d2dfeb4a5c03c3b105c6f7dba169caa29dee3959694f1f02c77de"},
+    {file = "keyrings.google_artifactregistry_auth-1.1.2-py3-none-any.whl", hash = "sha256:e3f18b50fa945c786593014dc225810d191671d4f5f8e12d9259e39bad3605a3"},
+]
+
+[package.dependencies]
+google-auth = "*"
+keyring = "*"
+pluggy = "*"
+requests = "*"
+
+[package.extras]
+testing = ["pytest (>=3.5,!=3.7.3)", "pytest-black (>=0.3.7) ; platform_python_implementation != \"PyPy\"", "pytest-checkdocs (>=1.2.3)", "pytest-cov", "pytest-flake8", "pytest-mypy ; platform_python_implementation != \"PyPy\""]
+tox = ["tox"]
 
 [[package]]
 name = "kiwisolver"
@@ -2195,7 +2261,7 @@ version = "10.7.0"
 description = "More routines for operating on iterables, beyond itertools"
 optional = false
 python-versions = ">=3.9"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "more_itertools-10.7.0-py3-none-any.whl", hash = "sha256:d43980384673cb07d2f7d2d918c616b30c659c089ee23953f601d6609c67510e"},
     {file = "more_itertools-10.7.0.tar.gz", hash = "sha256:9fddd5403be01a94b204faadcff459ec3568cf110265d3c54323e1e866ad29d3"},
@@ -2695,15 +2761,19 @@ reference = "assured-oss"
 
 [[package]]
 name = "packaging"
-version = "25.0"
+version = "23.2"
 description = "Core utilities for Python packages"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 groups = ["main", "dev"]
 files = [
-    {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
-    {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
+    {file = "packaging-23.2-py3-none-any.whl", hash = "sha256:7ff3bcae90b1022785b53006ac9dcb1262885de63627f84a3fd54af8952e68dd"},
 ]
+
+[package.source]
+type = "legacy"
+url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
+reference = "assured-oss"
 
 [[package]]
 name = "pathspec"
@@ -2939,7 +3009,7 @@ version = "1.5.0"
 description = "plugin and hook calling mechanisms for python"
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "pluggy-1.5.0-py3-none-any.whl", hash = "sha256:d5783d8a2575b1d2f22c03e92b0a2e18892b45eadc5a8e41625767aa5e6bcc52"},
 ]
@@ -3245,6 +3315,41 @@ groups = ["dev"]
 files = [
     {file = "ptyprocess-0.7.0-py2.py3-none-any.whl", hash = "sha256:353d7f924e11f9f479dfe94510d3c0af2a3af691075f697e0804c15021f2fce6"},
 ]
+
+[package.source]
+type = "legacy"
+url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
+reference = "assured-oss"
+
+[[package]]
+name = "pyasn1"
+version = "0.4.8"
+description = "ASN.1 types and codecs"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pyasn1-0.4.8-py2.py3-none-any.whl", hash = "sha256:834b20fe6493fd31bafa82f4068860cc65f4295045f6e3564fedb3c9b1c76840"},
+]
+
+[package.source]
+type = "legacy"
+url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
+reference = "assured-oss"
+
+[[package]]
+name = "pyasn1-modules"
+version = "0.3.0"
+description = "A collection of ASN.1-based protocols modules"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
+groups = ["main"]
+files = [
+    {file = "pyasn1_modules-0.3.0-py2.py3-none-any.whl", hash = "sha256:36fcc4bd596203aa3eba9f5266f78568e7a1d48cb795c324015a07f5b22e44e7"},
+]
+
+[package.dependencies]
+pyasn1 = ">=0.4.6,<0.6.0"
 
 [package.source]
 type = "legacy"
@@ -3671,7 +3776,7 @@ version = "0.2.3"
 description = "A (partial) reimplementation of pywin32 using ctypes/cffi"
 optional = false
 python-versions = ">=3.6"
-groups = ["dev"]
+groups = ["main", "dev"]
 markers = "sys_platform == \"win32\""
 files = [
     {file = "pywin32-ctypes-0.2.3.tar.gz", hash = "sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755"},
@@ -4217,6 +4322,25 @@ files = [
 ]
 
 [[package]]
+name = "rsa"
+version = "4.7.2"
+description = "Pure-Python RSA implementation"
+optional = false
+python-versions = ">=3.5, <4"
+groups = ["main"]
+files = [
+    {file = "rsa-4.7.2-py3-none-any.whl", hash = "sha256:b3abfdf52254bd53b297aedd390e844c7b0cf5c076206016a9667eb1cdff7f08"},
+]
+
+[package.dependencies]
+pyasn1 = ">=0.1.3"
+
+[package.source]
+type = "legacy"
+url = "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
+reference = "assured-oss"
+
+[[package]]
 name = "ruamel-yaml"
 version = "0.18.10"
 description = "ruamel.yaml is a YAML parser/emitter that supports roundtrip preservation of comments, seq/map flow style, and map key order"
@@ -4418,7 +4542,7 @@ version = "3.3.3"
 description = "Python bindings to FreeDesktop.org Secret Service API"
 optional = false
 python-versions = ">=3.6"
-groups = ["dev"]
+groups = ["main", "dev"]
 markers = "sys_platform == \"linux\""
 files = [
     {file = "SecretStorage-3.3.3-py3-none-any.whl", hash = "sha256:7ef3a3c14fd6975684be05cf30cb13cc17936814b3bd02664b6ab8378aaf0c5b"},
@@ -5507,4 +5631,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "610114e2b63f08dd8a5db45b35cbea1a8abe8e868f7ac481ddab1319124fc004"
+content-hash = "97a49c359afb27e6a9c9d6b836ccaa7bfc0c3a53967a169be0f4619213569426"
