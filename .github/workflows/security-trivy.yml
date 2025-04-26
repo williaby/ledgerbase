@@ -1,104 +1,131 @@
+---
+# Front-Matter for GitHub Workflow
+title: "Trivy Security Scan"
+name: "security-trivy.yml"
+description: >
+  Performs comprehensive security scanning using Trivy to identify vulnerabilities in container images,
+  filesystem, infrastructure as code, and secrets.
+category: security
+usage: "Triggered on push to main and pull requests"
+behavior: "Runs Trivy vulnerability scan on Docker image, filesystem, IaC, and secrets; reports findings in SARIF format"
+inputs: "Source code, Docker image"
+outputs: "SARIF reports, JSON reports, PR labels for security issues"
+dependencies: "Trivy, Docker, GitHub Actions"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Updated to conform to annotation spec format"
+tags: [security, trivy, container, vulnerability, scanning]
+---
+
 name: Security - Trivy
 
 on:
-    push:
-        branches: ["main"]
-    pull_request:
-        branches: ["main"]
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 permissions:
-    contents: read
-    security-events: write
-    pull-requests: write
+  contents: read
+  security-events: write
+  pull-requests: write
 
 jobs:
-    trivy:
-        name: Run Trivy vulnerability scan (Image, FS, IaC, Secrets)
-        runs-on: ubuntu-22.04
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@v2.11.1
-              with:
-                  egress-policy: audit
+  prepare:
+    name: Prepare Poetry & Assured OSS
+    uses: ./.github/workflows/templates/prepare-poetry.yml
+    with:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    secrets:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
-            - name: Install dependencies
-              run: |
-                  sudo apt-get update && sudo apt-get install -y jq curl
+  trivy:
+    name: Run Trivy vulnerability scan (Image, FS, IaC, Secrets)
+    needs: prepare
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Checkout repository
-              uses: actions/checkout@v4
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v2
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2.12.0
+        with:
+          egress-policy: audit
 
-            - name: Build Docker image with commit SHA tag
-              run: docker build -t ledgerbase:${{ github.sha }} .
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq curl
 
-            - name: Install Trivy CLI
-              run: |
-                  curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-                  trivy --version
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-            - name: Run Trivy via Nox
-              run: nox -s trivy
+      - name: Build Docker image with commit SHA tag
+        run: docker build -t ledgerbase:${{ github.sha }} .
 
-            - name: Validate outputs
-              run: |
-                  test -f docs/reports/sarif/trivy-results.sarif || { echo "SARIF output not found"; exit 1; }
-                  test -f docs/reports/json/trivy-results.json || { echo "JSON output not found"; exit 1; }
+      - name: Install Trivy CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+          trivy --version
 
-            - name: Count HIGH/CRITICAL issues in SARIF
-              id: count
-              run: |
-                  count=$(jq '[.runs[].results[] | select(.level == "error" or .level == "warning")] | length' trivy-results.sarif 2>/dev/null || echo "0")
-                  echo "Total HIGH/CRITICAL issues: $count"
-                  echo "vulns=$count" >> $GITHUB_OUTPUT
+      - name: Run Trivy via Nox
+        run: poetry run nox -s trivy
 
-            - name: Upload SARIF to GitHub Security tab
-              uses: github/codeql-action/upload-sarif@v3
-              with:
-                  sarif_file: trivy-results.sarif
+      - name: Validate outputs
+        run: |
+          test -f docs/reports/sarif/trivy-results.sarif || { echo "SARIF output not found"; exit 1; }
+          test -f docs/reports/json/trivy-results.json || { echo "JSON output not found"; exit 1; }
 
-            - name: Upload JSON artifact (includes enriched metadata)
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: trivy-json
-                  path: trivy-results.json
+      - name: Count HIGH/CRITICAL issues in SARIF
+        id: count
+        run: |
+          count=$(jq '[.runs[].results[] | select(.level=="error" or .level=="warning")] | length' docs/reports/sarif/trivy-results.sarif 2>/dev/null || echo 0)
+          echo "vulns=$count" >> $GITHUB_OUTPUT
 
-            - name: Upload FS/IaC/Secrets scan results
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: trivy-fs-scan
-                  path: trivy-fs
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: docs/reports/sarif/trivy-results.sarif
 
-            - name: Fail job if high-severity vulnerabilities found
-              if: steps.count.outputs.vulns != '0'
-              run: |
-                  echo "::error::Trivy found ${{ steps.count.outputs.vulns }} HIGH or CRITICAL vulnerabilities."
-                  exit 1
+      - name: Upload JSON artifact (includes enriched metadata)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-json
+          path: docs/reports/json/trivy-results.json
 
-            - name: Label PR if Trivy issues found
-              if: github.event_name == 'pull_request' && steps.count.outputs.vulns != '0'
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      const label = 'security:trivy';
-                      const pr = context.payload.pull_request;
-                      if (!pr || !pr.number) {
-                        console.log("No pull request context or PR number. Skipping label.");
-                        return;
-                      }
-                      await github.rest.issues.addLabels({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: pr.number,
-                        labels: [label],
-                      });
+      - name: Upload FS/IaC/Secrets scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs
+          path: docs/reports/fs
 
-            - name: Cleanup temporary files
-              if: always()
-              run: |
-                  rm -f trivy-results.sarif trivy-results.json
-                  rm -rf trivy-fs
+      - name: Fail job if high-severity vulnerabilities found
+        if: steps.count.outputs.vulns != '0'
+        run: |
+          echo "::error::Trivy found ${{ steps.count.outputs.vulns }} HIGH or CRITICAL vulnerabilities."
+          exit 1
+
+      - name: Label PR if Trivy issues found
+        if: github.event_name == 'pull_request' && steps.count.outputs.vulns != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr || !pr.number) return;
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: ['security:trivy']
+            });
+
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          rm -f docs/reports/sarif/trivy-results.sarif docs/reports/json/trivy-results.json
+          rm -rf docs/reports/fs
