@@ -1,16 +1,20 @@
-# .github/workflows/pre-commit.yml
-# name = pre-commit.yml  # noqa: E265
-# description = Runs pre-commit hooks via Nox session to enforce code standards
-# category = ci  # noqa: E265
-# usage = Trigger on push/PR to main and develop, or manual dispatch, weekly
-# behavior = Executes Nox session "pre-commit"; blocks merges if hooks fail
-# inputs = triggers: push(main,develop), pull_request(main,develop), workflow_dispatch, schedule; no secrets  # noqa: E265
-# outputs = Pre-commit check results  # noqa: E265
-# dependencies = ./.github/workflows/templates/nox-template.yml  # noqa: E265
-# author = Byron Williams  # noqa: E265
-# last_modified = 2025-04-17  # noqa: E265
-# tags = ci, lint, pre-commit  # noqa: E265
-# changelog = Extended triggers to develop; added schedule; pinned metadata header  # noqa: E265
+---
+# Front-Matter for GitHub Workflow
+title: "Pre-Commit Workflow"
+name: "pre-commit.yml"
+description: >
+  Runs pre-commit hooks via Nox session to enforce code standards
+category: workflow
+usage: "Trigger on push/PR to main and develop, or manual dispatch, weekly"
+behavior: "Executes Nox session \"pre-commit\"; blocks merges if hooks fail"
+inputs: "triggers: push(main,develop), pull_request(main,develop), workflow_dispatch, schedule; no secrets"
+outputs: "Pre-commit check results"
+dependencies: "./.github/workflows/templates/nox-template.yml"
+author: "Byron Williams"
+last_modified: "2025-04-17"
+changelog: "Extended triggers to develop; added schedule; pinned metadata header"
+tags: [workflow, ci, lint, pre-commit]
+---
 
 name: Pre-Commit
 
