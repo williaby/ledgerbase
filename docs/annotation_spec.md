@@ -25,6 +25,7 @@ This specification defines a unified approach to file metadata and docstrings, u
 ## Part 1: YAML Front‑Matter Metadata (Mandatory)
 
 All files **MUST** begin with a YAML block enclosed by `---` on the first lines. This block declares metadata consumed by documentation and validation tools.
+Python files **MUST** have the front-matter embedded in the module docstring.
 
 ### 1.1 Required Fields
 
