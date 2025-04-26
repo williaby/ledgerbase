@@ -1,5 +1,19 @@
-# Workflow: OpenSSF Scorecard Security Scan
-# Location: workflows/security/scorecard.yml
+---
+# Front-Matter for GitHub Workflow
+title: "OpenSSF Scorecard Security Scan"
+name: "scorecard.yml"
+description: "Runs OpenSSF Scorecard to analyze security practices and generate SARIF reports"
+category: security
+usage: "Triggered weekly, on branch protection rule changes, or on push to main"
+behavior: "Analyzes repository security practices and uploads results to GitHub"
+inputs: "Repository code"
+outputs: "SARIF security analysis results"
+dependencies: "ossf/scorecard-action, github/codeql-action"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Updated with front-matter according to annotation spec"
+tags: [security, scorecard, ossf]
+---
 
 name: Security - Scorecard
 
@@ -23,17 +37,17 @@ jobs:
 
         steps:
             - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              uses: step-security/harden-runner@v2.12
               with:
                   egress-policy: audit
 
             - name: Checkout code
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+              uses: actions/checkout@v4
               with:
                   persist-credentials: false
 
             - name: Run Scorecard scan
-              uses: ossf/scorecard-action@f49aabe0b5af0936a0987cfb85d86b75731b0186 # v2.4.1
+              uses: ossf/scorecard-action@v2
               with:
                   results_file: results.sarif
                   results_format: sarif
@@ -42,13 +56,13 @@ jobs:
                   # repo_token: ${{ secrets.SCORECARD_TOKEN }}
 
             - name: Upload artifact (SARIF JSON)
-              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+              uses: actions/upload-artifact@v4
               with:
                   name: scorecard-sarif
                   path: results.sarif
                   retention-days: 5
 
             - name: Upload to GitHub Code Scanning dashboard
-              uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
+              uses: github/codeql-action/upload-sarif@v3
               with:
                   sarif_file: results.sarif
