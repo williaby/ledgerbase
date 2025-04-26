@@ -14,7 +14,7 @@
 default_language_version:
   python: python3.11
 
-default_stages: [commit]
+default_stages: [pre-commit]
 
 exclude: |
   ^(
@@ -101,7 +101,7 @@ repos:
         name: pip-audit (project‑installed)
         entry: poetry run pip-audit
         language: system
-        stages: [push] # Remember the warning: pre-commit migrate-config suggested
+        stages: [pre-push] # Remember the warning: pre-commit migrate-config suggested
         pass_filenames: false
 
   # ┌───────────────────────────────────────────────────┐
@@ -174,3 +174,10 @@ repos:
         language: python
         additional_dependencies:
           - pyyaml
+
+      # Forbid committing any decrypted JSON files
+      - id: forbid-plain-json
+        name: Forbid decrypted JSON commits
+        entry: bash -c 'echo "❌ Decrypted JSON files (.plain.json) must not be committed." && exit 1'
+        language: system
+        files: \.plain\.json$
