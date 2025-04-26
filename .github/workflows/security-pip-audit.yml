@@ -1,152 +1,163 @@
-# name = security-pip-audit.yml
-# description = Security vulnerability scan using pip-audit; generates JSON & SARIF; comments PRs with high/critical findings
-# category = security
-# usage = Trigger weekly on Sundays at 02:00 UTC or on push/main or PR to run pip‑audit scan
-# behavior = Executes pip‑audit; unconditionally uploads pip‑audit-results.json & pip‑audit-results.sarif; comments on PRs for any high/critical issues found
-# inputs = triggers: schedule, push(main), pull_request(main), workflow_dispatch; secrets: none
-# outputs = pip‑audit-results.json, pip‑audit-results.sarif artifacts; PR comments
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608, actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa, actions/upload-artifact@v4, actions/download-artifact@v3, github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2c, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea, pip packages: pip-audit, pip-audit-sarif, jq
-# author = Byron Williams
-# last_modified = 2025-04-18
-# tags = security, vulnerability, compliance
-# changelog = Changed schedule to weekly; split reporting vs notification into matrix jobs; upgraded upload/download-artifact actions; unconditional artifact uploads
+---
+# Front-Matter for GitHub Workflow
+title: "pip-audit Security Scan"
+name: "security-pip-audit.yml"
+description: >
+  Performs security analysis on Python dependencies using pip-audit to identify known vulnerabilities.
+category: security
+usage: "Triggered on push to main, pull requests, and weekly on Sunday at 02:00 UTC"
+behavior: "Runs pip-audit scan on main and dev requirements, generates SARIF reports, and comments on PRs with findings"
+inputs: "requirements.txt, dev-requirements.txt"
+outputs: "JSON and SARIF reports, PR comments, and security labels"
+dependencies: "pip-audit, jq, sarif-tools, GitHub Actions"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Updated to conform to annotation spec format"
+tags: [security, pip-audit, dependencies, vulnerabilities]
+---
 
 name: Security – pip-audit
 
 on:
-    schedule:
-        - cron: "0 2 * * 0" # Weekly on Sunday at 02:00 UTC
-    push:
-        branches: ["main"]
-    pull_request:
-        branches: ["main"]
-    workflow_dispatch: {}
+  schedule:
+    - cron: "0 2 * * 0"  # weekly Sunday 02:00 UTC
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch: {}
 
 permissions:
-    contents: read
-    security-events: write
-    pull-requests: write
-    issues: write
+  contents: read
+  security-events: write
+  pull-requests: write
+  issues: write
 
 jobs:
-    pip_audit_report:
-        name: Generate pip-audit Report – ${{ matrix.target.name }}
-        runs-on: ubuntu-22.04
+  prepare:
+    uses: ./.github/workflows/templates/prepare-poetry.yml
+    with:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    secrets:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
-        strategy:
-            matrix:
-                target:
-                    - name: main
-                      req: requirements.txt
-                    - name: dev
-                      req: dev-requirements.txt
+  pip_audit_report:
+    name: Generate pip-audit Report – ${{ matrix.target.name }}
+    needs: prepare
+    runs-on: ubuntu-22.04
 
-        steps:
-            - name: Harden the runner (Audit outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-              with:
-                  egress-policy: audit
+    strategy:
+      matrix:
+        target:
+          - name: main
+            req: requirements.txt
+          - name: dev
+            req: dev-requirements.txt
 
-            - name: Checkout repository
-              uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Set up Python
-              uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa
-              with:
-                  python-version: "3.12"
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
 
-            - name: Install pip-audit & tools
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install pip-audit pip-audit-sarif jq
+      - name: Install jq for JSON parsing
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
 
-            - name: Run pip-audit scan (JSON)
-              run: pip-audit --requirement "${{ matrix.target.req }}" --output "${{ matrix.target.name }}.json" --format json
+      - name: Run pip-audit scan (JSON)
+        run: |
+          poetry run pip-audit \
+            --requirement "${{ matrix.target.req }}" \
+            --format json \
+            --output "${{ matrix.target.name }}.json"
 
-            - name: Convert JSON → SARIF
-              run: pip-audit-sarif --input "${{ matrix.target.name }}.json" --output "${{ matrix.target.name }}.sarif
+      - name: Convert JSON → SARIF
+        run: |
+          poetry run sarif summary "${{ matrix.target.name }}.json" --format sarif \
+            > "${{ matrix.target.name }}.sarif"
 
-            - name: Upload JSON report
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: pip-audit-${{ matrix.target.name }}-json
-                  path: ${{ matrix.target.name }}.json
+      - name: Upload JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-${{ matrix.target.name }}-json
+          path: ${{ matrix.target.name }}.json
 
-            - name: Upload SARIF report
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: pip-audit-${{ matrix.target.name }}-sarif
-                  path: ${{ matrix.target.name }}.sarif
-                  retention-days: 2
+      - name: Upload SARIF report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-${{ matrix.target.name }}-sarif
+          path: ${{ matrix.target.name }}.sarif
+          retention-days: 2
 
-            - name: Upload SARIF to Security tab
-              if: always()
-              uses: github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2c
-              with:
-                  sarif_file: ${{ matrix.target.name }}.sarif
+      - name: Upload SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ matrix.target.name }}.sarif
 
-    comment-vulnerabilities:
-        name: Comment on PR with pip-audit Findings – ${{ matrix.target.name }}
-        needs: pip_audit_report
-        if: github.event_name == 'pull_request'
-        runs-on: ubuntu-latest
+  comment-vulnerabilities:
+    name: Comment on PR with pip-audit Findings – ${{ matrix.target.name }}
+    needs: pip_audit_report
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
 
-        strategy:
-            matrix:
-                target:
-                    - name: main
-                      req: requirements.txt
-                    - name: dev
-                      req: dev-requirements.txt
+    strategy:
+      matrix:
+        target:
+          - name: main
+            req: requirements.txt
+          - name: dev
+            req: dev-requirements.txt
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Download JSON report
-              uses: actions/download-artifact@v3
-              with:
-                  name: pip-audit-${{ matrix.target.name }}-json
-                  path: ./reports
+      - name: Download JSON report
+        uses: actions/download-artifact@v4
+        with:
+          name: pip-audit-${{ matrix.target.name }}-json
+          path: ./reports
 
-            - id: count
-              name: Count high/critical vulnerabilities
-              run: |
-                  high=$(jq '[.[] | select(.vulns[]?.severity=="high" or .vulns[]?.severity=="critical")] | length' reports/${{ matrix.target.name }}.json)
-                  echo "vulns=$high" >> $GITHUB_OUTPUT
+      - id: count
+        name: Count high/critical vulnerabilities
+        run: |
+          high=$(jq '[.[] | select((.vulns[]?.severity == "high") or (.vulns[]?.severity == "critical"))] | length' reports/${{ matrix.target.name }}.json)
+          echo "vulns=$high" >> $GITHUB_OUTPUT
 
-            - name: Comment PR if issues found
-              if: steps.count.outputs.vulns != '0'
-              uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
-              with:
-                  script: |
-                      const fs = require('fs');
-                      const data = JSON.parse(fs.readFileSync(`reports/${{ matrix.target.name }}.json`, 'utf-8'));
-                      const issues = data.filter(pkg => pkg.vulns && pkg.vulns.some(v => ['high','critical'].includes(v.severity)));
-                      let body = `### pip-audit Scan: ${{ matrix.target.name }}\n\n⚠️ **${issues.length} high/critical issues found:**\n\n`;
-                      for (const pkg of issues) {
-                        const crit = pkg.vulns.filter(v => ['high','critical'].includes(v.severity));
-                        for (const v of crit) {
-                          body += `- **${pkg.name}@${pkg.version}**: ${v.id || v.advisory || v.cve || 'unknown'} (${v.severity})\n`;
-                        }
-                      }
-                      await github.rest.issues.createComment({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: context.payload.pull_request.number,
-                        body
-                      });
+      - name: Comment PR if issues found
+        if: steps.count.outputs.vulns != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync(`reports/${{ matrix.target.name }}.json`, 'utf-8'));
+            const issues = data.filter(pkg => pkg.vulns && pkg.vulns.some(v => ['high','critical'].includes(v.severity)));
+            let body = `### pip-audit Scan: ${{ matrix.target.name }}\n\n⚠️ **${issues.length} high/critical issues found:**\n\n`;
+            for (const pkg of issues) {
+              const crit = pkg.vulns.filter(v => ['high','critical'].includes(v.severity));
+              for (const v of crit) {
+                body += `- **${pkg.name}@${pkg.version}**: ${v.id || v.advisory || v.cve || 'unknown'} (${v.severity})\n`;
+              }
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body
+            });
 
-            - name: Label PR for pip-audit
-              if: steps.count.outputs.vulns != '0'
-              uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
-              with:
-                  script: |
-                      await github.rest.issues.addLabels({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: context.payload.pull_request.number,
-                        labels: ['security:pip-audit']
-                      });
+      - name: Label PR for pip-audit
+        if: steps.count.outputs.vulns != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['security:pip-audit']
+            });
