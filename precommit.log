@@ -1,0 +1,320 @@
+Ruff (project‑installed).................................................Failed
+- hook id: ruff
+- duration: 0.7s
+- exit code: 2
+
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+error: unexpected argument '--fix' found
+
+Usage: ruff [OPTIONS] <COMMAND>
+
+For more information, try '--help'.
+
+Mypy (project‑installed).................................................Failed
+- hook id: mypy
+- duration: 0.81s
+- exit code: 2
+
+.github/workflows/templates/python-template-pip.yml: error: Duplicate module named "__main__" (also at "docker/.gitkeep​")
+.github/workflows/templates/python-template-pip.yml: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+.github/workflows/templates/python-template-pip.yml: note: Common resolutions include: a) using `--exclude` to avoid checking one of them, b) adding `__init__.py` somewhere, c) using `--explicit-package-bases` or adjusting MYPYPATH
+Found 1 error in 1 file (errors prevented further checking)
+generate_requirements.sh:10: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+docs/reviews/review_request_template.md:48: error: invalid character '“' (U+201C)  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+.gitleaks.toml:16: error: unexpected indent  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+docs/source/rst/dev/scripts/validate_env_keys.rst:2: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+.github/workflows/safety.yml:14: error: invalid character '–' (U+2013)  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+docs/uml/LedgerBaseSchema.puml:58: error: unmatched '}'  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+.github/workflows/prepare-poetry.yml:21: error: invalid decimal literal  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+.github/scripts/pr-status-summary.js:1: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+.github/workflows/security-snyk.yml:14: error: invalid character '–' (U+2013)  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+.github/workflows/gh-pages.yml:13: error: invalid character '📚' (U+1F4DA)  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+scripts/lint-yaml.txt:1: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+sops.yaml:2: error: invalid decimal literal  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+scripts/check_semgrep_bundles.sh:14: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+Makefile:2: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+.hadolint.yaml: error: Duplicate module named "__main__" (also at "docs/wiki/API.md")
+.hadolint.yaml: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+.hadolint.yaml: note: Common resolutions include: a) using `--exclude` to avoid checking one of them, b) adding `__init__.py` somewhere, c) using `--explicit-package-bases` or adjusting MYPYPATH
+Found 1 error in 1 file (errors prevented further checking)
+.github/PULL_REQUEST_TEMPLATE.md:3: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+docs/source/_templates/python_template.rst.j2:4: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+poetry.toml:15: error: invalid syntax; you likely need to run mypy using Python 3.12 or newer  [syntax]
+Found 1 error in 1 file (errors prevented further checking)
+
+Bandit (project‑installed)...............................................Passed
+- hook id: bandit
+- duration: 0.39s
+
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.11.12
+Run started:2025-04-23 14:16:49.463073
+
+Test results:
+	No issues identified.
+
+Code scanned:
+	Total lines of code: 207
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 0
+Files skipped (0):
+
+Semgrep (project‑installed)..............................................Passed
+- hook id: semgrep
+- duration: 1.92s
+
+nox > Running session semgrep_ci
+nox > Re-using existing virtual environment at .nox/semgrep_ci.
+nox > python -m pip install --upgrade-strategy eager semgrep==1.119.0
+nox > ▶️  semgrep ci --jobs 4 --sarif --output docs/reports/sarif/semgrep-ci.sarif --config r/python.flask --config p/cwe-top-25 --config p/security-audit --config p/secure-defaults --config p/r2c-best-practices --config p/owasp-top-ten --config p/sql-injection --config p/command-injection --config p/xss --config p/github-actions --config p/semgrep-misconfigurations --config p/ci --config p/semgrep-rule-lints --config p/semgrep-rule-ci --config custom-rules.yml
+nox > semgrep ci --jobs 4 --sarif --output docs/reports/sarif/semgrep-ci.sarif --config r/python.flask --config p/cwe-top-25 --config p/security-audit --config p/secure-defaults --config p/r2c-best-practices --config p/owasp-top-ten --config p/sql-injection --config p/command-injection --config p/xss --config p/github-actions --config p/semgrep-misconfigurations --config p/ci --config p/semgrep-rule-lints --config p/semgrep-rule-ci --config custom-rules.yml
+Cannot run `semgrep ci` with --config while logged in. The `semgrep ci` command will upload findings to semgrep-app and those findings must come from rules configured there. Drop the `--config` to use rules configured on semgrep.dev or log out.
+There were errors during analysis but Semgrep will succeed because there were no blocking findings, use --no-suppress-errors if you want Semgrep to fail when there are errors.
+nox > ✅ Semgrep SARIF report saved to docs/reports/sarif/semgrep-ci.sarif
+nox > Session semgrep_ci was successful.
+
+Vulture (project‑installed)..............................................Passed
+- hook id: vulture
+- duration: 5.29s
+
+nox > Running session vulture
+nox > Re-using existing virtual environment at .nox/vulture.
+nox > python -m pip install poetry==1.8.3
+nox > poetry install --with dev
+nox > 🛡️ Using whitelist: vulture_whitelist.py
+nox > 🔍 Running vulture (min-confidence=90)...
+nox > vulture vulture_whitelist.py src tests --min-confidence 90
+nox > Session vulture was successful.
+
+ShellCheck (project‑installed)...........................................Passed
+- hook id: shellcheck
+- duration: 1.11s
+
+nox > Running session shellcheck
+nox > Checking for tool: shellcheck
+nox > No shell scripts found to lint.
+nox > Session shellcheck was successful.
+
+Codespell (project‑installed)............................................Passed
+- hook id: codespell
+- duration: 0.84s
+check yaml...............................................................Passed
+- hook id: check-yaml
+- duration: 0.07s
+fix end of files.........................................................Passed
+- hook id: end-of-file-fixer
+- duration: 0.06s
+trim trailing whitespace.................................................Passed
+- hook id: trailing-whitespace
+- duration: 0.07s
+debug statements (python)................................................Passed
+- hook id: debug-statements
+- duration: 0.06s
+fix utf-8 byte order marker..............................................Passed
+- hook id: fix-byte-order-marker
+- duration: 0.08s
+fix requirements.txt.....................................................Passed
+- hook id: requirements-txt-fixer
+- duration: 0.02s
+Detect secrets...........................................................Failed
+- hook id: detect-secrets
+- duration: 0.63s
+- exit code: 1
+
+ERROR: Potential secrets about to be committed to git repo!
+
+Secret Type: Hex High Entropy String
+Location:    .pre-commit-config.yaml:105
+
+Secret Type: Hex High Entropy String
+Location:    .pre-commit-config.yaml:116
+
+Possible mitigations:
+  - For information about putting your secrets in a safer place, please ask in
+    #security
+  - Mark false positives with an inline `pragma: allowlist secret` comment
+
+If a secret has already been committed, visit
+https://help.github.com/articles/removing-sensitive-data-from-a-repository
+
+Detect hardcoded secrets.................................................Passed
+- hook id: gitleaks
+- duration: 0.07s
+
+○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m7:16AM[0m [32mINF[0m 1 commits scanned.
+[90m7:16AM[0m [32mINF[0m scan completed in 62.9ms
+[90m7:16AM[0m [32mINF[0m no leaks found
+
+markdownlint.............................................................Failed
+- hook id: markdownlint
+- duration: 0.41s
+- exit code: 1
+
+docs/WTD-Runbook.md:3 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "description = Documentation fo..."]
+docs/WTD-Runbook.md:5 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "category = docs"]
+docs/WTD-Runbook.md:7 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "usage = Reference for develope..."]
+docs/WTD-Runbook.md:9 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "behavior = Explains the trigge..."]
+docs/WTD-Runbook.md:11 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "inputs = none"]
+docs/WTD-Runbook.md:13 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "outputs = none"]
+docs/WTD-Runbook.md:15 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "dependencies = What-The-Diff C..."]
+docs/WTD-Runbook.md:17 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "author = LedgerBase Team"]
+docs/WTD-Runbook.md:19 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "last_modified = 2023-11-15"]
+docs/WTD-Runbook.md:21 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "changelog = Initial version"]
+docs/WTD-Runbook.md:23 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "What The Diff PR Summaries Run..."]
+.github/PULL_REQUEST_TEMPLATE.md:1 MD041/first-line-heading/first-line-h1 First line in a file should be a top-level heading [Context: "## Summary"]
+docs/semantic_release.md:3 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "description = Guide for using ..."]
+docs/semantic_release.md:5 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "category = docs"]
+docs/semantic_release.md:7 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "usage = Reference for develope..."]
+docs/semantic_release.md:9 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "behavior = Explains how differ..."]
+docs/semantic_release.md:11 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "inputs = Developer commit mess..."]
+docs/semantic_release.md:13 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "outputs = Semantic version num..."]
+docs/semantic_release.md:15 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "dependencies = semantic-releas..."]
+docs/semantic_release.md:17 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "author = LedgerBase Team"]
+docs/semantic_release.md:19 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "last_modified = 2023-11-15"]
+docs/semantic_release.md:21 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "changelog = Initial version"]
+docs/semantic_release.md:23 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "Semantic‑Release Guide"]
+SECURITY.md:3 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "description = Security policy ..."]
+SECURITY.md:5 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "category = security"]
+SECURITY.md:7 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "usage = Reference for users an..."]
+SECURITY.md:9 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "behavior = Outlines supported ..."]
+SECURITY.md:11 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "inputs = none"]
+SECURITY.md:13 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "outputs = none"]
+SECURITY.md:15 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "dependencies = none"]
+SECURITY.md:17 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "author = LedgerBase Team"]
+SECURITY.md:19 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "last_modified = 2023-11-15"]
+SECURITY.md:21 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "changelog = Initial version"]
+SECURITY.md:23 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "Security Policy"]
+SECURITY.md:113 MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Last updated: November 15, 202..."]
+
+Validate Required Keys in .env.prod.sops.yaml........(no files to check)Skipped
+- hook id: validate-env-prod-sops
+Forbid .env.prod commits.............................(no files to check)Skipped
+- hook id: forbid-new-env-prod
+Validate file header metadata........................(no files to check)Skipped
+- hook id: validate-file-headers

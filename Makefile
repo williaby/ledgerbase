@@ -1,3 +1,7 @@
+# Declare phony targets so Make treats these names as actions, not files
+.PHONY: up down restart logs dev-setup lint format test \
+        encrypt-sa decrypt-sa clean-sa
+
 # Active Environment File (defaults to dev)
 ENV_FILE ?= .env.dev
 
@@ -65,3 +69,20 @@ format:
 
 test:
 	pytest --cov=ledgerbase
+
+# Secure Keys Management
+# Encrypt the service-account.json in place using SOPS
+encrypt-sa:
+	@echo "🔒 Encrypting service-account.json…"
+	sops -i --encrypt ledgerbase_secure_env/service-account.json
+
+# Decrypt the service-account.json to a temporary file for local use
+decrypt-sa:
+	@echo "🔓 Decrypting service-account.json to .plain…"
+	sops -d ledgerbase_secure_env/service-account.json > ledgerbase_secure_env/service-account.plain.json
+	@echo "Plainfile created at ledgerbase_secure_env/service-account.plain.json"
+
+# Cleanup any plaintext service-account file
+clean-sa:
+	@echo "🧹 Cleaning up plaintext service account JSON…"
+	-rm -f ledgerbase_secure_env/service-account.plain.json

@@ -1,0 +1,720 @@
+[WARNING] hook id `pip-audit` uses deprecated stage names (push) which will be removed in a future version.  run: `pre-commit migrate-config` to automatically fix this.
+[WARNING] top-level `default_stages` uses deprecated stage names (commit) which will be removed in a future version.  run: `pre-commit migrate-config` to automatically fix this.
+Ruff Check & Fix (project-installed).....................................Failed
+- hook id: ruff
+- duration: 1.71s
+- exit code: 1
+
+All checks passed!
+All checks passed!
+All checks passed!
+conftest.py:6:5: ANN201 Missing return type annotation for public function `pytest_configure`
+  |
+6 | def pytest_configure(config):
+  |     ^^^^^^^^^^^^^^^^ ANN201
+7 |     """Provide a no-op pytest.assume() that accepts any signature,
+8 |     so placeholder tests using pytest.assume(new=True) won’t error.
+  |
+  = help: Add return type annotation: `None`
+
+conftest.py:6:22: ANN001 Missing type annotation for function argument `config`
+  |
+6 | def pytest_configure(config):
+  |                      ^^^^^^ ANN001
+7 |     """Provide a no-op pytest.assume() that accepts any signature,
+8 |     so placeholder tests using pytest.assume(new=True) won’t error.
+  |
+
+conftest.py:6:22: ARG001 Unused function argument: `config`
+  |
+6 | def pytest_configure(config):
+  |                      ^^^^^^ ARG001
+7 |     """Provide a no-op pytest.assume() that accepts any signature,
+8 |     so placeholder tests using pytest.assume(new=True) won’t error.
+  |
+
+conftest.py:8:59: RUF002 Docstring contains ambiguous `’` (RIGHT SINGLE QUOTATION MARK). Did you mean ``` (GRAVE ACCENT)?
+   |
+ 6 | def pytest_configure(config):
+ 7 |     """Provide a no-op pytest.assume() that accepts any signature,
+ 8 |     so placeholder tests using pytest.assume(new=True) won’t error.
+   |                                                           ^ RUF002
+ 9 |     """
+10 |     if not hasattr(pytest, "assume"):
+   |
+
+conftest.py:11:13: ANN202 Missing return type annotation for private function `assume`
+   |
+ 9 |     """
+10 |     if not hasattr(pytest, "assume"):
+11 |         def assume(*args, **kwargs):
+   |             ^^^^^^ ANN202
+12 |             # Always succeed; ignore args/kwargs
+13 |             return None
+   |
+   = help: Add return type annotation: `None`
+
+conftest.py:11:20: ANN002 Missing type annotation for `*args`
+   |
+ 9 |     """
+10 |     if not hasattr(pytest, "assume"):
+11 |         def assume(*args, **kwargs):
+   |                    ^^^^^ ANN002
+12 |             # Always succeed; ignore args/kwargs
+13 |             return None
+   |
+
+conftest.py:11:21: ARG001 Unused function argument: `args`
+   |
+ 9 |     """
+10 |     if not hasattr(pytest, "assume"):
+11 |         def assume(*args, **kwargs):
+   |                     ^^^^ ARG001
+12 |             # Always succeed; ignore args/kwargs
+13 |             return None
+   |
+
+conftest.py:11:27: ANN003 Missing type annotation for `**kwargs`
+   |
+ 9 |     """
+10 |     if not hasattr(pytest, "assume"):
+11 |         def assume(*args, **kwargs):
+   |                           ^^^^^^^^ ANN003
+12 |             # Always succeed; ignore args/kwargs
+13 |             return None
+   |
+
+conftest.py:11:29: ARG001 Unused function argument: `kwargs`
+   |
+ 9 |     """
+10 |     if not hasattr(pytest, "assume"):
+11 |         def assume(*args, **kwargs):
+   |                             ^^^^^^ ARG001
+12 |             # Always succeed; ignore args/kwargs
+13 |             return None
+   |
+
+Found 9 errors.
+No fixes available (2 hidden fixes can be enabled with the `--unsafe-fixes` option).
+All checks passed!
+All checks passed!
+All checks passed!
+noxfile.py:89:60: RUF003 Comment contains ambiguous `‑` (NON-BREAKING HYPHEN). Did you mean `-` (HYPHEN-MINUS)?
+   |
+87 | TXT_REPORT_DIR: Path = REPORT_DIR / "txt"
+88 |
+89 | # -- Semgrep Shared list of registry bundles (community + p‑packs your plan supports)
+   |                                                            ^ RUF003
+90 | SHARED_BUNDLES = [
+91 |     "r/python.flask",  # community-only
+   |
+
+noxfile.py:116:46: ANN401 Dynamically typed expressions (typing.Any) are disallowed in `*args`
+    |
+114 |     def decorator(func: Callable[..., Any]) -> Callable:
+115 |         @functools.wraps(func)
+116 |         def wrapper(session: Session, *args: Any, **kwargs: Any) -> Any:
+    |                                              ^^^ ANN401
+117 |             for report_dir in dirs_to_ensure:
+118 |                 report_dir.mkdir(parents=True, exist_ok=True)
+    |
+
+noxfile.py:116:61: ANN401 Dynamically typed expressions (typing.Any) are disallowed in `**kwargs`
+    |
+114 |     def decorator(func: Callable[..., Any]) -> Callable:
+115 |         @functools.wraps(func)
+116 |         def wrapper(session: Session, *args: Any, **kwargs: Any) -> Any:
+    |                                                             ^^^ ANN401
+117 |             for report_dir in dirs_to_ensure:
+118 |                 report_dir.mkdir(parents=True, exist_ok=True)
+    |
+
+noxfile.py:116:69: ANN401 Dynamically typed expressions (typing.Any) are disallowed in `wrapper`
+    |
+114 |     def decorator(func: Callable[..., Any]) -> Callable:
+115 |         @functools.wraps(func)
+116 |         def wrapper(session: Session, *args: Any, **kwargs: Any) -> Any:
+    |                                                                     ^^^ ANN401
+117 |             for report_dir in dirs_to_ensure:
+118 |                 report_dir.mkdir(parents=True, exist_ok=True)
+    |
+
+noxfile.py:228:47: FBT001 Boolean-typed positional argument in function definition
+    |
+228 | def get_poetry_dependencies(session: Session, include_dev: bool = True) -> list[str]:
+    |                                               ^^^^^^^^^^^ FBT001
+229 |     """Export dependencies from Poetry and return a list of package names."""
+230 |     req_file = Path(session.create_tmp()) / "poetry_deps.txt"
+    |
+
+noxfile.py:228:47: FBT002 Boolean default positional argument in function definition
+    |
+228 | def get_poetry_dependencies(session: Session, include_dev: bool = True) -> list[str]:
+    |                                               ^^^^^^^^^^^ FBT002
+229 |     """Export dependencies from Poetry and return a list of package names."""
+230 |     req_file = Path(session.create_tmp()) / "poetry_deps.txt"
+    |
+
+noxfile.py:322:89: E501 Line too long (89 > 88)
+    |
+320 |     # Install project & dev deps, including ruff. Need full env (no_root=False) for entry points. # noqa: E501
+321 |     install_poetry_and_deps(session, with_dev=True, no_root=False)
+322 |     # session.install(f"ruff=={TOOL_VERSIONS['ruff']}") # No longer needed # noqa: ERA001
+    |                                                                                         ^ E501
+323 |     session.log("Running Ruff checks ")
+324 |     try:
+    |
+
+noxfile.py:334:89: E501 Line too long (89 > 88)
+    |
+332 |     """Auto-fix Ruff lint issues  & format code with Ruff. Relies on ruff being installed via Poetry dev deps."""  # noqa: E501
+333 |     install_poetry_and_deps(session, with_dev=True, no_root=False)
+334 |     # session.install(f"ruff=={TOOL_VERSIONS['ruff']}") # No longer needed # noqa: ERA001
+    |                                                                                         ^ E501
+335 |     targets = LINT_TARGETS + session.posargs
+336 |     session.log("Running Ruff auto-fix ...")
+    |
+
+noxfile.py:346:89: E501 Line too long (89 > 88)
+    |
+344 |     """Perform static type checking using Mypy (uses pyproject.toml). Needs project installed. Relies on mypy being installed via Poe…
+345 |     install_poetry_and_deps(session, with_dev=True, no_root=False)
+346 |     # session.install(f"mypy=={TOOL_VERSIONS['mypy']}") # No longer needed # noqa: ERA001
+    |                                                                                         ^ E501
+347 |     session.run("mypy", *session.posargs if session.posargs else [PACKAGE_DIR])
+    |
+
+noxfile.py:354:89: E501 Line too long (103 > 88)
+    |
+352 |     """Lint reStructuredText files using sphinx-lint. Needs project installed. Relies on sphinx-lint being installed via Poetry dev d…
+353 |     install_poetry_and_deps(session, with_dev=True, no_root=False)
+354 |     # session.install(f"sphinx-lint=={TOOL_VERSIONS['sphinx-lint']}") # No longer needed # noqa: ERA001
+    |                                                                                         ^^^^^^^^^^^^^^^ E501
+355 |     rst_dirs_or_files = ["docs/source"]
+356 |     session.log("🔍 Running sphinx-lint on RST files...")
+    |
+
+noxfile.py:554:44: RUF001 String contains ambiguous `‑` (NON-BREAKING HYPHEN). Did you mean `-` (HYPHEN-MINUS)?
+    |
+552 |     session.run("taplo", "check", *toml_files, external=True)
+553 |
+554 |     session.log("🔧 Formatting TOML files in‑place…")
+    |                                             ^ RUF001
+555 |     session.run("taplo", "format", "--write", *toml_files, external=True)
+    |
+
+noxfile.py:749:89: E501 Line too long (149 > 88)
+    |
+747 | …
+748 | …
+749 | …enses. Relies on pip-licenses installed via Poetry dev deps. Uses explicit dependency list."""
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+750 | …
+751 | …
+    |
+
+noxfile.py:755:89: E501 Line too long (96 > 88)
+    |
+753 |         no_root=False,
+754 |     )  # Install pip-licenses & poetry
+755 |     # session.install(f"pip-licenses=={TOOL_VERSIONS['pip-licenses']}") # Removed # noqa: ERA001
+    |                                                                                         ^^^^^^^^ E501
+756 |     json_path = JSON_DIR / "license-report.json"
+757 |     disallowed_path = JSON_DIR / "disallowed-licenses.txt"
+    |
+
+noxfile.py:783:89: E501 Line too long (112 > 88)
+    |
+781 |     allowed_licenses = {"MIT", "BSD", "Apache-2.0", "ISC", "Python-2.0"}
+782 |     disallowed = [
+783 |         f"{pkg.get('Name', 'Unknown')} ({pkg.get('Version', 'N/A')}) - License: {pkg.get('License', 'Unknown')}"
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^ E501
+784 |         for pkg in licenses
+785 |         if pkg.get("License", "UNKNOWN") not in allowed_licenses
+    |
+
+noxfile.py:802:1: E402 Module level import not at top of file
+    |
+802 | import subprocess
+    | ^^^^^^^^^^^^^^^^^ E402
+    |
+
+noxfile.py:807:89: E501 Line too long (91 > 88)
+    |
+805 | @nox.session(name="snyk_code")
+806 | def snyk_code(session: nox.Session) -> None:
+807 |     """Run Snyk Code scan and save results as SARIF, fail only for high/critical issues."""
+    |                                                                                         ^^^ E501
+808 |     sarif_path = Path("docs/reports/sarif/snyk-code.sarif")
+809 |     session.log("📦 Installing/Updating Snyk CLI...")
+    |
+
+noxfile.py:844:89: E501 Line too long (104 > 88)
+    |
+842 | @ensure_reports(SARIF_DIR)
+843 | def snyk_oss(session: nox.Session) -> None:
+844 |     """Run Snyk Open Source (SCA) scan and save results as SARIF, fail only for high/critical issues."""
+    |                                                                                         ^^^^^^^^^^^^^^^^ E501
+845 |     token = os.environ.get("SNYK_TOKEN")
+846 |     if not token:
+    |
+
+noxfile.py:884:89: E501 Line too long (96 > 88)
+    |
+882 | @ensure_reports(SARIF_DIR)
+883 | def snyk_container(session: nox.Session) -> None:
+884 |     """Run Snyk Container scan and save results as SARIF, fail only for high/critical issues."""
+    |                                                                                         ^^^^^^^^ E501
+885 |     token = os.environ.get("SNYK_TOKEN")
+886 |     if not token:
+    |
+
+noxfile.py:902:5: F841 Local variable `result` is assigned to but never used
+    |
+901 |     session.log(f"🧪 Running Snyk Container scan on {image_tag}...")
+902 |     result = subprocess.run(
+    |     ^^^^^^ F841
+903 |         [
+904 |             "snyk",
+    |
+    = help: Remove assignment to unused variable `result`
+
+noxfile.py:929:89: E501 Line too long (118 > 88)
+    |
+927 | @nox.session(python=False, tags=["ci", "security", "secrets"])
+928 | def ggshield(session: Session) -> None:
+929 |     """Scan for secrets using GitGuardian ggshield. Requires external ggshield CLI and GITGUARDIAN_API_KEY env var."""
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+930 |     require_tool(session, "ggshield")
+931 |     api_key = os.environ.get("GITGUARDIAN_API_KEY")
+    |
+
+noxfile.py:934:89: E501 Line too long (93 > 88)
+    |
+932 |     if not api_key:
+933 |         session.warn(
+934 |             "GITGUARDIAN_API_KEY environment variable not set. Scan may fail or be limited.",
+    |                                                                                         ^^^^^ E501
+935 |         )
+936 |     scan_cmd = ["ggshield"] + (session.posargs if session.posargs else ["scan", "ci"])
+    |
+
+noxfile.py:948:89: E501 Line too long (131 > 88)
+    |
+946 | @ensure_reports(SARIF_DIR)
+947 | def semgrep_ci(session: Session) -> None:
+948 |     """Run Semgrep SAST scan in 'ci' mode (diff-aware). Requires external Semgrep CLI. Uploads results if SEMGREP_APP_TOKEN set."""
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+949 |     sarif_path = SARIF_DIR / "semgrep-ci.sarif"
+950 |     _run_semgrep(session, mode="ci", sarif_path=sarif_path)
+    |
+
+noxfile.py:962:89: E501 Line too long (90 > 88)
+    |
+961 | def _run_semgrep(session: Session, mode: str, sarif_path: Path) -> None:
+962 |     """Install Semgrep into the venv, then run with server-side bundles + custom rules."""
+    |                                                                                         ^^ E501
+963 |     # 1) ensure the Python package is present
+964 |     session.install("--upgrade-strategy", "eager", "semgrep==1.119.0")
+    |
+
+noxfile.py:1025:89: E501 Line too long (107 > 88)
+     |
+1023 | @nox.session(reuse_venv=True, tags=["ci", "security"])
+1024 | def aikido_pr_scan(session: Session) -> None:
+1025 |     """Run Aikido diff scan for PRs via Docker. Needs AIKIDO_API_TOKEN, CHANGED_FILES env vars & Docker."""
+     |                                                                                         ^^^^^^^^^^^^^^^^^^^ E501
+1026 |     token = os.environ.get(TOKEN_ENV)
+1027 |     if not token:
+     |
+
+noxfile.py:1067:89: E501 Line too long (92 > 88)
+     |
+1065 |     if not token:
+1066 |         session.error(f"Set {TOKEN_ENV} environment variable.")
+1067 |     # Use session install for requests if kept in TOOL_VERSIONS, else rely on poetry install
+     |                                                                                         ^^^^ E501
+1068 |     session.install(f"requests=={TOOL_VERSIONS['requests']}")
+1069 |     session.log("Fetching Aikido usage report...")
+     |
+
+noxfile.py:1080:89: E501 Line too long (90 > 88)
+     |
+1078 |     print(json.dumps(resp.json(), indent=2)) # Print JSON to stdout
+1079 | except requests.exceptions.RequestException as e:
+1080 |     print(f"Error fetching Aikido usage report: {{e}}", file=sys.stderr) # Error to stderr
+     |                                                                                         ^^ E501
+1081 |     exit(1)
+1082 | """
+     |
+
+noxfile.py:1105:89: E501 Line too long (138 > 88)
+     |
+1103 | …zing"], reuse_venv=True)
+1104 | …
+1105 | …(requires external setup). Assumes CIFuzz CLI is installed and configured externally."""
+     |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+1106 | …rs locally with CIFuzz...")
+1107 | …up (e.g., Docker, prerequisites).")
+     |
+
+noxfile.py:1121:89: E501 Line too long (167 > 88)
+     |
+1119 | …
+1120 | …
+1121 | … dependencies. Uses '-- --strict' for warnings-as-errors. Requires external 'make' and LaTeX tools."""
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+1122 | …
+1123 | …
+     |
+
+noxfile.py:1187:89: E501 Line too long (137 > 88)
+     |
+1185 | …
+1186 | …
+1187 | …ledgerbase:dev'). Requires external Docker tool. Specify tag/dockerfile via posargs."""
+     |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+1188 | …
+1189 | …rgs else f"{get_repo_name()}:dev"
+     |
+
+noxfile.py:1208:89: E501 Line too long (149 > 88)
+     |
+1206 | …use_venv=True)
+1207 | …
+1208 | …twine. Relies on twine installed via Poetry dev deps. Ensures package artifacts are valid."""
+     |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+1209 | …
+1210 | …
+     |
+
+noxfile.py:1230:89: E501 Line too long (153 > 88)
+     |
+1228 | …
+1229 | …
+1230 | …r CI matrix generation. Runs 'nox -l --json' and filters the output. Requires 'nox' in PATH."""
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+1231 | …
+1232 | …
+     |
+
+noxfile.py:1247:89: E501 Line too long (97 > 88)
+     |
+1245 |     ) as e:
+1246 |         session.error(
+1247 |             f"Could not dynamically list sessions: {e}. Check nox installation and permissions.",
+     |                                                                                         ^^^^^^^^^ E501
+1248 |         )
+     |
+
+noxfile.py:1254:89: E501 Line too long (112 > 88)
+     |
+1252 | @ensure_reports(TXT_REPORT_DIR) # Use your existing helper
+1253 | def pre_commit_log(session: Session) -> None:
+1254 |     """Run all pre-commit hooks verbosely and log to docs/reports/txt/pre-commit.log using shell redirection."""
+     |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^ E501
+1255 |     log_path = TXT_REPORT_DIR / "pre-commit.log"
+     |
+
+noxfile.py:1266:89: E501 Line too long (93 > 88)
+     |
+1264 |     full_command = f"{pre_commit_base_command} run --all-files --verbose"
+1265 |
+1266 |     # Construct the shell command with redirection. shlex.quote handles spaces/special chars.
+     |                                                                                         ^^^^^ E501
+1267 |     # This redirects stdout (>) to the log file and stderr (2>&1) to the same place as stdout.
+1268 |     shell_command = f"{full_command} > {shlex.quote(str(log_path))} 2>&1"
+     |
+
+noxfile.py:1267:89: E501 Line too long (94 > 88)
+     |
+1266 |     # Construct the shell command with redirection. shlex.quote handles spaces/special chars.
+1267 |     # This redirects stdout (>) to the log file and stderr (2>&1) to the same place as stdout.
+     |                                                                                         ^^^^^^ E501
+1268 |     shell_command = f"{full_command} > {shlex.quote(str(log_path))} 2>&1"
+     |
+
+noxfile.py:1276:9: ERA001 Found commented-out code
+     |
+1274 |     try:
+1275 |         # No need to install pre-commit here if using 'poetry run'
+1276 |         # session.install("pre-commit") # Remove this line if using 'poetry run'
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ERA001
+1277 |         session.run("bash", "-c", shell_command, external=True)
+1278 |         # Check if the log file was created and has content, log success
+     |
+     = help: Remove commented-out code
+
+noxfile.py:1285:89: E501 Line too long (104 > 88)
+     |
+1283 |         else:
+1284 |              session.warn(f"Pre-commit ran, but log file {log_path} was not created.")
+1285 |              # This case might indicate the command itself failed before redirection could happen fully.
+     |                                                                                         ^^^^^^^^^^^^^^^^ E501
+1286 |
+1287 |     except nox.command.CommandFailed as e:
+     |
+
+noxfile.py:1288:89: E501 Line too long (92 > 88)
+     |
+1287 |     except nox.command.CommandFailed as e:
+1288 |         # The exception 'e' itself contains the exit code info in its string representation.
+     |                                                                                         ^^^^ E501
+1289 |         # So, just use 'e' directly in the f-string.
+1290 |         session.error(
+     |
+
+noxfile.py:1295:9: ERA001 Found commented-out code
+     |
+1293 |         # Optional: Print tail of log file here if desired for quick debugging
+1294 |         # if log_path.exists():
+1295 |         #    tail_output = subprocess.run(['tail', '-n', '20', str(log_path)], capture_output=True, text=True)
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ERA001
+1296 |         #    session.log(f"Last lines of log:\n{tail_output.stdout}")
+     |
+     = help: Remove commented-out code
+
+noxfile.py:1295:89: E501 Line too long (110 > 88)
+     |
+1293 |         # Optional: Print tail of log file here if desired for quick debugging
+1294 |         # if log_path.exists():
+1295 |         #    tail_output = subprocess.run(['tail', '-n', '20', str(log_path)], capture_output=True, text=True)
+     |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^ E501
+1296 |         #    session.log(f"Last lines of log:\n{tail_output.stdout}")
+     |
+
+noxfile.py:1296:9: ERA001 Found commented-out code
+     |
+1294 |         # if log_path.exists():
+1295 |         #    tail_output = subprocess.run(['tail', '-n', '20', str(log_path)], capture_output=True, text=True)
+1296 |         #    session.log(f"Last lines of log:\n{tail_output.stdout}")
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ERA001
+1297 |
+1298 |     except Exception as e:
+     |
+     = help: Remove commented-out code
+
+noxfile.py:1298:12: BLE001 Do not catch blind exception: `Exception`
+     |
+1296 |         #    session.log(f"Last lines of log:\n{tail_output.stdout}")
+1297 |
+1298 |     except Exception as e:
+     |            ^^^^^^^^^ BLE001
+1299 |
+1300 |         session.error(
+     |
+
+Found 42 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+src/ledgerbase/config.py:49:21: RUF013 PEP 484 prohibits implicit `Optional`
+   |
+49 | def get_config(env: str = None) -> type[Config]:
+   |                     ^^^ RUF013
+50 |     """Select a Config subclass based on the given environment name.
+   |
+   = help: Convert to `T | None`
+
+src/ledgerbase/config.py:53:89: E501 Line too long (89 > 88)
+   |
+52 |     Args:
+53 |         env: One of 'development', 'production', or None (defaults to DevelopmentConfig).
+   |                                                                                         ^ E501
+54 |
+55 |     Returns:
+   |
+
+Found 2 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+All checks passed!
+
+Mypy (via Nox)...........................................................Failed
+- hook id: mypy
+- duration: 16.63s
+- exit code: 1
+
+nox > Running session mypy-3.11
+nox > Re-using existing virtual environment at .nox/mypy-3-11.
+nox > python -m pip install poetry==1.8.3
+nox > poetry install --with dev
+nox > mypy src/ledgerbase
+src/ledgerbase/config.py:49: error: Incompatible default for argument "env" (default has type "None", argument has type "str")  [assignment]
+src/ledgerbase/config.py:49: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/ledgerbase/config.py:49: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/ledgerbase/wsgi.py:1: error: Module "src.ledgerbase" has no attribute "create_app"  [attr-defined]
+src/ledgerbase/error_handlers.py:87: error: Argument 2 to "register_error_handler" of "Scaffold" has incompatible type "Callable[[], tuple[flask.wrappers.Response | str, int]]"; expected "Callable[[Any], werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int, Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | Callable[[dict[str, Any], StartResponse], Iterable[bytes]]] | Callable[[Any], Awaitable[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int, Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | Callable[[dict[str, Any], StartResponse], Iterable[bytes]]]]"  [arg-type]
+Found 3 errors in 3 files (checked 6 source files)
+nox > Command mypy src/ledgerbase failed with exit code 1
+nox > Session mypy-3.11 failed.
+nox > Running session mypy-3.12
+nox > Creating virtual environment (virtualenv) using python3.12 in .nox/mypy-3-12
+nox > python -m pip install poetry==1.8.3
+nox > poetry install --with dev
+nox > mypy src/ledgerbase
+src/ledgerbase/config.py:49: error: Incompatible default for argument "env" (default has type "None", argument has type "str")  [assignment]
+src/ledgerbase/config.py:49: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+src/ledgerbase/config.py:49: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+src/ledgerbase/wsgi.py:1: error: Module "src.ledgerbase" has no attribute "create_app"  [attr-defined]
+src/ledgerbase/error_handlers.py:87: error: Argument 2 to "register_error_handler" of "Scaffold" has incompatible type "Callable[[], tuple[flask.wrappers.Response | str, int]]"; expected "Callable[[Any], werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int, Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | Callable[[dict[str, Any], StartResponse], Iterable[bytes]]] | Callable[[Any], Awaitable[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int] | tuple[werkzeug.sansio.response.Response | str | bytes | list[Any] | Mapping[str, Any] | Iterator[str] | Iterator[bytes], int, Headers | Mapping[str, str | list[str] | tuple[str, ...]] | Sequence[tuple[str, str | list[str] | tuple[str, ...]]]] | Callable[[dict[str, Any], StartResponse], Iterable[bytes]]]]"  [arg-type]
+Found 3 errors in 3 files (checked 6 source files)
+nox > Command mypy src/ledgerbase failed with exit code 1
+nox > Session mypy-3.12 failed.
+nox > Ran multiple sessions:
+nox > * mypy-3.11: failed
+nox > * mypy-3.12: failed
+
+Bandit (via Nox).........................................................Passed
+- hook id: bandit
+- duration: 5.46s
+
+nox > Running session bandit_scan
+nox > Re-using existing virtual environment at .nox/bandit_scan.
+nox > python -m pip install poetry==1.8.3
+nox > poetry install --with dev
+nox > bandit -r src/ledgerbase -f sarif -o docs/reports/sarif/bandit.sarif
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.12.10
+[sarif]	INFO	SARIF output written to file: docs/reports/sarif/bandit.sarif
+nox > Bandit SARIF report generated at docs/reports/sarif/bandit.sarif
+nox > Session bandit_scan was successful.
+
+Semgrep (project‑installed)..............................................Passed
+- hook id: semgrep
+- duration: 2.86s
+
+nox > Running session semgrep_ci
+nox > Re-using existing virtual environment at .nox/semgrep_ci.
+nox > python -m pip install --upgrade-strategy eager semgrep==1.119.0
+nox > ▶️  semgrep ci --jobs 4 --sarif --output docs/reports/sarif/semgrep-ci.sarif --config r/python.flask --config p/cwe-top-25 --config p/security-audit --config p/secure-defaults --config p/r2c-best-practices --config p/owasp-top-ten --config p/sql-injection --config p/command-injection --config p/xss --config p/github-actions --config p/semgrep-misconfigurations --config p/ci --config p/semgrep-rule-lints --config p/semgrep-rule-ci --config custom-rules.yml
+nox > semgrep ci --jobs 4 --sarif --output docs/reports/sarif/semgrep-ci.sarif --config r/python.flask --config p/cwe-top-25 --config p/security-audit --config p/secure-defaults --config p/r2c-best-practices --config p/owasp-top-ten --config p/sql-injection --config p/command-injection --config p/xss --config p/github-actions --config p/semgrep-misconfigurations --config p/ci --config p/semgrep-rule-lints --config p/semgrep-rule-ci --config custom-rules.yml
+Cannot run `semgrep ci` with --config while logged in. The `semgrep ci` command will upload findings to semgrep-app and those findings must come from rules configured there. Drop the `--config` to use rules configured on semgrep.dev or log out.
+There were errors during analysis but Semgrep will succeed because there were no blocking findings, use --no-suppress-errors if you want Semgrep to fail when there are errors.
+nox > ✅ Semgrep SARIF report saved to docs/reports/sarif/semgrep-ci.sarif
+nox > Session semgrep_ci was successful.
+
+Vulture (project‑installed)..............................................Passed
+- hook id: vulture
+- duration: 4.55s
+
+nox > Running session vulture
+nox > Re-using existing virtual environment at .nox/vulture.
+nox > python -m pip install poetry==1.8.3
+nox > poetry install --with dev
+nox > 🛡️ Using whitelist: vulture_whitelist.py
+nox > 🔍 Running vulture (min-confidence=90)...
+nox > vulture vulture_whitelist.py src tests --min-confidence 90
+nox > Session vulture was successful.
+
+ShellCheck (project‑installed)...........................................Passed
+- hook id: shellcheck
+- duration: 0.71s
+
+nox > Running session shellcheck
+nox > Checking for tool: shellcheck
+nox > No shell scripts found to lint.
+nox > Session shellcheck was successful.
+
+Codespell (via Nox lint_other).......................(no files to check)Skipped
+- hook id: codespell
+check yaml...............................................................Passed
+- hook id: check-yaml
+- duration: 0.08s
+fix end of files.........................................................Passed
+- hook id: end-of-file-fixer
+- duration: 0.06s
+trim trailing whitespace.................................................Passed
+- hook id: trailing-whitespace
+- duration: 0.05s
+debug statements (python)................................................Passed
+- hook id: debug-statements
+- duration: 0.05s
+fix utf-8 byte order marker..............................................Passed
+- hook id: fix-byte-order-marker
+- duration: 0.06s
+fix requirements.txt.....................................................Passed
+- hook id: requirements-txt-fixer
+- duration: 0.02s
+Detect secrets...........................................................Failed
+- hook id: detect-secrets
+- duration: 0.62s
+- exit code: 1
+
+ERROR: Potential secrets about to be committed to git repo!
+
+Secret Type: Hex High Entropy String
+Location:    .pre-commit-config.yaml:121
+
+Secret Type: Hex High Entropy String
+Location:    .pre-commit-config.yaml:132
+
+Possible mitigations:
+  - For information about putting your secrets in a safer place, please ask in
+    #security
+  - Mark false positives with an inline `pragma: allowlist secret` comment
+
+If a secret has already been committed, visit
+https://help.github.com/articles/removing-sensitive-data-from-a-repository
+
+Detect hardcoded secrets.................................................Passed
+- hook id: gitleaks
+- duration: 0.07s
+
+○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m2:00PM[0m [32mINF[0m 1 commits scanned.
+[90m2:00PM[0m [32mINF[0m scan completed in 53.5ms
+[90m2:00PM[0m [32mINF[0m no leaks found
+
+markdownlint.............................................................Failed
+- hook id: markdownlint
+- duration: 0.42s
+- exit code: 1
+
+docs/WTD-Runbook.md:3 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "description = Documentation fo..."]
+docs/WTD-Runbook.md:5 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "category = docs"]
+docs/WTD-Runbook.md:7 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "usage = Reference for develope..."]
+docs/WTD-Runbook.md:9 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "behavior = Explains the trigge..."]
+docs/WTD-Runbook.md:11 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "inputs = none"]
+docs/WTD-Runbook.md:13 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "outputs = none"]
+docs/WTD-Runbook.md:15 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "dependencies = What-The-Diff C..."]
+docs/WTD-Runbook.md:17 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "author = LedgerBase Team"]
+docs/WTD-Runbook.md:19 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "last_modified = 2023-11-15"]
+docs/WTD-Runbook.md:21 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "changelog = Initial version"]
+docs/WTD-Runbook.md:23 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "What The Diff PR Summaries Run..."]
+.github/PULL_REQUEST_TEMPLATE.md:1 MD041/first-line-heading/first-line-h1 First line in a file should be a top-level heading [Context: "## Summary"]
+docs/semantic_release.md:3 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "description = Guide for using ..."]
+docs/semantic_release.md:5 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "category = docs"]
+docs/semantic_release.md:7 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "usage = Reference for develope..."]
+docs/semantic_release.md:9 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "behavior = Explains how differ..."]
+docs/semantic_release.md:11 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "inputs = Developer commit mess..."]
+docs/semantic_release.md:13 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "outputs = Semantic version num..."]
+docs/semantic_release.md:15 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "dependencies = semantic-releas..."]
+docs/semantic_release.md:17 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "author = LedgerBase Team"]
+docs/semantic_release.md:19 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "last_modified = 2023-11-15"]
+docs/semantic_release.md:21 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "changelog = Initial version"]
+docs/semantic_release.md:23 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "Semantic‑Release Guide"]
+SECURITY.md:3 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "description = Security policy ..."]
+SECURITY.md:5 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "category = security"]
+SECURITY.md:7 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "usage = Reference for users an..."]
+SECURITY.md:9 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "behavior = Outlines supported ..."]
+SECURITY.md:11 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "inputs = none"]
+SECURITY.md:13 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "outputs = none"]
+SECURITY.md:15 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "dependencies = none"]
+SECURITY.md:17 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "author = LedgerBase Team"]
+SECURITY.md:19 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "last_modified = 2023-11-15"]
+SECURITY.md:21 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "changelog = Initial version"]
+SECURITY.md:23 MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "Security Policy"]
+SECURITY.md:113 MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Last updated: November 15, 202..."]
+
+Validate Required Keys in .env.prod.sops.yaml........(no files to check)Skipped
+- hook id: validate-env-prod-sops
+Forbid .env.prod commits.............................(no files to check)Skipped
+- hook id: forbid-new-env-prod
+Validate file header metadata........................(no files to check)Skipped
+- hook id: validate-file-headers

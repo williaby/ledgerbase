@@ -11,55 +11,41 @@
 # tags = ci, python, automation
 # changelog = Replaced direct interpolation of run-command with environment variable and added metadata header
 
-name: Python (pip) Task
+name: Python Task (via Poetry)
 
 on:
-    workflow_call:
-        inputs:
-            python-version:
-                required: true
-                type: string
-                description: Python version to set up
-            run-command:
-                required: true
-                type: string
-                description: Command to execute
+  workflow_call:
+    inputs:
+      run-command:
+        required: true
+        type: string
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
-    run:
-        name: Python (pip) Task
-        runs-on: ubuntu-latest
+  prepare:
+    name: Prepare Poetry & Assured OSS
+    uses: ./.github/workflows/templates/prepare-poetry.yml
+    with:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    secrets:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
-        steps:
-            - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
-              with:
-                  egress-policy: audit
+  task:
+    name: Run Provided Command
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Checkout code
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify no public PyPI fallback
+        run: poetry run nox -s verify_assured
 
-            - name: Set up Python
-              uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
-              with:
-                  python-version: ${{ inputs.python-version }}
-
-            - name: Upgrade pip and install requirements
-              run: |
-                  python -m pip install --upgrade pip
-                  if [ -f requirements.txt ]; then
-                    echo "Installing dependencies from requirements.txt..."
-                    pip install -r requirements.txt
-                  else
-                    echo "⚠️ No requirements.txt found. Skipping dependency installation."
-                  fi
-
-            - name: Run Provided Command
-              env:
-                  RUN_COMMAND: ${{ inputs.run-command }}
-              run: |
-                  echo "Running command: $RUN_COMMAND"
-                  "${RUN_COMMAND}"
+      - name: Execute command
+        env:
+          RUN_COMMAND: ${{ inputs.run-command }}
+        run: |
+          echo "▶ $RUN_COMMAND"
+          poetry run $RUN_COMMAND
