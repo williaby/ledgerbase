@@ -1,14 +1,20 @@
-# name = security-snyk.yml
-# description = Unified Snyk security pipeline: Code, OSS & Container scans via Nox; artifacts via SARIF; fails on high/critical issues
-# category = security
-# usage = Trigger on push/main, pull_request/main, or workflow_dispatch to run all Snyk scans
-# behavior = Executes Nox sessions snyk_code, snyk_oss, snyk_container in parallel; uploads SARIF artifacts to GitHub Security tab
-# inputs = secrets: SNYK_TOKEN
-# outputs = snyk-code.sarif, snyk-oss.sarif, snyk-container.sarif artifacts
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e, actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47, nox, poetry, node
-# author = Byron Williams
-# last_modified = 2025-04-23
-# tags = security, snyk, ci
+---
+# Front-Matter for GitHub Workflow
+title: "Unified Snyk Security Scan"
+name: "security-snyk.yml"
+description: >
+  Unified Snyk security pipeline: Code, OSS & Container scans via Nox; artifacts via SARIF
+category: security
+usage: "Triggered on push to main, pull requests, and manual workflow dispatch"
+behavior: "Runs Snyk security scans for code, OSS, and container, and reports findings in SARIF format"
+inputs: "Python source code, dependencies, container images"
+outputs: "SARIF reports and security labels"
+dependencies: "Snyk, Node.js, Poetry, GitHub Actions"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Updated to conform to annotation spec format"
+tags: [security, snyk, analysis, sarif, code, oss, container]
+---
 
 name: Security – Unified Snyk CI
 
@@ -29,8 +35,17 @@ env:
   PR_LABEL: status:security-failed
 
 jobs:
+  prepare:
+    name: Prepare Poetry & Assured OSS
+    uses: ./.github/workflows/templates/prepare-poetry.yml
+    with:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    secrets:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+
   snyk_scan:
     name: Snyk Scan – ${{ matrix.target.name }}
+    needs: prepare
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -46,54 +61,29 @@ jobs:
             sarif: docs/reports/sarif/snyk-container.sarif
 
     steps:
-      - name: Harden the runner (Audit outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@v4
 
-      - name: Set up Python & Node
-        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
-        with:
-          python-version: "3.12"
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
 
-      - name: Cache Poetry & pip
-        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      - name: Cache npm
-        uses: actions/cache@2f8e54208210a422b2efd51efaa6bd6d7ca8920f
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Install Nox & Poetry export plugin
-        run: |
-          python -m pip install --upgrade pip
-          pip install nox poetry poetry-plugin-export
-
-      - name: Run ${{ matrix.target.name }} via Nox
-        run: nox -s ${{ matrix.target.session }}
+      - name: Run Snyk session
+        run: poetry run nox -s ${{ matrix.target.session }}
 
       - name: Upload SARIF report
-        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
+        uses: actions/upload-artifact@v4
         with:
           name: snyk-${{ matrix.target.name }}-sarif
           path: ${{ matrix.target.sarif }}
           retention-days: 2
 
-      - name: Upload SARIF → GitHub Security tab
-        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
+      - name: Upload SARIF → Security tab
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ matrix.target.sarif }}

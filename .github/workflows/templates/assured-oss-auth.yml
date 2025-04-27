@@ -1,0 +1,79 @@
+---
+# Front-Matter for GitHub Workflow Template
+
+title: "Assured OSS Authentication"
+name: "assured-oss-auth.yml"
+description: "Configures authentication for Google Artifact Registry and Poetry for Assured OSS"
+category: workflow
+usage: "Include as a reusable workflow in GitHub Actions"
+behavior: "Authenticates to Google Cloud and configures Poetry for Assured OSS"
+inputs: "credentials_json, configure_poetry"
+outputs: "none"
+dependencies: "google-github-actions/auth, keyring, keyrings.google-artifactregistry-auth"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Added front-matter according to annotation spec"
+tags: [workflow, authentication, assured-oss]
+---
+
+on:
+  workflow_call:
+    inputs:
+      credentials_json:
+        description: "Service account JSON for Google Artifact Registry (base64 or raw)."
+        required: true
+        type: string
+      configure_poetry:
+        description: "Whether to configure Poetry to use Assured OSS (true/false)."
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      GCP_SA_JSON:
+        description: "Service account JSON secret mapped from repository secrets."
+        required: true
+        type: string
+
+jobs:
+  auth_and_configure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ inputs.credentials_json }}
+
+      - name: Install pip tooling
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install keyring keyrings.google-artifactregistry-auth
+
+      - name: Configure Poetry for Assured OSS
+        if: ${{ inputs.configure_poetry }}
+        shell: bash
+        run: |
+          poetry config repositories.assured-oss https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple
+          poetry config http-basic.assured-oss _json_key_base64 "${{ inputs.credentials_json }}"
+
+  verify_assured:
+    needs: auth_and_configure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify no public PyPI fallbacks
+        shell: bash
+        run: |
+          nox -s verify_assured
+
+# Example usage in a workflow file:
+# jobs:
+#   my_python_job:
+#     uses: ./.github/workflows/templates/assured-oss-auth.yml
+#     with:
+#       credentials_json: ${{ secrets.GCP_SA_JSON }}
+#       configure_poetry: true
+#     secrets:
+#       GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}

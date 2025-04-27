@@ -1,102 +1,83 @@
-# name = license.yml
-# description = License compliance checks via Nox session and PR comments on violations
-# category = security
-# usage = Trigger weekly on Sundays at 02:00 UTC, on push/main, or on PR to run license checks
-# behavior = Runs Nox license_report session; comments on PRs with violations; uploads report artifacts
-# inputs = triggers: schedule, push(main), pull_request(main), workflow_dispatch; secrets: none
-# outputs = license-report.json, disallowed.txt artifacts; PR comments
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea, actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5, poetry, nox
-# author = Byron Williams
-# last_modified = 2025-04-18
-# tags = security, compliance, license
-# changelog = Switched to license_report session; unconditional report upload; fixed continue‑on‑error behavior
+---
+# Front-Matter for GitHub Workflow
+
+title: "License Compliance Workflow"
+name: "license.yml"
+description: "License compliance checks via Nox session and PR comments on violations"
+category: security
+usage: "Trigger weekly on Sundays at 02:00 UTC, on push/main, or on PR"
+behavior: "Runs Nox license_report; comments on PRs via comment_violations; uploads report artifacts"
+inputs: "Repository code and dependencies"
+outputs: "License report artifacts and PR comments"
+dependencies: "Poetry, Nox, GitHub Actions"
+author: "Byron Williams"
+last_modified: "2025-04-25"
+changelog: "Initial migration to front-matter format"
+tags: [security, compliance, license]
+---
 
 name: License Compliance
 
 on:
-    push:
-        branches: ["main"]
-    pull_request:
-        branches: ["main"]
-    workflow_dispatch: {}
+  schedule:
+    - cron: '0 2 * * 0'   # weekly Sunday 02:00 UTC
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch: {}
 
 permissions:
-    contents: read
-    issues: write
-    pull-requests: write
+  contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
-    license_report:
-        name: Generate & Archive License Report
-        runs-on: ubuntu-latest
-        steps:
-            - name: Harden the runner (Audit outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-              with:
-                  egress-policy: audit
+  prepare:
+    name: Prepare Poetry & Assured OSS
+    uses: ./.github/workflows/templates/prepare-poetry.yml
+    with:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    secrets:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
-            - name: Checkout repository
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+  license_report:
+    name: Generate & Archive License Report
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up Python
-              uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
-              with:
-                  python-version: "3.12"
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
 
-            - name: Install Nox & Poetry export plugin
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install poetry nox poetry-plugin-export
+      - name: Run license_report session
+        run: poetry run nox -s license_report
 
-            - name: Run license_report session
-              run: nox -s license_report
+      - name: Upload license report artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-report
+          path: |
+            docs/reports/json/license-report.json
+            docs/reports/json/disallowed.txt
+          retention-days: 2
 
-            - name: Upload license report artifacts
-              if: always()
-              uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5
-              with:
-                  name: license-report
-                  path: |
-                      docs/reports/json/license-report.json
-                      docs/reports/json/disallowed.txt
-                  retention-days: 2
+  comment_violations:
+    name: Comment on PR with License Violations
+    needs: license_report
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    comment-violations:
-        name: Comment on PR with License Violations
-        needs: license_report
-        if: github.event_name == 'pull_request'
-        runs-on: ubuntu-latest
-        steps:
-            - name: Harden the runner (Audit outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-              with:
-                  egress-policy: audit
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
 
-            - name: Checkout repository
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-            - name: Check for disallowed licenses
-              id: check
-              run: |
-                  if [[ -f docs/reports/json/disallowed.txt ]]; then
-                    count=$(wc -l < docs/reports/json/disallowed.txt)
-                    echo "violations=$count" >> "$GITHUB_OUTPUT"
-                  else
-                    echo "violations=0" >> "$GITHUB_OUTPUT"
-                  fi
-
-            - name: Comment PR if violations exist
-              if: steps.check.outputs.violations != '0'
-              uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
-              with:
-                  script: |
-                      const fs = require('fs');
-                      const violations = fs.readFileSync('docs/reports/json/disallowed.txt', 'utf-8').trim();
-                      const count = violations.split('\n').length;
-                      const comment = `### License Scan Results\n\n⚠️ **${count} license violations found:**\n\n\`\`\`\n${violations}\n\`\`\``;
-                      await github.rest.issues.createComment({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: context.payload.pull_request.number,
-                        body: comment
-                      });
+      - name: Run comment_violations session
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: poetry run nox -s comment_violations

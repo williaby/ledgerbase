@@ -2,3 +2,7 @@ creation_rules:
     - pgp: 9360A8293F1430EB3E88B99CB2C95364612BFFDF # pragma: allowlist secret
       encrypted_regex: "^(DATABASE_URL|SNYK_TOKEN|.+_KEY|.+_SECRET)$"
       path_regex: '\\.env\\.prod(\\.sops)?\\.ya?ml$'
+
+    # New rule for your GCP service account
+    - path_regex: 'ledgerbase_secure_env/service-account\.json$'
+      pgp: 9360A8293F1430EB3E88B99CB2C95364612BFFDF # pragma: allowlist secret

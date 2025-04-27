@@ -25,18 +25,28 @@ release = "0.1.0"
 
 # -- General configuration ------------------------------------------
 extensions = [
-    "sphinx.ext.autodoc",  # Core autodoc support
-    "sphinx.ext.autosummary",  # Generate autodoc summaries
-    "sphinx.ext.viewcode",  # Link to highlighted source code
-    "sphinx.ext.intersphinx",  # Link to other projects' docs
-    "sphinx.ext.napoleon",  # Google/NumPy style docstrings
-    "sphinx.ext.todo",  # Support for todo directives
-    "sphinxcontrib.plantuml",  # PlantUML diagrams
+    "sphinx.ext.autodoc",            # Core autodoc support
+    "sphinx.ext.autosummary",        # Generate autodoc summaries
+    "sphinx.ext.viewcode",           # Link to highlighted source code
+    "sphinx.ext.intersphinx",        # Link to other projects' docs
+    "sphinx.ext.napoleon",           # Google/NumPy style docstrings
+    "sphinx.ext.todo",               # Support for todo directives
+    "sphinxcontrib.plantuml",        # PlantUML diagrams
     "readthedocs_sphinx_search.extension",  # RTD search-as-you-type
-    "sphinxcontrib.spelling",  # Spell checking
+    "sphinxcontrib.spelling",        # Spell checking
+
+    # **New additions for Markdown & front-matter**
+    "myst_parser",                   # Markdown support + front-matter
+    "sphinx_copybutton",             # “Copy” button on code blocks
+    "sphinx_autodoc_typehints",      # Inline param/return types
 ]
 
-autosummary_generate = True  # Automatically generate summary pages
+# Automatically generate summary pages for modules
+autosummary_generate = True
+
+# -- MyST (Markdown) front-matter configuration --------------------
+myst_enable_extensions = ["front_matter"]
+myst_front_matter_enable = True
 
 # -- Autodoc default options ----------------------------------------
 autodoc_default_options = {
@@ -53,7 +63,7 @@ napoleon_numpy_docstring = True
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "requests": ("https://docs.python-requests.org/en/latest/", None),
-    # Add other mappings as needed...
+    # Add other mappings as needed…
 }
 
 # -- PlantUML configuration -----------------------------------------
@@ -64,7 +74,6 @@ plantuml_output_format = "svg"
 # -- Spelling configuration -----------------------------------------
 spelling_show_suggestions = True
 spelling_ignore_pypi_package_names = True
-# To whitelist terms: uncomment and list wordlist files
 spelling_word_list_filename = ["spelling_wordlist.txt"]
 
 # -- TODO configuration ---------------------------------------------
@@ -72,12 +81,17 @@ todo_include_todos = True
 
 # -- Templates and exclude patterns ---------------------------------
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store","reports/json/*",
-                    "reports/sarif/*"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "reports/json/*",
+    "reports/sarif/*",
+]
 html_static_path = ["_static"]
 
 # -- HTML output options --------------------------------------------
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 html_theme_options = {
     "navigation_depth": 4,
     "collapse_navigation": False,

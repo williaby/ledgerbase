@@ -1,3 +1,21 @@
+---
+# Front-Matter for GitHub Workflow
+title: "Bandit Security Scan"
+name: "security-bandit.yml"
+description: >
+  Performs security analysis on Python code using Bandit to identify common security issues.
+category: security
+usage: "Triggered on push to main and pull requests"
+behavior: "Runs Bandit security scan and reports findings in SARIF format and PR comments"
+inputs: "Python source code"
+outputs: "SARIF reports, PR comments, and security labels"
+dependencies: "Bandit, SARIF tools, GitHub Actions"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Updated to conform to annotation spec format"
+tags: [security, bandit, analysis, python]
+---
+
 name: Bandit Security Scan
 
 on:
@@ -26,12 +44,12 @@ jobs:
 
         steps:
             - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              uses: step-security/harden-runner@v2.12
               with:
                   egress-policy: audit
 
             - name: Checkout
-              uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+              uses: actions/checkout@v4
 
             - name: Install SARIF tools
               run: |

@@ -1,16 +1,20 @@
-# .github/workflows/dependency-review.yml
-# name = dependency-review.yml  # noqa: E265
-# description = Scans dependency changes in pull requests and blocks known-vulnerable versions
-# category = ci  # noqa: E265
-# usage = Trigger on pull_request to review dependencies via GitHub Dependency Review Action
-# behavior = Flags vulnerable dependencies in PRs; blocks merge if required
-# inputs = GitHub pull_request event payload; no secrets  # noqa: E265
-# outputs = GitHub check results for dependency safety  # noqa: E265
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/dependency-review-action@67d4f4bd7a9b17a0db54d2a7519187c65e339de8  # noqa: E265
-# author = Byron Williams  # noqa: E265
-# last_modified = 2025-04-17  # noqa: E265
-# tags = security, dependencies  # noqa: E265
-# changelog = Pinned all action SHAs; added annotation header  # noqa: E265
+---
+# Front-Matter for GitHub Workflow
+
+title: "Dependency Review Workflow"
+name: "dependency-review.yml"
+description: "Scans dependency changes in pull requests and blocks known-vulnerable versions"
+category: ci
+usage: "Trigger on pull_request to review dependencies via GitHub Dependency Review Action"
+behavior: "Flags vulnerable dependencies in PRs; blocks merge if required"
+inputs: "GitHub pull_request event payload; no secrets"
+outputs: "GitHub check results for dependency safety"
+dependencies: "step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/dependency-review-action@67d4f4bd7a9b17a0db54d2a7519187c65e339de8"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Pinned all action SHAs; added annotation header; converted to YAML front-matter format"
+tags: [security, dependencies]
+---
 
 name: "Dependency Review"
 
@@ -26,12 +30,12 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+              uses: step-security/harden-runner@v2.12
               with:
                   egress-policy: audit
 
             - name: Checkout repository
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+              uses: actions/checkout@v4
 
             - name: Dependency Review
-              uses: actions/dependency-review-action@67d4f4bd7a9b17a0db54d2a7519187c65e339de8
+              uses: actions/dependency-review-action@v4

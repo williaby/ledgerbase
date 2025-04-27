@@ -1,144 +1,127 @@
-# Enhanced File Annotation & Docstring Specification v3
-
-## Introduction
-
-Consistent, clear documentation significantly enhances maintainability, collaboration,
-onboarding, and automation capabilities. This guide defines mandatory requirements for
-file headers and docstrings, along with recommended best practices and automation tools
-to support compliance.
-
+---
+title: "Enhanced File Annotation & Docstring Specification"
+name: "annotation_spec.md"
+description: >
+  Defines the required structure for metadata front‑matter and docstrings across all project files.
+category: docs
+usage: "Reference for all project contributors when creating or modifying files"
+behavior: "Defines standards for file documentation"
+inputs: none
+outputs: none
+dependencies: none
+author: "Byron Williams"
+version: "2.0"
+last_modified: "2023-11-15"
+changelog: "Converted spec to YAML front-matter format and updated examples"
+tags: [docs, specification]
 ---
 
-## Part 1: File Header Metadata (Mandatory)
+## Enhanced File Annotation & Docstring Specification
 
-Each source file (.py, .sh, .yml, .toml, etc.) **MUST** begin with structured metadata headers.
+## Purpose
 
-### 1.1 Supported Header Styles
+This specification defines a unified approach to file metadata and docstrings, using YAML front‑matter across all text‑based source files (`.md`, `.py`, `.sh`, `.yml`, `.toml`). It improves clarity, onboarding, and automation compatibility.
 
-| File Extension | Header Syntax | Example Prefix |
-|----------------|---------------|----------------|
-| .py            | ##:           | ##: name = example_script.py |
-| .sh            | ##:           | ##: name = deploy.sh |
-| .yml, .yaml    | #             | # name = config.yml |
-| .toml          | #             | # name = pyproject.toml |
+## Part 1: YAML Front‑Matter Metadata (Mandatory)
 
-### 1.2 Metadata Fields (All Required)
+All files **MUST** begin with a YAML block enclosed by `---` on the first lines. This block declares metadata consumed by documentation and validation tools.
+Python files **MUST** have the front-matter embedded in the module docstring.
 
-All fields listed below are **mandatory**. If a field does not apply, use `none`
-explicitly to preserve structure and enable tooling.
+### 1.1 Required Fields
 
 | Field          | Required | Description                                              | Example                                               |
 |----------------|----------|----------------------------------------------------------|-------------------------------------------------------|
-| name           | ✅ Yes   | File name or logical identifier.                         | ##: name = run_semgrep_modular.py                     |
-| description    | ✅ Yes   | Summary of the file's primary purpose and functionality. | ##: description = Parallelized modular Semgrep runner |
-| category       | ✅ Yes   | Grouping keyword (security, correctness, best-practice, performance, maintainability, or portability.).   | ##: category = security                               |
-| usage          | ✅ Yes   | Usage instructions for scripts or CLIs.                  | ##: usage = python run_script.py [--verbose]          |
-| behavior       | ✅ Yes   | High-level behavior or side effects.                     | ##: behavior = Emits SARIF reports                    |
-| inputs         | ✅ Yes   | Key input files, env vars, or params.                    | ##: inputs = source code folders                      |
-| outputs        | ✅ Yes   | Key outputs or side effects.                             | ##: outputs = sarif/*.sarif                           |
-| dependencies   | ✅ Yes   | External libraries or tools.                             | ##: dependencies = Semgrep CLI                        |
-| author         | ✅ Yes   | Primary maintainer.                                      | ##: author = Your Name                                |
-| last_modified  | ✅ Yes   | Last modification date (YYYY-MM-DD).                     | ##: last_modified = {% now 'utc', '%Y-%m-%d' %}       |
-| tags           | ⬜ Optional   | Keywords for grouping/searching.                         | ##: tags = security, automation                       |
-| changelog      | ✅ Yes   | Historical context or versioning notes.                  | ##: changelog = Initial version, Added new validation |
+| name           | ✅ Yes   | File name or logical identifier.                         | name: "run_semgrep_modular.py"                        |
+| description    | ✅ Yes   | Summary of the file's primary purpose and functionality. | description: "Parallelized modular Semgrep runner"    |
+| category       | ✅ Yes   | Grouping keyword (e.g., security, performance).          | category: security                                    |
+| usage          | ✅ Yes   | Usage instructions.                                      | usage: "python run_script.py [--verbose]"             |
+| behavior       | ✅ Yes   | High-level behavior or side effects.                     | behavior: "Emits SARIF reports"                       |
+| inputs         | ✅ Yes   | Key input files, env vars, or params.                    | inputs: "source code folders"                         |
+| outputs        | ✅ Yes   | Key outputs or side effects.                             | outputs: "sarif/*.sarif"                              |
+| dependencies   | ✅ Yes   | External libraries or tools.                             | dependencies: "Semgrep CLI"                           |
+| author         | ✅ Yes   | Primary maintainer.                                      | author: "Your Name"                                   |
+| last_modified  | ✅ Yes   | Last modification date (YYYY-MM-DD).                     | last_modified: "2023-11-15"                           |
+| tags           | ⬜ Optional | Keywords for grouping/searching.                      | tags: [security, automation]                          |
+| changelog      | ✅ Yes   | Historical context or versioning notes.                  | changelog: "Initial version, Added new validation"    |
 
-> **Note:** All metadata fields are required. Use `none` if a specific field does not apply.
-> This ensures uniformity and supports automation and documentation tooling.
+> **Note:** Use `none` where a value does not apply to preserve structure and enable tooling.
+> **Note:** If inputs includes "secrets:" then make sure to include "# pragma: allowlist secret" to avoid false positives
+>
+### 1.2 Example for Markdown (`.md`)
 
-### 1.3 Linting Compatibility
+```md
+---
+# Front‑Matter for Markdown Page
 
-For Python files, append `# noqa: E265` to each metadata line to ensure Flake8/Ruff compatibility:
-
-```python
-##: name = example.py  # noqa: E265
-```
-
-### 1.4 Updating Guidelines
-
-Metadata **MUST** be updated when significant file changes occur, including refactoring or interface updates.
-
+title: "Project Overview"
+name: "overview.md"
+description: "Introduction to the LedgerBase project."
+category: docs
+usage: "Reference documentation for project overview"
+behavior: "Provides high-level project information"
+inputs: none
+outputs: none
+dependencies: none
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Added front-matter migration guide"
+tags: [docs, introduction]
 ---
 
-## Part 2: Docstring Requirements (Mandatory)
+# Project Overview
+…
+```
 
-All Python files (.py) **MUST** follow Google Python Style Guide for docstrings.
-
-### 2.1 Module-Level Docstrings
-
-Place immediately after file header metadata or imports.
+### 1.3 Example for Python (`.py`)
 
 ```python
-"""Module summary.
-
-Detailed explanation of features, components, and usage.
-
-Examples:
-    >>> example_function()
-    'Example Output'
+#!/usr/bin/env python
 """
+---
+title: "Data Export Script"
+name: "export_data.py"
+description: "Exports ledger transactions to CSV."
+category: script
+usage: "python export_data.py [--format=csv]"
+behavior: "Reads from database and writes to file system"
+inputs: "Database connection parameters"
+outputs: "CSV files in the output directory"
+dependencies: "pandas, csv"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Initial migration to front-matter format"
+tags: [export, data]
+---
+
+Core functionality for exporting transactions.
+"""
+import csv
+…
 ```
 
-### 2.2 Class-Level Docstrings
+## Part 2: Docstring Requirements (Python Only)
 
-```python
-class ExampleClass:
-    """Represents an example concept.
+Follow the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html) for all Python docstrings:
 
-    Detailed description of responsibilities, behaviors, and use cases.
+1. **Module docstring** immediately after front‑matter (or imports).
+2. **Class docstrings** listing purpose and attributes.
+3. **Function docstrings** with Args, Returns, Raises sections.
 
-    Attributes:
-        attr1 (str): Description.
-        attr2 (int): Description.
-    """
-```
+## Part 3: Validation & Automation
 
-### 2.3 Function and Method Docstrings
+1. **Migration Script** (`tools/convert_headers.py`) to bulk‑convert old headers to front‑matter.
+2. **Validation Hook** (`tools/check_front_matter.py`) integrated in pre‑commit:
+   - Verifies presence and format of required fields.
+   - Blocks commits on errors.
 
-```python
-def example_function(param1, param2=0):
-    """Calculate and return the result.
+## FAQ & Pitfalls
 
-    Args:
-        param1 (str): Description.
-        param2 (int, optional): Description. Defaults to 0.
+- **Q:** Is front‑matter only for Markdown?
+  **A:** No — it applies to any text file (`.py`, `.md`, `.sh`, `.yml`, `.toml`) that begins with a `---` block.
 
-    Returns:
-        bool: True if successful.
-
-    Raises:
-        ValueError: If `param1` is invalid.
-    """
-```
-
-### 2.4 Documenting Exceptions and Edge Cases
-
-Explicitly document any edge cases, boundary conditions, and conditional exceptions clearly.
+- **Q:** How to exempt binary or non‑text files?
+  **A:** Only apply validation to supported extensions via pre‑commit patterns.
 
 ---
 
-## Part 3: Automation & Best Practices
-
-### 3.1 Automated Validation Tools
-
-Compliance enforced through pre-commit checks:
-
-- Ruff, Black, Semgrep, Bandit, MyPy, markdownlint, doc8, detect-secrets, gitleaks, shellcheck
-- Custom scripts for header metadata and docstring compliance.
-
-### 3.2 Recommended Tagging Standards
-
-Use standardized tags: security, refactor, deprecated, optimization, compliance.
-
----
-
-## Part 4: FAQ & Common Pitfalls
-
-- **When to document private methods?** Document if logic is complex or non-obvious.
-- **Detail level for optional fields?** All fields are now required. Use `none` explicitly when a field doesn’t apply.
-- **Handling internal vs public APIs?** Clearly differentiate expectations; internal APIs still need clarity for maintainability.
-
----
-
-## Conclusion
-
-Adherence to these guidelines ensures robust documentation, simplifies maintenance, and supports seamless collaboration.
+End of specification.

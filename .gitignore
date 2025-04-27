@@ -20,7 +20,6 @@ venv/
 Thumbs.db
 
 # Poetry artifacts
-poetry.lock
 dist/
 build/
 
@@ -46,6 +45,8 @@ build/
 *.sops.yaml
 *.sops.json
 *.sops.env
+ledgerbase_secure_env/service-account.plain.json
+
 
 # Security and audit artifacts
 *.sarif
@@ -71,3 +72,4 @@ sbom.cdx.json
 
 # Ignore specific directories
 /styles/
+/ledgerbase_secure_env/service-account.json

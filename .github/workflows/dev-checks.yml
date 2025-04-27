@@ -1,3 +1,21 @@
+---
+# Front-Matter for GitHub Workflow
+title: "Development Checks Workflow"
+name: "dev-checks.yml"
+description: >
+  GitHub workflow that runs development checks using Nox across multiple Python versions.
+category: workflow
+usage: "Triggered automatically on PRs or manually via workflow_dispatch"
+behavior: "Runs specified Nox sessions for linting, type checking, and documentation generation"
+inputs: "Nox session parameter via workflow_dispatch"
+outputs: "Nox session results"
+dependencies: "Nox, yq, Python"
+author: "Byron Williams"
+last_modified: "2023-11-15"
+changelog: "Added front-matter according to annotation spec"
+tags: [workflow, ci, dev-checks]
+---
+
 name: Dev Checks
 
 on:
@@ -20,12 +38,12 @@ jobs:
             versions: ${{ steps.load.outputs.versions }}
         steps:
             - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+              uses: step-security/harden-runner@v2.12
               with:
                   egress-policy: audit
 
             - name: Checkout
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+              uses: actions/checkout@v4
 
             - name: Install yq
               run: |

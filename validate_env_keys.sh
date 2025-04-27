@@ -1,9 +1,12 @@
 #!/bin/bash
 
 ##: name = validate_env_keys.sh
-##: description = Validates that required keys exist in the decrypted .env file.
+##: description = Validates that required keys exist in the decrypted env files (.env.dev.sops.yaml, .env.prod.sops.yaml).
 ##: usage = ./validate_env_keys.sh
-##: behavior = Greps required keys and exits with error if any are missing.
+##: behavior = Greps required keys and exits with error if any are missing in each env file.
+##: author = LedgerBase Team
+##: last_modified = 2025-04-25
+##: changelog = Added AOSS keys and support for both dev and prod envs.
 
 set -e
 
@@ -16,29 +19,41 @@ REQUIRED_VARS=(
   SEMGREP_DEPLOYMENT_ID
   CODECOV_TOKEN
   AIKIDO_API_TOKEN
+  GOOGLE_APPLICATION_CREDENTIALS
+  GOOGLE_CLOUD_PROJECT
 )
 
-MISSING_KEYS=()
+FILES_TO_CHECK=(
+  .env.prod.sops.yaml
+  .env.dev.sops.yaml
+)
 
-DECRYPTED=$(sops -d .env.prod.sops.yaml 2>/dev/null || echo "")
+for FILE in "${FILES_TO_CHECK[@]}"; do
+  if [[ -f "$FILE" ]]; then
+    echo "🔍 Checking: $FILE"
+    DECRYPTED=$(sops -d "$FILE" 2>/dev/null || echo "")
+    if [[ -z "$DECRYPTED" ]]; then
+      echo "❌ Failed to decrypt $FILE or file empty."
+      exit 1
+    fi
 
-if [[ -z "$DECRYPTED" ]]; then
-  echo "❌ Failed to decrypt .env.prod.sops.yaml or file missing."
-  exit 1
-fi
+    MISSING_KEYS=()
+    for KEY in "${REQUIRED_VARS[@]}"; do
+      if ! echo "$DECRYPTED" | grep -q "^$KEY="; then
+        MISSING_KEYS+=("$KEY")
+      fi
+    done
 
-for KEY in "${REQUIRED_VARS[@]}"; do
-  if ! echo "$DECRYPTED" | grep -q "^$KEY="; then
-    MISSING_KEYS+=("$KEY")
+    if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
+      echo "❌ Missing required keys in $FILE:"
+      for KEY in "${MISSING_KEYS[@]}"; do
+        echo "   - $KEY"
+      done
+      exit 1
+    else
+      echo "✅ All required keys present in $FILE."
+    fi
+  else
+    echo "⚠️  File not found: $FILE — skipping."
   fi
 done
-
-if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
-  echo "❌ Missing required keys in .env.prod.sops.yaml:"
-  for KEY in "${MISSING_KEYS[@]}"; do
-    echo "   - $KEY"
-  done
-  exit 1
-fi
-
-echo "✅ All required keys present in .env.prod.sops.yaml."

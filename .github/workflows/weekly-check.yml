@@ -1,33 +1,50 @@
-# .github/workflows/weekly-check.yml
-# name = weekly-check.yml  # noqa: E265
-# description = Weekly CI health check: runs core sessions, merges SARIF, labels PRs as needed
-# category = security  # noqa: E265
-# usage = Trigger weekly on Sundays at 02:00 UTC, or on push/PR/dispatch
-# behavior = Generates session matrix; runs security, dev, lint, test sessions; merges SARIF files; labels PRs
-# inputs = triggers: schedule, push, pull_request, workflow_dispatch; secrets: none  # noqa: E265
-# outputs = merged-results.sarif in Security tab; PR labels
-# dependencies = ./.github/workflows/templates/generate-matrix.yml, ./.github/workflows/pre-commit.yml, ./.github/workflows/dev-checks.yml, ./.github/workflows/lint-matrix.yml, ./.github/workflows/test-matrix.yml, step-security/harden-runner, actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # noqa: E265
-# author = Byron Williams  # noqa: E265
-# last_modified = 2025-04-23  # noqa: E265
-# tags = ci, healthcheck, sarif, aikido  # noqa: E265
-# changelog =
-#  - Changed schedule to weekly
-#  - Pinned all third-party action SHAs
-#  - Updated metadata headers
-#  - Removed black & isort
-#  - Changed lint-matrix to use 'lint' instead of 'black'
-#  - Consolidated code-hygiene-checks to lint_other & vulture
+---
+# Front-Matter for GitHub Workflow
+title: "Weekly CI Health Check"
+name: "weekly-check.yml"
+description: "Weekly CI health check: runs core sessions, merges SARIF, labels PRs as needed"
+category: security
+usage: "Trigger weekly on Sundays at 02:00 UTC, or on push/PR/dispatch"
+behavior: "Generates session matrix; runs security, dev, lint, test sessions; merges SARIF files; labels PRs"
+inputs: "triggers: schedule, push, pull_request, workflow_dispatch; secrets: none" # pragma: allowlist secret
+outputs: "merged-results.sarif in Security tab; PR labels"
+dependencies: "./.github/workflows/templates/generate-matrix.yml, ./.github/workflows/pre-commit.yml, ./.github/workflows/dev-checks.yml, ./.github/workflows/lint-matrix.yml, ./.github/workflows/test-matrix.yml, step-security/harden-runner, actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e, actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea"
+author: "Byron Williams"
+last_modified: "2025-04-23"
+tags: [ci, healthcheck, sarif, aikido]
+changelog: |
+  - Changed schedule to weekly
+  - Pinned all third-party action SHAs
+  - Updated metadata headers
+  - Removed black & isort
+  - Changed lint-matrix to use 'lint' instead of 'black'
+  - Consolidated code-hygiene-checks to lint_other & vulture
+---
 
 name: Weekly CI Health Check
 
 on:
   schedule:
     - cron: "0 2 * * 0"   # Run weekly on Sunday at 02:00 UTC
-  push:
-  pull_request:
+  push: {}
+  pull_request: {}
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+  pull-requests: write
+
 jobs:
+  prepare:
+    name: Prepare Poetry & Assured OSS
+    uses: ./.github/workflows/templates/prepare-poetry.yml
+    with:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    secrets:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+
   generate-matrix:
     uses: ./.github/workflows/templates/generate-matrix.yml
 
@@ -38,56 +55,51 @@ jobs:
       sessions: ${{ needs.generate-matrix.outputs.sessions }}
 
   pre-commit:
+    needs: prepare
     uses: ./.github/workflows/pre-commit.yml
 
   dev-checks:
+    needs: prepare
     uses: ./.github/workflows/dev-checks.yml
 
   lint-matrix:
+    needs: prepare
     uses: ./.github/workflows/templates/lint-matrix.yml
     with:
-      # "black" removed, replaced with your "lint" session
       sessions: '["lint","mypy"]'
 
   test-matrix:
+    needs: prepare
     uses: ./.github/workflows/templates/test-matrix.yml
     with:
       session: "tests"
 
-  # ------------------------------------------------
-  # Aikido weekly full-repo security scan + usage
-  # ------------------------------------------------
   aikido-weekly-scan:
-    needs: security-checks
+    name: Aikido Weekly Scan & Usage
+    needs: [security-checks, prepare]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Install Nox & Aikido CLI
-        run: |
-          pip install nox aikido-security-cli
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
 
       - name: Run Aikido weekly scan
         env:
           AIKIDO_API_TOKEN: ${{ secrets.AIKIDO_API_TOKEN }}
-        run: nox -s aikido-weekly-scan
+        run: poetry run nox -s aikido-weekly-scan
 
       - name: Generate Aikido SARIF report
         run: |
-          aikido-local-scanner scan ./ \
+          poetry run aikido-local-scanner scan ./ \
             --all \
             --ignore-path .semgrepignore \
             --sarif-output aikido.sarif
 
       - name: Upload Aikido SARIF artifact
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: aikido-sarif
           path: aikido.sarif
@@ -95,56 +107,39 @@ jobs:
       - name: Run Aikido usage report
         env:
           AIKIDO_API_TOKEN: ${{ secrets.AIKIDO_API_TOKEN }}
-        run: nox -s aikido-usage-report
+        run: poetry run nox -s aikido-usage-report
 
   code-hygiene-checks:
     name: Code Hygiene (lint_other & vulture)
+    needs: [pre-commit, prepare]
     runs-on: ubuntu-22.04
-    needs: [pre-commit]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Install Nox
-        run: pip install nox
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
 
       - name: Run lint_other & vulture
         run: |
-          mkdir -p reports
-          # YAML/Markdown formatting + codespell
-          nox -s lint_other
-          # dead-code scan
-          nox -s vulture > reports/vulture.log 2>&1
+          poetry run nox -s lint_other
+          poetry run nox -s vulture > reports/vulture.log 2>&1
 
       - name: Upload vulture log
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vulture-log
           path: reports/vulture.log
 
   summary:
     name: CI Status Summary
+    needs: [security-checks, pre-commit, dev-checks, lint-matrix, test-matrix, aikido-weekly-scan, code-hygiene-checks]
     runs-on: ubuntu-22.04
     if: always()
-    needs:
-      [
-        security-checks,
-        pre-commit,
-        dev-checks,
-        lint-matrix,
-        test-matrix,
-        aikido-weekly-scan,
-        code-hygiene-checks,
-      ]
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+      - name: Harden the runner (Audit outbound calls)
+        uses: step-security/harden-runner@v2.12.0
         with:
           egress-policy: audit
 
@@ -161,7 +156,7 @@ jobs:
           npm install -g @microsoft/sarif-multitool jq
 
       - name: Download SARIF artifacts
-        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e
+        uses: actions/download-artifact@v4
         with:
           path: merged
 
@@ -175,7 +170,7 @@ jobs:
 
       - name: Upload Merged SARIF to GitHub Security Tab
         if: ${{ hashFiles('merged-results.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@45775bd8235c68ba998cffa5171334d58593da47
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: merged-results.sarif
 
@@ -184,7 +179,6 @@ jobs:
         run: |
           if [ -f merged-results.sarif ]; then
             count=$(jq '[.runs[].results[]] | length' merged-results.sarif)
-            echo "Found $count security issues."
             echo "issue_count=$count" >> $GITHUB_OUTPUT
           else
             echo "issue_count=0" >> $GITHUB_OUTPUT
@@ -192,10 +186,10 @@ jobs:
 
       - name: Label PR if Security Issues Found
         if: github.event_name == 'pull_request' && steps.check_sarif.outputs.issue_count != '0'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        uses: actions/github-script@v7
         with:
           script: |
-            github.issues.addLabels({
+            await github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,

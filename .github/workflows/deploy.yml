@@ -1,16 +1,20 @@
-# .github/workflows/deploy.yml
-# name = deploy.yml  # noqa: E265
-# description = Deploys LedgerBase to Unraid self-hosted runner: builds, backs up, and runs Docker Compose
-# category = cd  # noqa: E265
-# usage = Trigger on push to main or version tag, or manual dispatch to deploy changes
-# behavior = Checks out code; validates secrets; builds/pushes images; backs up data & images; deploys via Docker Compose
-# inputs = triggers: push(main, tags v*.*.*), workflow_dispatch; secrets: GHCR_PAT, none  # noqa: E265
-# outputs = New Docker image deployed; backups created  # noqa: E265
-# dependencies = step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # noqa: E265
-# author = Byron Williams  # noqa: E265
-# last_modified = 2025-04-17  # noqa: E265
-# tags = cd, deployment, backup  # noqa: E265
-# changelog = Pinned all action SHAs; added full metadata header; clarified triggers  # noqa: E265
+---
+# Front-Matter for GitHub Workflow
+
+title: "Deploy to Unraid"
+name: "deploy.yml"
+description: "Deploys LedgerBase to Unraid self-hosted runner: builds, backs up, and runs Docker Compose"
+category: cd
+usage: "Trigger on push to main or version tag, or manual dispatch to deploy changes"
+behavior: "Checks out code; validates secrets; builds/pushes images; backs up data & images; deploys via Docker Compose"
+inputs: "triggers: push(main, tags v*.*.*), workflow_dispatch; secrets: GHCR_PAT"
+outputs: "New Docker image deployed; backups created"
+dependencies: "step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf, actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"
+author: "Byron Williams"
+last_modified: "2025-04-17"
+changelog: "Pinned all action SHAs; added full metadata header; clarified triggers"
+tags: [cd, deployment, backup]
+---
 
 name: Deploy to Unraid
 
@@ -32,12 +36,12 @@ jobs:
 
         steps:
             - name: Harden the runner (Audit all outbound calls)
-              uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+              uses: step-security/harden-runner@v2.12
               with:
                   egress-policy: audit
 
             - name: Checkout code
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+              uses: actions/checkout@v4
 
             - name: Validate GHCR_PAT Secret
               run: |

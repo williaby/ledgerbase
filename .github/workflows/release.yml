@@ -1,39 +1,54 @@
-# name = release.yml
-# description = GitHub workflow that automates the release process using semantic-release
-# category = automation
-# usage = Automatically triggered when code is pushed to the main branch
-# behavior = Determines the next version number based on commit messages, creates a new release, and publishes to PyPI
-# inputs = GitHub and PyPI tokens
-# outputs = New GitHub release and PyPI package
-# dependencies = semantic-release, poetry
-# author = LedgerBase Team
-# last_modified = 2023-11-15
-# changelog = Initial version
+---
+# Front-Matter for GitHub Workflow
+title: "Semantic Release Automation"
+name: "release.yml"
+description: "Automate releases via semantic-release"
+category: automation
+usage: "Triggered automatically on push to main branch"
+behavior: "Runs semantic-release to create new releases based on commit messages"
+inputs: "GitHub token and PyPI token secrets"
+outputs: "New GitHub release and PyPI package if applicable"
+dependencies: "semantic-release, poetry"
+author: "LedgerBase Team"
+last_modified: "2023-11-15"
+changelog: "Updated to match annotation spec format"
+tags: [release, automation, semantic-release]
+---
 
 name: Release
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write  # if you need OIDC later
 
 jobs:
-    release:
-        name: Semantic Release
-        runs-on: ubuntu-22.04
-        steps:
-            - uses: actions/checkout@v4
+  prepare:
+    name: Prepare Poetry & Assured OSS
+    uses: ./.github/workflows/templates/prepare-poetry.yml
+    with:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    secrets:
+      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                  python-version: 3.11
+  release:
+    name: Semantic Release
+    needs: prepare
+    runs-on: ubuntu-22.04
 
-            - name: Install dependencies
-              run: poetry install --with dev
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Run Semantic‑Release
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-              run: semantic-release publish
+      - name: Verify no public PyPI fallbacks
+        run: poetry run nox -s verify_assured
+
+      - name: Run Semantic-Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: poetry run semantic-release publish
