@@ -42,6 +42,10 @@ keyring = "^24.0.0"
 "keyrings.google-artifactregistry-auth" = "^1.1.2"
 packaging = "^23.1"
 
+# Azure Key Vault runtime SDKs
+azure-identity = "^1.16.0"
+azure-keyvault-secrets = "^4.8.0"
+
 [tool.poetry.group.dev.dependencies]
 # Core testing & linting
 pytest = "^8.3.5"
