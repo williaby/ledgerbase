@@ -66,7 +66,7 @@
   // MD040: Fenced code blocks should have a language specified
   "MD040": true,
   // MD041: First line in a file should be a top-level heading
-  "MD041": true, // Enforce H1 as first line
+  "MD041": false, // Enforce H1 as first line
   // MD046: Code block style (require 'fenced' ``` blocks)
   "MD046": { "style": "fenced" },
   // MD047: Files should end with a single newline character

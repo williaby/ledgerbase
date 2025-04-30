@@ -1,102 +1,74 @@
----
-title: "Security Policy"
-name: "SECURITY.md"
-description: "Security policy and practices for the LedgerBase project"
-category: security
-usage: "Reference for users and contributors to understand security policies and procedures"
-behavior: "Outlines supported versions, vulnerability reporting, security practices, and policy enforcement"
-inputs: none
-outputs: none
-dependencies: none
-author: "LedgerBase Team"
-last_modified: "2023-11-15"
-changelog: "Initial version"
-tags: [security, policy]
----
+<!-- SPDX-FileCopyrightText: © 2019–2025 Byron Williams -->
+<!-- SPDX-License-Identifier: MIT -->
 
-## Security Policy
+> **NOTE:** This file is maintained centrally in the organization’s `.github` repository.
+> For the latest version, see:
+> <https://github.com/williaby/.github/blob/main/SECURITY.md>
 
-This document outlines the security practices and processes for the LedgerBase project, aligned with the [OSSF Scorecard](https://github.com/ossf/scorecard) and [OpenSSF Best Practices Badge](https://openssf.org/best-practices-badge/) requirements.
-
-## Supported Versions
-
-We follow [Semantic Versioning](https://semver.org/) and maintain security support for the following release series:
-
-| Version    | Supported      |
-|------------|----------------|
-| `>= 1.0.0` | ✅ Active      |
-| `< 1.0.0`  | ❌ End-of-life |
-
-Releases outside the supported range will not receive security updates. Users should upgrade to a supported version by following the [Upgrade Guide](docs/UPGRADE.md) in the repository.
+# Security Policy
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in LedgerBase, please report it via one of the following channels:
+If you discover a security vulnerability in any project under our organization,
+**please do not open a public issue**.
+Instead, use GitHub’s built-in Security advisories feature:
 
-1. **GitHub Security Advisory**: Open a confidential advisory in the [Security tab](https://github.com/williaby/ledgerbase/security/advisories).
-2. **Encrypted Email**: Send an email to `security@williaby.io`, encrypted with the project PGP key.
+1. Go to the repository’s **Security** tab
+2. Click **“Report a vulnerability”**
+3. Fill in the details and submit
 
------BEGIN PGP PUBLIC KEY BLOCK-----
-(Key ID: `9360A8293F1430EB3E88B99CB2C95364612BFFDF`)
------END PGP PUBLIC KEY BLOCK-----
+All reports will be kept confidential. We commit to acknowledging receipt and
+next steps via the Security tab.
 
-Please include in your report:
+## Supported Versions
 
-- Affected version(s)
-- Detailed description and steps to reproduce
-- Impact assessment
-- Proof-of-concept or logs, if available
+The following table shows which major releases we support. For full upgrade
+paths and end-of-life schedules, see our [Upgrade Guide][upgrade‐guide].
 
-## CVE & Advisory Workflow
-
-Once a vulnerability is verified:
-
-1. Maintainers will request a CVE ID via GitHub’s integrated CVE assignment.
-2. A fix will be developed, merged, and a Security Advisory published, including the CVE.
-3. Release notes will reference the advisory and CVE for tracking.
-
-## Acknowledgment & Response
-
-- We will acknowledge receipt within **72 hours**.
-- For critical issues, we aim to provide a mitigation or fix within **90 days** of acknowledgment.
-
-## Security Contact
-
-- **GitHub Team**: [@williaby/security](https://github.com/orgs/williaby/teams/security)
-- **Email**: `security@williaby.io`
+| Version  | Status       |
+|----------|--------------|
+| v3.x     | Supported    |
+| v2.x     | Security‐only support |
+| v1.x     | End of life  |
 
 ## Security Practices
 
-We enforce comprehensive security measures across code, dependencies, infrastructure, and runtime environments:
+We strive for proactive, comprehensive security across our codebases and infrastructure.
+Our standard practices include:
 
-- **Dependency Management**:
-  - Dependencies are pinned in `pyproject.toml` and periodically reviewed.
-  - Automated alerts and pull requests via Dependabot and `pip-audit`.
+- **Static Analysis** with CodeQL, Semgrep, Ruff, and Bandit
+- **Dependency Pinning** for reproducible builds
+- **Container Scanning** using Trivy
+- **SBOM Generation** for each release
+- **Secrets Detection** integrated in CI pipelines
+- **Hardened CI Runners** with minimal privileges
 
-- **Static Analysis & SAST**:
-  - **CodeQL**, **Semgrep**, **Ruff**, **Bandit**, and **Safety** scans run on every pull request.
+## CVE & Advisory Workflow
 
-- **Container Security & SBOM**:
-  - **Trivy** scans container images in CI.
-  - SBOMs generated with **CycloneDX (cyclonedx-py)** for each release.
+We track and publish advisories for all confirmed vulnerabilities:
 
-- **Vulnerability Scanning & Testing**:
-  - **Snyk** and **Codecov** integrated for continuous monitoring and coverage metrics.
+1. **Request a CVE** for issues rated Moderate or above.
+2. **Draft and publish an advisory** in the Security tab.
+3. **Include remediation steps** in release notes and upgrade guide.
 
-- **Secrets Detection**:
-  - `ggshield` (GitGuardian) and pre-commit hooks detect accidental commits of secrets.
+## Response Timeline
 
-- **Infrastructure Hardening**:
-  - GitHub Actions workflows use `step-security/harden-runner@v2.11.1`, pinned to the specific SHA, to ensure runner environments are secured and up-to-date.
+- **Acknowledgment:** within 5 business days
+- **Fix released:** within 30 days of acknowledgment
+- **Emergency patch:** sooner for critical severity
 
-- **CI/CD Enforcement**:
-  - All PRs must pass security checks (CodeQL, Semgrep, Trivy, Snyk, Safety, Bandit) in GitHub Actions before merging.
+## Disclosure Policy
 
-## Policy Enforcement
+We follow coordinated disclosure principles. Once a fix is available, we will
+publish details in our Security Advisories page. If you wish to receive credit
+for responsibly disclosing a vulnerability, please let us know; otherwise
+credit will be anonymous.
 
-- Pull requests introducing security issues or failing automated checks will be blocked.
-- Contributors must follow this policy; non-compliance may delay or reject contributions.
+## Credit
 
-## Acknowledgements
+This policy is based on community best practices and has drawn on elements from
+multiple sources within our organization’s previous drafts.
 
-We appreciate the work of security researchers, contributors, and the OpenSSF community for guidance and best practices.
+### Last updated: April 30, 2025
+
+[upgrade‐guide]: https://github.com/williaby/.github/blob/main/UPGRADE_GUIDE.md
