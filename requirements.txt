@@ -58,7 +58,7 @@ psycopg-binary==3.1.18 ; python_version >= "3.11" and python_version < "4.0" and
 pycparser==2.22 ; python_version >= "3.11" and python_version < "4.0" and platform_python_implementation != "PyPy"
 pygments==2.19.1 ; python_version >= "3.11" and python_version < "4.0"
 python-dateutil==2.9.0.post0 ; python_version >= "3.11" and python_version < "4.0"
-python-dotenv==1.1.0 ; python_version >= "3.11" and python_version < "4.0"
+python-dotenv==1.2.2 ; python_version >= "3.11" and python_version < "4.0"
 pyyaml==6.0.1 ; python_version >= "3.11" and python_version < "4.0"
 referencing==0.36.2 ; python_version >= "3.11" and python_version < "4.0"
 requests==2.32.3 ; python_version >= "3.11" and python_version < "4.0"
