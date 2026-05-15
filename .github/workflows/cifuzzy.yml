@@ -37,15 +37,18 @@ jobs:
       security-events: write
     steps:
       - name: Harden runner (audit outbound)
-        uses: step-security/harden-runner@v2.12
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
           egress-policy: audit
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Build Fuzzers
         id: build
+        # NOTE: google/oss-fuzz publishes CIFuzz actions only on the `master`
+        # branch; no immutable SHA is available upstream. See SECURITY-FINDINGS.md
+        # GHA-006 for the mitigation plan (run inside a hardened, egress-blocked job).
         uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
         with:
           oss-fuzz-project-name: "ledgerbase"
@@ -59,13 +62,13 @@ jobs:
 
       - name: Upload crash artifacts
         if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
         with:
           name: cifuzz-artifacts
           path: out/artifacts
 
       - name: Upload CIFuzz SARIF
         if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
         with:
           sarif_file: sarif/cifuzz.sarif

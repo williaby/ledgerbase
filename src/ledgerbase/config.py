@@ -39,7 +39,7 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-development-key")
+    SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 class DevelopmentConfig(Config):
@@ -53,7 +53,15 @@ class ProductionConfig(Config):
 
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
     PREFERRED_URL_SCHEME = "https"
+
+    def __init__(self) -> None:
+        if not os.getenv("SECRET_KEY"):
+            raise ValueError("SECRET_KEY must be set in production.")
+        if not os.getenv("DATABASE_URL"):
+            raise ValueError("DATABASE_URL must be set in production.")
 
 
 def get_security_settings() -> dict[str, Any]:
