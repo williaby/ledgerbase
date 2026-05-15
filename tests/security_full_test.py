@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -102,7 +101,8 @@ def test_configure_logging_skips_setup_in_testing_mode() -> None:
 
 
 def test_configure_logging_attaches_file_handler_in_production(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     """Non-debug, non-test apps get a RotatingFileHandler installed."""
     import ledgerbase.security as security_mod

@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-import services.plaid_service as plaid_service
+from services import plaid_service
 from services.plaid_service import (
     PLAID_BASE_URLS,
     create_link_token,
@@ -105,7 +105,8 @@ def test_plaid_request_returns_none_on_http_error(
 ) -> None:
     """An HTTP error (e.g. token expiry 401) returns None and prints diagnostics."""
     bad_response = _make_response(
-        {"error_code": "INVALID_ACCESS_TOKEN"}, status_code=401
+        {"error_code": "INVALID_ACCESS_TOKEN"},
+        status_code=401,
     )
     with patch.object(plaid_service.requests, "post", return_value=bad_response):
         result = plaid_request("/endpoint", {"access_token": "expired"})

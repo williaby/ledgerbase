@@ -111,7 +111,8 @@ def test_sentry_dsn_absent_branch_prints_notice(
 ) -> None:
     """Reproduce the ``SENTRY_DSN not found`` notice path without mutating the
     real ``ledgerbase`` package (which would corrupt SQLAlchemy registry state
-    for other tests)."""
+    for other tests).
+    """
     monkeypatch.delenv("SENTRY_DSN", raising=False)
 
     # Mirror the inline branch in ``ledgerbase/__init__.py`` so we cover the

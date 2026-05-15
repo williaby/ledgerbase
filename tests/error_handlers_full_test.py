@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
 from marshmallow import ValidationError
 from werkzeug.exceptions import InternalServerError, NotFound
 

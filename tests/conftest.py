@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 
 if TYPE_CHECKING:
-    from flask import Flask
     from flask.testing import FlaskClient
+
+    from flask import Flask
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -29,11 +31,10 @@ def app(monkeypatch: pytest.MonkeyPatch) -> Iterator[Flask]:
 
     monkeypatch.setattr(_ledger_pkg, "configure_logging", lambda _app: None)
 
-    from ledgerbase import create_app, db
-
     # Ensure ``ExampleModel`` is registered against the current ``db.metadata``
     # so ``db.create_all()`` actually creates its table.
     import ledgerbase.models  # noqa: F401
+    from ledgerbase import create_app, db
 
     flask_app = create_app()
     flask_app.config.update(TESTING=True)

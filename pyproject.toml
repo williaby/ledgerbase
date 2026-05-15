@@ -187,6 +187,34 @@ exclude = [
 # file‑specific overrides
 [tool.ruff.lint.per-file-ignores]
 "annotation_spec.md" = ["E501"]
+"tests/*" = [
+  # Tests legitimately use literal status codes / sizes (200, 422, 7…) so
+  # mandating named constants would just obscure intent.
+  "PLR2004",
+  # Test fixtures often defer imports to inside test bodies (to avoid
+  # collection-time side-effects, to enable monkeypatching, or to keep
+  # test isolation clean). Module-level-only imports don't fit that need.
+  "PLC0415",
+  # Pytest fixtures appear as unused arguments to the test function but
+  # are required for the dependency-injection wiring -- they're "used"
+  # by being requested.
+  "ARG001",
+  "ARG002",
+  # Tests do not need a strict typing-only import block.
+  "TC002",
+  "TC003",
+  # ``pytest.MonkeyPatch`` parameter etc. -- ANN401 is excessive in tests.
+  "ANN401",
+  "ANN202",
+  # Marshmallow ValidationError is constructed in test routes with a
+  # short literal message.
+  "EM101",
+  "TRY003",
+  # Test fakes must mirror the third-party interface they substitute
+  # (e.g. ``logging.Handler.setLevel``) and so cannot be renamed to
+  # snake_case without breaking duck-typing.
+  "N802",
+]
 
 
 [tool.ruff.lint.isort]
