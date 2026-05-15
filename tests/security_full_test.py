@@ -71,12 +71,18 @@ def test_configure_rate_limiting_adds_login_route() -> None:
 
 
 def test_rate_limiter_enforces_per_minute_cap() -> None:
-    """After exceeding the rate cap, /login returns 429."""
+    """After exceeding the rate cap, /login returns 429.
+
+    Asserts both that an early request still succeeds (200) and that
+    later requests get throttled (429), so the test doesn't pass when
+    the limiter rejects from the very first call.
+    """
     app = _make_bare_flask_app()
     configure_rate_limiting(app)
     client = app.test_client()
 
     statuses = [client.get("/login").status_code for _ in range(7)]
+    assert statuses[0] == 200
     assert 429 in statuses
 
 

@@ -105,27 +105,25 @@ def test_db_object_is_sqlalchemy_instance() -> None:
     assert isinstance(db, SQLAlchemy)
 
 
-def test_sentry_dsn_absent_branch_prints_notice(
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """Reproduce the ``SENTRY_DSN not found`` notice path without mutating the
-    real ``ledgerbase`` package (which would corrupt SQLAlchemy registry state
-    for other tests).
+def test_sentry_dsn_absent_branch_prints_notice() -> None:
+    """Importing ``ledgerbase`` without ``SENTRY_DSN`` set prints the notice.
+
+    Runs the import in an isolated subprocess so the real
+    ``ledgerbase/__init__.py`` branch executes without mutating this
+    test process's SQLAlchemy registry / module cache.
     """
-    monkeypatch.delenv("SENTRY_DSN", raising=False)
+    import subprocess
+    import sys
 
-    # Mirror the inline branch in ``ledgerbase/__init__.py`` so we cover the
-    # logical behaviour without re-importing the package.
-    import os
-
-    sentry_dsn = os.getenv("SENTRY_DSN")
-    if sentry_dsn:  # pragma: no cover - exercised by the present branch
-        msg = "SENTRY_DSN was set"
-    else:
-        print("SENTRY_DSN not found, Sentry not initialized.")
-        msg = "skipped"
-
-    captured = capsys.readouterr()
-    assert msg == "skipped"
-    assert "SENTRY_DSN not found" in captured.out
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import os; os.environ.pop('SENTRY_DSN', None); import ledgerbase",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "SENTRY_DSN not found, Sentry not initialized." in proc.stdout

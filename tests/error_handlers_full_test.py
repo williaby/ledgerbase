@@ -131,22 +131,28 @@ def test_handle_validation_error_direct_call_json(app: Flask) -> None:
     """The handler can be invoked directly inside a request context."""
     err = ValidationError({"name": ["required"]})
     with app.test_request_context("/", headers={"Accept": "application/json"}):
-        response, status = handle_validation_error(err)
+        result = handle_validation_error(err)
+        assert isinstance(result, tuple)
+        response, status = result
         assert status == 422
-        assert response.get_json() == {"errors": {"name": ["required"]}}
+        assert response.get_json() == {"errors": {"name": ["required"]}}  # type: ignore[union-attr]
 
 
 def test_handle_not_found_direct_call_json(app: Flask) -> None:
     """Direct call to handle_not_found returns the JSON payload."""
     with app.test_request_context("/", headers={"Accept": "application/json"}):
-        response, status = handle_not_found(NotFound())
+        result = handle_not_found(NotFound())
+        assert isinstance(result, tuple)
+        response, status = result
         assert status == 404
-        assert response.get_json() == {"error": "Not found"}
+        assert response.get_json() == {"error": "Not found"}  # type: ignore[union-attr]
 
 
 def test_handle_internal_error_direct_call_json(app: Flask) -> None:
     """Direct call to handle_internal_error logs and returns JSON."""
     with app.test_request_context("/", headers={"Accept": "application/json"}):
-        response, status = handle_internal_error(RuntimeError("kaboom"))
+        result = handle_internal_error(RuntimeError("kaboom"))
+        assert isinstance(result, tuple)
+        response, status = result
         assert status == 500
-        assert response.get_json() == {"error": "Internal server error"}
+        assert response.get_json() == {"error": "Internal server error"}  # type: ignore[union-attr]

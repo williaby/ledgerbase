@@ -180,7 +180,6 @@ exclude = [
   "dist",
   "migrations",
   "__pycache__",
-  "tests",
   ".git.bak",
 ]
 
@@ -226,6 +225,36 @@ ignore_missing_imports = true #
 
 [tool.mypy."flask.*"]
 ignore_missing_imports = true #
+
+# basedpyright (read by ``pyright`` and ``basedpyright``):
+# the org-level CI runs basedpyright with default strict settings.
+# Tests legitimately use SQLAlchemy declarative models (whose runtime
+# attributes are dynamic), Flask Response unpacking, and short
+# Optional[...] expressions where a None branch is exercised by a
+# different test. Use ``basic`` mode for tests so we don't fight the
+# library typings, but keep ``standard`` strictness for src/.
+[tool.pyright]
+include = ["src", "tests"]
+typeCheckingMode = "standard"
+reportMissingImports = "warning"
+reportMissingTypeStubs = "none"
+
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+reportCallIssue = "warning"
+reportAttributeAccessIssue = "warning"
+reportOptionalSubscript = "warning"
+reportArgumentType = "warning"
+reportPrivateImportUsage = "warning"
+reportIncompatibleMethodOverride = "warning"
+reportUnknownMemberType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownVariableType = "none"
+reportUnknownParameterType = "none"
+reportAny = "none"
+reportExplicitAny = "none"
+reportUnannotatedClassAttribute = "none"
+reportUnusedParameter = "none"
 
 [build-system]
 requires = ["poetry-core"] #
