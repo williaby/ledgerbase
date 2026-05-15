@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 if TYPE_CHECKING:
-    from flask.testing import FlaskClient
-
     from flask import Flask
+    from flask.testing import FlaskClient
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
