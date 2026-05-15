@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator
 
@@ -22,6 +21,13 @@ def app(monkeypatch: pytest.MonkeyPatch) -> Iterator[Flask]:
     """Build a Flask app using the factory with an in-memory SQLite DB."""
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
     monkeypatch.delenv("SENTRY_DSN", raising=False)
+
+    # Prevent ``configure_logging`` from creating ``src/logs/ledgerbase.log``
+    # during the test run -- the factory invokes it before TESTING=True is
+    # set, so patch the name as it was re-exported into the package.
+    import ledgerbase as _ledger_pkg
+
+    monkeypatch.setattr(_ledger_pkg, "configure_logging", lambda _app: None)
 
     from ledgerbase import create_app, db
 

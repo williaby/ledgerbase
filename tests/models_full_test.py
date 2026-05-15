@@ -60,24 +60,25 @@ def test_example_model_requires_name(app: Flask) -> None:
     db.session.rollback()
 
 
-def test_two_users_do_not_share_data(app: Flask) -> None:
-    """Independent rows do not leak between logical 'users' (id isolation).
+def test_independent_inserts_produce_distinct_rows(app: Flask) -> None:
+    """Two independent inserts produce distinct primary keys and round-trip
+    their own values.
 
-    The current schema does not own a user_id column, so this test asserts
-    the structural property that primary keys differ — i.e. each insert
-    creates an isolated row. This stands in for an access-control test
-    until per-user ownership is added to the schema.
+    The current schema has no ownership column, so this is a row-isolation
+    assertion (not an access-control assertion). It is the structural
+    placeholder for a per-user access-control test that will be added once
+    the schema gains a ``user_id`` column.
     """
     from ledgerbase import db
     from ledgerbase.models import ExampleModel
 
-    user_a_row = ExampleModel(name="alice")
-    user_b_row = ExampleModel(name="bob")
-    db.session.add_all([user_a_row, user_b_row])
+    row_a = ExampleModel(name="alice")
+    row_b = ExampleModel(name="bob")
+    db.session.add_all([row_a, row_b])
     db.session.commit()
 
-    assert user_a_row.id != user_b_row.id
+    assert row_a.id != row_b.id
     rows = db.session.query(ExampleModel).all()
     names_by_id = {row.id: row.name for row in rows}
-    assert names_by_id[user_a_row.id] == "alice"
-    assert names_by_id[user_b_row.id] == "bob"
+    assert names_by_id[row_a.id] == "alice"
+    assert names_by_id[row_b.id] == "bob"

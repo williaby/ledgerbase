@@ -113,13 +113,29 @@ def test_internal_handler_returns_html(app: Flask, template_folder) -> None:  # 
 
 
 def test_register_error_handlers_attaches_three_handlers(app: Flask) -> None:
-    """register_error_handlers attaches handlers for the three known classes."""
-    register_error_handlers(app)
-    handler_map = app.error_handler_spec[None]
-    registered = {exc for code_map in handler_map.values() for exc in code_map}
-    assert ValidationError in registered
-    assert NotFound in registered
-    assert InternalServerError in registered
+    """register_error_handlers wires handlers that respond to each error class.
+
+    Asserts via public behaviour (the Flask test client) rather than poking
+    at the internal ``app.error_handler_spec`` table, which is not part of
+    Flask's public API and shifts between releases.
+    """
+    _register_test_routes(app)
+    app.config["PROPAGATE_EXCEPTIONS"] = False
+    client = app.test_client()
+
+    validation = client.get(
+        "/raise/validation", headers={"Accept": "application/json"}
+    )
+    not_found = client.get(
+        "/raise/not-found", headers={"Accept": "application/json"}
+    )
+    internal = client.get(
+        "/raise/internal", headers={"Accept": "application/json"}
+    )
+
+    assert validation.status_code == 422
+    assert not_found.status_code == 404
+    assert internal.status_code == 500
 
 
 def test_handle_validation_error_direct_call_json(app: Flask) -> None:

@@ -23,10 +23,23 @@ def test_create_app_disables_sqlalchemy_track_modifications(app: Flask) -> None:
     assert app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] is False
 
 
+def _patch_safe_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Prevent ``configure_logging`` from writing ``src/logs/ledgerbase.log``.
+
+    Tests that exercise ``create_app`` directly (i.e. without the
+    ``app``/``client`` conftest fixture) must still suppress the file-logging
+    side-effect that runs before ``TESTING=True`` is set.
+    """
+    import ledgerbase
+
+    monkeypatch.setattr(ledgerbase, "configure_logging", lambda _app: None)
+
+
 def test_create_app_sets_database_uri_from_env(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """create_app picks up DATABASE_URL from the environment when called."""
+    _patch_safe_logging(monkeypatch)
     monkeypatch.setenv("DATABASE_URL", "sqlite:///example-uri.db")
     from ledgerbase import create_app
 
@@ -38,6 +51,7 @@ def test_create_app_default_uri_when_env_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """When DATABASE_URL is unset, create_app falls back to the default sqlite URI."""
+    _patch_safe_logging(monkeypatch)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     from ledgerbase import create_app
 
@@ -51,6 +65,7 @@ def test_create_app_warns_when_templates_missing(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """If templates dir is missing, create_app warns and uses the Flask default."""
+    _patch_safe_logging(monkeypatch)
     monkeypatch.setenv("DATABASE_URL", "sqlite:///:memory:")
     import ledgerbase
 
