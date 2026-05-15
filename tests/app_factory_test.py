@@ -71,9 +71,7 @@ def test_create_app_warns_when_templates_missing(
 
     fake_module_dir = tmp_path / "ledgerbase"
     fake_module_dir.mkdir()
-    monkeypatch.setattr(
-        ledgerbase, "__file__", str(fake_module_dir / "__init__.py")
-    )
+    monkeypatch.setattr(ledgerbase, "__file__", str(fake_module_dir / "__init__.py"))
 
     flask_app = ledgerbase.create_app()
     captured = capsys.readouterr()

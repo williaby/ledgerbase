@@ -55,9 +55,7 @@ def test_validation_handler_returns_json(app: Flask) -> None:
     """Validation errors return a 422 JSON body when JSON is preferred."""
     _register_test_routes(app)
     client = app.test_client()
-    response = client.get(
-        "/raise/validation", headers={"Accept": "application/json"}
-    )
+    response = client.get("/raise/validation", headers={"Accept": "application/json"})
     assert response.status_code == 422
     payload = response.get_json()
     assert payload == {"errors": {"field": ["bad value"]}}
@@ -76,9 +74,7 @@ def test_not_found_handler_returns_json(app: Flask) -> None:
     """404 responses are JSON when JSON is preferred."""
     _register_test_routes(app)
     client = app.test_client()
-    response = client.get(
-        "/raise/not-found", headers={"Accept": "application/json"}
-    )
+    response = client.get("/raise/not-found", headers={"Accept": "application/json"})
     assert response.status_code == 404
     assert response.get_json() == {"error": "Not found"}
 
@@ -123,15 +119,9 @@ def test_register_error_handlers_attaches_three_handlers(app: Flask) -> None:
     app.config["PROPAGATE_EXCEPTIONS"] = False
     client = app.test_client()
 
-    validation = client.get(
-        "/raise/validation", headers={"Accept": "application/json"}
-    )
-    not_found = client.get(
-        "/raise/not-found", headers={"Accept": "application/json"}
-    )
-    internal = client.get(
-        "/raise/internal", headers={"Accept": "application/json"}
-    )
+    validation = client.get("/raise/validation", headers={"Accept": "application/json"})
+    not_found = client.get("/raise/not-found", headers={"Accept": "application/json"})
+    internal = client.get("/raise/internal", headers={"Accept": "application/json"})
 
     assert validation.status_code == 422
     assert not_found.status_code == 404

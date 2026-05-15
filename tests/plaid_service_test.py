@@ -104,7 +104,9 @@ def test_plaid_request_returns_none_on_http_error(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """An HTTP error (e.g. token expiry 401) returns None and prints diagnostics."""
-    bad_response = _make_response({"error_code": "INVALID_ACCESS_TOKEN"}, status_code=401)
+    bad_response = _make_response(
+        {"error_code": "INVALID_ACCESS_TOKEN"}, status_code=401
+    )
     with patch.object(plaid_service.requests, "post", return_value=bad_response):
         result = plaid_request("/endpoint", {"access_token": "expired"})
     assert result is None
