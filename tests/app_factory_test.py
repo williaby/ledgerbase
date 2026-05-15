@@ -47,16 +47,16 @@ def test_create_app_sets_database_uri_from_env(
     assert flask_app.config["SQLALCHEMY_DATABASE_URI"] == "sqlite:///example-uri.db"
 
 
-def test_create_app_default_uri_when_env_missing(
+def test_create_app_raises_when_database_url_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """When DATABASE_URL is unset, create_app falls back to the default sqlite URI."""
+    """create_app raises ValueError when DATABASE_URL is unset."""
     _patch_safe_logging(monkeypatch)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     from ledgerbase import create_app
 
-    flask_app = create_app()
-    assert flask_app.config["SQLALCHEMY_DATABASE_URI"] == "sqlite:///default.db"
+    with pytest.raises(ValueError, match="DATABASE_URL"):
+        create_app()
 
 
 def test_create_app_warns_when_templates_missing(

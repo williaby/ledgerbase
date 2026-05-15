@@ -45,10 +45,7 @@ def create_app() -> Flask:
     else:
         app = Flask(__name__, template_folder=str(template_dir))
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-        "DATABASE_URL",
-        "sqlite:///default.db",
-    )
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
     if not app.config["SQLALCHEMY_DATABASE_URI"]:
         msg = "DATABASE_URL environment variable is not set."
         raise ValueError(msg)
