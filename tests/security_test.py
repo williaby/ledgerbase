@@ -1,16 +1,16 @@
-import pytest
+"""Placeholder smoke-test for the security module.
 
-from ledgerbase import config
+Real coverage lives in ``tests/security_full_test.py``. This file keeps the
+historical test path importable and exercises the public security
+helpers exposed by the config module.
+"""
 
 
-def test_placeholder_security_check() -> None:
-    """Test placeholder for security checks.
+def test_security_settings_round_trip() -> None:
+    """get_security_settings returns the expected mapping."""
+    from ledgerbase import config
 
-    This is a placeholder test to ensure the security logic is tested.
-    """
-    # Example usage of config to fix FBT003
-    security_settings = config.get_security_settings()
-    if security_settings is None:
-        error_message = "Security settings must not be None."
-        raise ValueError(error_message)
-    pytest.assume(new=True)
+    settings = config.get_security_settings()
+    assert isinstance(settings, dict)
+    assert "SESSION_COOKIE_SECURE" in settings
+    assert "PREFERRED_URL_SCHEME" in settings

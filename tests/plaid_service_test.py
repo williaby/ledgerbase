@@ -48,9 +48,9 @@ def _make_response(
 
 def test_plaid_base_urls_known_environments() -> None:
     """The base URL map covers the three Plaid environments."""
-    assert PLAID_BASE_URLS["sandbox"].startswith("https://sandbox.plaid.com")
-    assert PLAID_BASE_URLS["development"].startswith("https://development.plaid.com")
-    assert PLAID_BASE_URLS["production"].startswith("https://production.plaid.com")
+    assert PLAID_BASE_URLS["sandbox"] == "https://sandbox.plaid.com"
+    assert PLAID_BASE_URLS["development"] == "https://development.plaid.com"
+    assert PLAID_BASE_URLS["production"] == "https://production.plaid.com"
 
 
 def test_plaid_request_successful_call_returns_json() -> None:

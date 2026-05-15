@@ -25,6 +25,10 @@ def app(monkeypatch: pytest.MonkeyPatch) -> Iterator[Flask]:
 
     from ledgerbase import create_app, db
 
+    # Ensure ``ExampleModel`` is registered against the current ``db.metadata``
+    # so ``db.create_all()`` actually creates its table.
+    import ledgerbase.models  # noqa: F401
+
     flask_app = create_app()
     flask_app.config.update(TESTING=True)
     # The factory's template path resolution points at ``src/templates``;
