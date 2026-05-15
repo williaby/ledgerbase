@@ -21,7 +21,6 @@ and 500 Internal Server Error, responding in JSON or rendered HTML
 based on the client's Accept header.
 """
 
-
 from marshmallow import ValidationError
 from werkzeug.exceptions import InternalServerError, NotFound
 

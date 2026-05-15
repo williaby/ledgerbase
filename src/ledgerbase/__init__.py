@@ -79,6 +79,7 @@ def create_app() -> Flask:
         return "LedgerBase API is running."
 
     if not is_production:
+
         @app.route("/debug-sentry")
         def trigger_error() -> str:
             result = 1 / 0
