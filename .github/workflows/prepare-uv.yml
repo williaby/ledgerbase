@@ -1,0 +1,61 @@
+---
+# Front-Matter for GitHub Workflow
+title: "Prepare uv Environment"
+name: "prepare-uv.yml"
+description: "Sets up a uv-managed Python environment with Google Artifact Registry authentication"
+category: workflow
+usage: "Called by other workflows that need a uv-managed Python environment"
+behavior: "Sets up uv (and Python), configures Assured OSS index, installs dependencies via uv sync"
+inputs: "GCP_SA_JSON secret for Google Artifact Registry authentication"
+outputs: "dev-requirements.txt file exported from the uv lock"
+dependencies: "astral-sh/setup-uv, google-github-actions/auth"
+author: "LedgerBase Team"
+last_modified: "2026-05-15"
+changelog: "Migrated from Poetry to uv (closes #136)"
+tags: [uv, workflow, python]
+---
+
+name: Prepare uv Environment
+
+on:
+  workflow_call:
+    secrets:
+      GCP_SA_JSON:
+        description: "Service account JSON for Google Artifact Registry"
+        required: true
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    # Route uv installs through Assured OSS, falling back to PyPI
+    env:
+      UV_INDEX_URL: https://_json_key_base64:${{ secrets.GCP_SA_JSON }}@us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple
+      UV_EXTRA_INDEX_URL: https://pypi.org/simple
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2.12
+        with:
+          egress-policy: audit
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Authenticate to Google Artifact Registry
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_JSON }}
+
+      - name: Install Dependencies
+        run: uv sync --all-extras --frozen
+
+      - name: Export Dev Requirements
+        run: uv export --only-group dev --no-hashes --format requirements-txt --output-file dev-requirements.txt

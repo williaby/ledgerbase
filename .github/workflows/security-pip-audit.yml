@@ -35,7 +35,7 @@ permissions:
 
 jobs:
   prepare:
-    uses: ./.github/workflows/templates/prepare-poetry.yml
+    uses: ./.github/workflows/prepare-uv.yml
     with:
       GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
     secrets:
