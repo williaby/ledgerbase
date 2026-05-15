@@ -44,23 +44,23 @@ jobs:
     needs: prepare
     runs-on: ubuntu-22.04
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Verify no public PyPI fallbacks
         run: poetry run nox -s verify_assured
-
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@v2.12.0
-        with:
-          egress-policy: audit
 
       - name: Install system dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y jq curl
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
       - name: Build Docker image with commit SHA tag
         run: docker build -t ledgerbase:${{ github.sha }} .
@@ -86,20 +86,20 @@ jobs:
           echo "vulns=$count" >> $GITHUB_OUTPUT
 
       - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
         with:
           sarif_file: docs/reports/sarif/trivy-results.sarif
 
       - name: Upload JSON artifact (includes enriched metadata)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
         with:
           name: trivy-json
           path: docs/reports/json/trivy-results.json
 
       - name: Upload FS/IaC/Secrets scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
         with:
           name: trivy-fs
           path: docs/reports/fs
@@ -112,7 +112,7 @@ jobs:
 
       - name: Label PR if Trivy issues found
         if: github.event_name == 'pull_request' && steps.count.outputs.vulns != '0'
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const pr = context.payload.pull_request;

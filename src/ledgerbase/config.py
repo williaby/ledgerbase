@@ -39,7 +39,7 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-development-key")
+    SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 class DevelopmentConfig(Config):
@@ -53,7 +53,24 @@ class ProductionConfig(Config):
 
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
     PREFERRED_URL_SCHEME = "https"
+
+
+def validate_production_env() -> None:
+    """Raise ValueError if required production env vars are missing.
+
+    Flask's `app.config.from_object(ProductionConfig)` reads class-level
+    attributes without instantiating, so a class `__init__` would not run.
+    This module-level function is the explicit entry point that callers
+    (e.g. `get_config` and the application factory) should invoke whenever
+    production mode is selected.
+    """
+    if not os.getenv("SECRET_KEY"):
+        raise ValueError("SECRET_KEY must be set in production.")
+    if not os.getenv("DATABASE_URL"):
+        raise ValueError("DATABASE_URL must be set in production.")
 
 
 def get_security_settings() -> dict[str, Any]:
@@ -95,5 +112,8 @@ def get_config(env: str | None = None) -> type[Config]:
         "production": ProductionConfig,
     }
     if env is None:
-        env = os.getenv("FLASK_ENV", "development")
-    return mapping.get(env.lower(), DevelopmentConfig)
+        env = os.getenv("LEDGERBASE_ENV") or os.getenv("FLASK_ENV", "development")
+    selected = mapping.get(env.lower(), DevelopmentConfig)
+    if selected is ProductionConfig:
+        validate_production_env()
+    return selected

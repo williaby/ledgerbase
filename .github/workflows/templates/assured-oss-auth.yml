@@ -34,12 +34,20 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   auth_and_configure:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
           credentials_json: ${{ inputs.credentials_json }}
 
@@ -52,16 +60,23 @@ jobs:
       - name: Configure Poetry for Assured OSS
         if: ${{ inputs.configure_poetry }}
         shell: bash
+        env:
+          GCP_CREDENTIALS_JSON: ${{ inputs.credentials_json }}
         run: |
           poetry config repositories.assured-oss https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple
-          poetry config http-basic.assured-oss _json_key_base64 "${{ inputs.credentials_json }}"
+          poetry config http-basic.assured-oss _json_key_base64 "$GCP_CREDENTIALS_JSON"
 
   verify_assured:
     needs: auth_and_configure
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Verify no public PyPI fallbacks
         shell: bash

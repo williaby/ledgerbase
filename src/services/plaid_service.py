@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any
 
@@ -5,6 +6,8 @@ import requests
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env.plaid")
+
+logger = logging.getLogger(__name__)
 
 PLAID_CLIENT_ID: str | None = os.getenv("PLAID_CLIENT_ID")
 PLAID_SECRET: str | None = os.getenv("PLAID_SECRET")
@@ -35,6 +38,13 @@ def plaid_request(endpoint: str, payload: dict[str, Any]) -> dict[str, Any] | No
         or None if the request fails. # noqa: E501
 
     """
+    if BASE_URL is None:
+        logger.error("Plaid environment %r is not configured.", PLAID_ENV)
+        return None
+    if not PLAID_CLIENT_ID or not PLAID_SECRET:
+        logger.error("Plaid credentials are not configured.")
+        return None
+
     url = f"{BASE_URL}{endpoint}"
     payload.update(
         {
@@ -52,10 +62,14 @@ def plaid_request(endpoint: str, payload: dict[str, Any]) -> dict[str, Any] | No
         )
         response.raise_for_status()
         return response.json()
-    except requests.RequestException as e:
-        print(f"Plaid API request failed: {e}")
-        if response is not None:
-            print("Response:", response.text)
+    except requests.RequestException as exc:
+        status = response.status_code if response is not None else "no-response"
+        logger.warning(
+            "Plaid API request to %s failed (status=%s): %s",
+            endpoint,
+            status,
+            exc,
+        )
         return None
 
 
