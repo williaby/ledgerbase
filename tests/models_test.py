@@ -1,11 +1,12 @@
-"""Unit tests for models logic."""
+"""Placeholder smoke-test for the models module.
 
-import pytest
+Real coverage lives in ``tests/models_full_test.py``. This file keeps the
+historical test path importable.
+"""
 
 
-def test_placeholder_model_logic() -> None:
-    """Placeholder test for model logic.
+def test_models_module_imports() -> None:
+    """The models module exposes the ExampleModel class."""
+    from ledgerbase import models
 
-    This test is a placeholder and always passes.
-    """
-    pytest.assume(new=True)
+    assert hasattr(models, "ExampleModel")
