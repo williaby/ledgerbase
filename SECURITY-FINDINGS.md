@@ -175,7 +175,7 @@ otherwise echo the configuration error back.
 **Finding.** Searched the entire codebase for `execute(`, `text(`, and
 f-string SQL construction:
 
-```
+```bash
 $ grep -rn "execute\|raw\|text(" --include="*.py" src/ *.py
 src/scripts/generate_review_request.py: read_text/write_text only (file I/O)
 load_env.py:88: write_text (file I/O)
@@ -286,7 +286,7 @@ on the upstream release page):
 | `actions/github-script` | v7.0.1 | `60a0d83039c74a4aee543508d2ffcb1c3799cdea` |
 | `actions/stale` | v9.1.0 | `5bef64f19d7facfb25b37b414482c7164d639639` |
 | `actions/dependency-review-action` | v4.5.0 | `67d4f4bd7a9b17a0db54d2a7519187c65e339de8` |
-| `step-security/harden-runner` | v2.10.1 | `91182cccc01eb5e619899d80e4e971d6181294a7` |
+| `step-security/harden-runner` | v2.12.0 | `0634a2670c59f64b4a01f0f96f84700a4088b9f0` |
 | `github/codeql-action/*` | v3.28.0 | `48ab28a6f5dbc2a99bf1e0131198dd8f1df78169` |
 | `docker/setup-buildx-action` | v3.10.0 | `b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2` |
 | `peaceiris/actions-gh-pages` | v4.0.0 | `4f9cc6602d3f66b9c108549d475ec49e8ef4d45e` |

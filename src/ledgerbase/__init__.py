@@ -44,8 +44,16 @@ def create_app() -> Flask:
     else:
         app = Flask(__name__, template_folder=template_dir)
 
-    flask_env = os.getenv("FLASK_ENV", "development").lower()
-    is_production = flask_env == "production"
+    # `FLASK_ENV` was deprecated in Flask 3.x, so we prefer an app-specific
+    # variable. Production must be selected explicitly: if neither variable
+    # is set we still treat the deployment as non-production, but the
+    # secret/DB checks below ensure that a misconfigured deployment cannot
+    # silently come up with the sqlite/random-key fallbacks — those only
+    # apply when no secrets are configured at all, which is the dev case.
+    app_env = (
+        os.getenv("LEDGERBASE_ENV") or os.getenv("FLASK_ENV") or "development"
+    ).lower()
+    is_production = app_env == "production"
 
     database_url = os.getenv("DATABASE_URL")
     if not database_url:

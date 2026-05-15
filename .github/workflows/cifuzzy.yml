@@ -37,7 +37,7 @@ jobs:
       security-events: write
     steps:
       - name: Harden runner (audit outbound)
-        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
         with:
           egress-policy: audit
 
@@ -47,8 +47,11 @@ jobs:
       - name: Build Fuzzers
         id: build
         # NOTE: google/oss-fuzz publishes CIFuzz actions only on the `master`
-        # branch; no immutable SHA is available upstream. See SECURITY-FINDINGS.md
-        # GHA-006 for the mitigation plan (run inside a hardened, egress-blocked job).
+        # branch; no immutable SHA is available upstream. The job runs with
+        # step-security/harden-runner in `egress-policy: audit` so any
+        # unexpected outbound calls show up in the run summary. See
+        # SECURITY-FINDINGS.md GHA-006 — tighten to `block` with an
+        # allow-list once the audit run is reviewed.
         uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
         with:
           oss-fuzz-project-name: "ledgerbase"
