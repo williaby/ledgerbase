@@ -1,0 +1,119 @@
+# Postman / Newman API smoke tests
+#
+# Boots the Flask app against a throwaway SQLite database, waits for it to
+# become reachable, and runs the Postman collection at docs/api/postman-collection.json
+# via Newman. Uses Poetry because the project is configured with a [tool.poetry]
+# pyproject (no PEP 621 [project] table, so `uv sync` cannot resolve dependencies
+# here).
+#
+# Required GitHub Actions secrets:
+#   - (none required for the default test run)
+#
+# Optional GitHub Actions secrets / variables:
+#   - POSTMAN_API_KEY        : value injected as {{apiKey}} when the collection
+#                              is run. Leave unset for unauthenticated routes.
+#   - SENTRY_DSN             : if set, the app initializes Sentry on boot.
+#                              Intentionally left unset in CI to avoid sending
+#                              the deliberate /debug-sentry error to Sentry.
+#   - TEST_DATABASE_URL      : overrides the default sqlite:///ci-test.db.
+#                              Set only if you want CI to run against an
+#                              external test database.
+
+name: Postman API Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  newman:
+    name: Newman (Postman) API tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js (for Newman)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Poetry
+        run: |
+          pipx install poetry
+          poetry --version
+
+      - name: Install Python dependencies
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry install --no-interaction --no-root --only main
+
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Start Flask app
+        env:
+          FLASK_APP: ledgerbase.wsgi:app
+          FLASK_ENV: testing
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL || 'sqlite:////tmp/ci-test.db' }}
+          # Intentionally unset so the deliberate /debug-sentry error is not
+          # forwarded to a real Sentry project from CI.
+          SENTRY_DSN: ""
+          PYTHONPATH: src
+        run: |
+          poetry run flask --app ledgerbase.wsgi:app run --host 127.0.0.1 --port 5000 \
+            > flask.log 2>&1 &
+          echo $! > flask.pid
+          echo "Started Flask app with PID $(cat flask.pid)"
+
+      - name: Wait for Flask app to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5000/ >/dev/null 2>&1; then
+              echo "Flask app is ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Flask app failed to start within 30s"
+          echo "--- flask.log ---"
+          cat flask.log || true
+          exit 1
+
+      - name: Run Newman
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+        run: |
+          newman run docs/api/postman-collection.json \
+            --env-var "baseUrl=http://127.0.0.1:5000" \
+            --env-var "apiKey=${POSTMAN_API_KEY}" \
+            --reporters cli,junit \
+            --reporter-junit-export newman-results.xml
+
+      - name: Upload Newman results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-results
+          path: |
+            newman-results.xml
+            flask.log
+
+      - name: Stop Flask app
+        if: always()
+        run: |
+          if [ -f flask.pid ]; then
+            kill "$(cat flask.pid)" || true
+            rm -f flask.pid
+          fi

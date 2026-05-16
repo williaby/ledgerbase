@@ -55,6 +55,10 @@ safety_output.txt
 semgrep-results.json
 license-report.json
 
+# Tracked API spec artifacts (override the blanket *.json ignore)
+!docs/api/openapi.json
+!docs/api/postman-collection.json
+
 # Local build/cache
 node_modules/
 logs/

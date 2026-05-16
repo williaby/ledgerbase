@@ -1,0 +1,164 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ledgerbase API",
+    "version": "0.1.0",
+    "description": "OpenAPI 3.1.0 specification for the Ledgerbase Flask service. Documents the currently exposed routes and the cross-cutting error responses produced by the registered Flask error handlers.\n\nMonetary amounts are always serialized as JSON strings (never numbers) to preserve Decimal precision. The reusable `MonetaryAmount` schema component (type: string, format: decimal) is provided for future endpoints that accept or return monetary values."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Service liveness probe",
+        "description": "Returns a plain text greeting confirming the Ledgerbase API process is running. Used as a lightweight liveness/health check.",
+        "operationId": "getIndex",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "text/html; charset=utf-8": {
+                "schema": {
+                  "type": "string",
+                  "example": "LedgerBase API is running."
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/debug-sentry": {
+      "get": {
+        "summary": "Trigger Sentry test error",
+        "description": "Deliberately raises a ZeroDivisionError to verify Sentry error monitoring is wired up correctly. Always returns a 500 response in production code paths and should not be reachable in normal usage.",
+        "operationId": "triggerDebugSentry",
+        "responses": {
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/login": {
+      "get": {
+        "summary": "Rate-limited login probe",
+        "description": "Stub login endpoint protected by a 5-requests-per-minute rate limit. Returns a placeholder confirmation string. Returns 429 Too Many Requests when the limiter threshold is exceeded.",
+        "operationId": "getLogin",
+        "responses": {
+          "200": {
+            "description": "Login attempt accepted",
+            "content": {
+              "text/html; charset=utf-8": {
+                "schema": {
+                  "type": "string",
+                  "example": "Login attempt"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded (more than 5 requests per minute)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key passed in the X-API-Key header. Reserved for future authenticated endpoints; current routes are unauthenticated."
+      }
+    },
+    "schemas": {
+      "MonetaryAmount": {
+        "type": "string",
+        "format": "decimal",
+        "pattern": "^-?\\d+(\\.\\d+)?$",
+        "description": "A monetary amount serialized as a string to preserve Decimal precision. Never represented as a JSON number. Example: \"123.45\".",
+        "example": "123.45"
+      },
+      "Error": {
+        "type": "object",
+        "description": "Generic error response body used by the 404 and 500 error handlers.",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message."
+          }
+        },
+        "required": ["error"]
+      },
+      "ValidationError": {
+        "type": "object",
+        "description": "Validation error response body produced by the marshmallow ValidationError handler.",
+        "properties": {
+          "errors": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Field-keyed map of validation error messages."
+          }
+        },
+        "required": ["errors"]
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Not found"
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "Request body failed marshmallow validation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Unhandled server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Internal server error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
