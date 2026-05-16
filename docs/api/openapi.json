@@ -82,14 +82,6 @@
     }
   },
   "components": {
-    "securitySchemes": {
-      "ApiKeyAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-API-Key",
-        "description": "API key passed in the X-API-Key header. Reserved for future authenticated endpoints; current routes are unauthenticated."
-      }
-    },
     "schemas": {
       "MonetaryAmount": {
         "type": "string",

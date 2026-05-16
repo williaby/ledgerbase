@@ -4,14 +4,18 @@
 # become reachable, and runs the Postman collection at docs/api/postman-collection.json
 # via Newman.
 #
-# Dependency install uses `pip install -r requirements.txt` rather than the
-# task description's suggested `uv sync` (or Poetry). Two reasons:
+# Dependency install uses an explicit minimal package list (see the "Install
+# Python dependencies" step) rather than the task description's suggested
+# `uv sync` or `poetry install`. Reasons:
 #   1. pyproject.toml is Poetry-only ([tool.poetry], no PEP 621 [project]),
 #      so `uv sync` cannot resolve dependencies here.
 #   2. The project's Poetry primary source is Google Artifact Registry
-#      (Assured OSS), which requires a GCP service account secret. Using the
-#      pre-exported requirements.txt against public PyPI keeps this workflow
-#      independent of that secret.
+#      (Assured OSS), which requires the GCP_SA_JSON secret to install.
+#   3. requirements.txt pulls in the full toolchain (semgrep, plaid-python,
+#      keyring with google-artifactregistry-auth, cryptography built from
+#      source, ...), none of which the API smoke test exercises.
+# Pinning the minimal runtime-import set keeps the workflow independent of
+# the GCP secret and avoids long, fragile installs.
 #
 # Required GitHub Actions secrets:
 #   - (none required for the default test run)
@@ -73,7 +77,8 @@ jobs:
             "sentry-sdk[flask]>=2.25,<3"
 
       - name: Install Newman
-        run: npm install -g newman
+        # Pin Newman for deterministic CI runs; bump intentionally.
+        run: npm install -g newman@6.2.2
 
       - name: Start Flask app
         env:
