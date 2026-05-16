@@ -2,9 +2,16 @@
 #
 # Boots the Flask app against a throwaway SQLite database, waits for it to
 # become reachable, and runs the Postman collection at docs/api/postman-collection.json
-# via Newman. Uses Poetry because the project is configured with a [tool.poetry]
-# pyproject (no PEP 621 [project] table, so `uv sync` cannot resolve dependencies
-# here).
+# via Newman.
+#
+# Dependency install uses `pip install -r requirements.txt` rather than the
+# task description's suggested `uv sync` (or Poetry). Two reasons:
+#   1. pyproject.toml is Poetry-only ([tool.poetry], no PEP 621 [project]),
+#      so `uv sync` cannot resolve dependencies here.
+#   2. The project's Poetry primary source is Google Artifact Registry
+#      (Assured OSS), which requires a GCP service account secret. Using the
+#      pre-exported requirements.txt against public PyPI keeps this workflow
+#      independent of that secret.
 #
 # Required GitHub Actions secrets:
 #   - (none required for the default test run)
@@ -49,15 +56,10 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Poetry
-        run: |
-          pipx install poetry
-          poetry --version
-
       - name: Install Python dependencies
         run: |
-          poetry config virtualenvs.in-project true
-          poetry install --no-interaction --no-root --only main
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Install Newman
         run: npm install -g newman
@@ -72,7 +74,7 @@ jobs:
           SENTRY_DSN: ""
           PYTHONPATH: src
         run: |
-          poetry run flask --app ledgerbase.wsgi:app run --host 127.0.0.1 --port 5000 \
+          flask --app ledgerbase.wsgi:app run --host 127.0.0.1 --port 5000 \
             > flask.log 2>&1 &
           echo $! > flask.pid
           echo "Started Flask app with PID $(cat flask.pid)"
