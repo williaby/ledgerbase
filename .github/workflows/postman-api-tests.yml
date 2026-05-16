@@ -16,13 +16,13 @@
 # Required GitHub Actions secrets:
 #   - (none required for the default test run)
 #
-# Optional GitHub Actions secrets / variables:
+# Optional GitHub Actions secrets:
 #   - POSTMAN_API_KEY        : value injected as {{apiKey}} when the collection
 #                              is run. Leave unset for unauthenticated routes.
 #   - SENTRY_DSN             : if set, the app initializes Sentry on boot.
 #                              Intentionally left unset in CI to avoid sending
 #                              the deliberate /debug-sentry error to Sentry.
-#   - TEST_DATABASE_URL      : overrides the default sqlite:///ci-test.db.
+#   - TEST_DATABASE_URL      : overrides the default sqlite:////tmp/ci-test.db.
 #                              Set only if you want CI to run against an
 #                              external test database.
 
@@ -57,9 +57,20 @@ jobs:
           node-version: "20"
 
       - name: Install Python dependencies
+        # Install only the runtime imports actually used by src/ledgerbase/.
+        # The full requirements.txt pulls in semgrep, plaid-python, keyring,
+        # cryptography (build-from-source on some platforms), etc., none of
+        # which the API smoke test exercises. Keep this list aligned with
+        # imports in src/ledgerbase/*.py.
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install \
+            "Flask>=3.1,<4" \
+            "Flask-SQLAlchemy>=3.1,<4" \
+            "Flask-Limiter>=3.5,<4" \
+            "marshmallow>=3.21,<4" \
+            "python-dotenv>=1.1,<2" \
+            "sentry-sdk[flask]>=2.25,<3"
 
       - name: Install Newman
         run: npm install -g newman

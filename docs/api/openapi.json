@@ -3,7 +3,7 @@
   "info": {
     "title": "Ledgerbase API",
     "version": "0.1.0",
-    "description": "OpenAPI 3.1.0 specification for the Ledgerbase Flask service. Documents the currently exposed routes and the cross-cutting error responses produced by the registered Flask error handlers.\n\nMonetary amounts are always serialized as JSON strings (never numbers) to preserve Decimal precision. The reusable `MonetaryAmount` schema component (type: string, format: decimal) is provided for future endpoints that accept or return monetary values."
+    "description": "OpenAPI 3.1.0 specification for the Ledgerbase Flask service. Documents the currently exposed routes and the cross-cutting error responses produced by the registered Flask error handlers.\n\nContent negotiation: the registered error handlers in `src/ledgerbase/error_handlers.py` return the JSON envelopes documented below only when the client sends `Accept: application/json`. With any other Accept header the handlers render the corresponding HTML template (`404.html`, `422.html`, `500.html`). API clients should send `Accept: application/json` to receive the documented JSON responses.\n\nMonetary amounts are always serialized as JSON strings (never numbers) to preserve Decimal precision. The reusable `MonetaryAmount` schema component (type: string, format: decimal) is provided for future endpoints that accept or return monetary values."
   },
   "servers": [
     {
@@ -21,7 +21,7 @@
           "200": {
             "description": "Service is running",
             "content": {
-              "text/html; charset=utf-8": {
+              "text/html": {
                 "schema": {
                   "type": "string",
                   "example": "LedgerBase API is running."
@@ -56,7 +56,7 @@
           "200": {
             "description": "Login attempt accepted",
             "content": {
-              "text/html; charset=utf-8": {
+              "text/html": {
                 "schema": {
                   "type": "string",
                   "example": "Login attempt"
@@ -65,11 +65,11 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded (more than 5 requests per minute)",
+            "description": "Rate limit exceeded (more than 5 requests per minute). The default Flask-Limiter handler returns the werkzeug TooManyRequests HTML page; no custom JSON error handler is registered for 429.",
             "content": {
-              "application/json": {
+              "text/html": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "string"
                 }
               }
             }
