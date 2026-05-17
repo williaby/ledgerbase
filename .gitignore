@@ -58,6 +58,9 @@ license-report.json
 # Tracked API spec artifacts (override the blanket *.json ignore)
 !docs/api/openapi.json
 !docs/api/postman-collection.json
+# Tracked Node project for Newman in CI
+!package.json
+!package-lock.json
 
 # Local build/cache
 node_modules/

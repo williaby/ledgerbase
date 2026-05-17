@@ -3,7 +3,7 @@
   "info": {
     "title": "Ledgerbase API",
     "version": "0.1.0",
-    "description": "OpenAPI 3.1.0 specification for the Ledgerbase Flask service. Documents the currently exposed routes and the cross-cutting error responses produced by the registered Flask error handlers.\n\nContent negotiation: the registered error handlers in `src/ledgerbase/error_handlers.py` return the JSON envelopes documented below only when the client sends `Accept: application/json`. With any other Accept header the handlers render the corresponding HTML template (`404.html`, `422.html`, `500.html`). API clients should send `Accept: application/json` to receive the documented JSON responses.\n\nMonetary amounts are always serialized as JSON strings (never numbers) to preserve Decimal precision. The reusable `MonetaryAmount` schema component (type: string, format: decimal) is provided for future endpoints that accept or return monetary values."
+    "description": "OpenAPI 3.1.0 specification for the Ledgerbase Flask service. Documents the currently exposed routes and the cross-cutting error responses produced by the registered Flask error handlers.\n\nAll documented endpoints (`/`, `/debug-sentry`, `/login`) are intentionally public diagnostic / liveness routes; no authentication is required. The previous `ApiKeyAuth` scheme was removed since no operation enforced it. Future production endpoints will be documented under `components.securitySchemes` and reference an explicit `security` block.\n\nContent negotiation: the registered error handlers in `src/ledgerbase/error_handlers.py` return the JSON envelopes documented below only when the client sends `Accept: application/json`. With any other Accept header the handlers render the corresponding HTML template (`404.html`, `422.html`, `500.html`); reusable error responses below model both content types. API clients should send `Accept: application/json` to receive the JSON form.\n\nMonetary amounts are always serialized as JSON strings (never numbers) to preserve Decimal precision. The reusable `MonetaryAmount` schema component (type: string, format: decimal) is provided for future endpoints that accept or return monetary values."
   },
   "servers": [
     {
@@ -37,9 +37,10 @@
     },
     "/debug-sentry": {
       "get": {
-        "summary": "Trigger Sentry test error",
-        "description": "Deliberately raises a ZeroDivisionError to verify Sentry error monitoring is wired up correctly. Always returns a 500 response in production code paths and should not be reachable in normal usage.",
+        "summary": "Trigger Sentry test error (internal / test-only)",
+        "description": "Internal diagnostic route. Deliberately raises a `ZeroDivisionError` to verify Sentry error-monitoring wiring; always responds 500. This endpoint is documented here because it is registered on the Flask app, but it is not part of the public API contract — production deployments should either restrict it (authentication / network policy) or disable it via a feature flag. Do not depend on this path from client code.",
         "operationId": "triggerDebugSentry",
+        "tags": ["internal"],
         "responses": {
           "500": {
             "$ref": "#/components/responses/InternalServerError"
@@ -116,7 +117,7 @@
     },
     "responses": {
       "NotFound": {
-        "description": "Resource not found",
+        "description": "Resource not found. Returned by the registered 404 handler in `src/ledgerbase/error_handlers.py` as JSON for `Accept: application/json` and as the `404.html` template for any other Accept header.",
         "content": {
           "application/json": {
             "schema": {
@@ -125,21 +126,33 @@
             "example": {
               "error": "Not found"
             }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "description": "Rendered `404.html` template."
+            }
           }
         }
       },
       "UnprocessableEntity": {
-        "description": "Request body failed marshmallow validation",
+        "description": "Request body failed marshmallow validation. Returned by the registered 422 handler as JSON for `Accept: application/json` and as the `422.html` template for any other Accept header.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/ValidationError"
             }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "description": "Rendered `422.html` template (receives the marshmallow error map as `errors`)."
+            }
           }
         }
       },
       "InternalServerError": {
-        "description": "Unhandled server error",
+        "description": "Unhandled server error. Returned by the registered 500 handler as JSON for `Accept: application/json` and as the `500.html` template for any other Accept header.",
         "content": {
           "application/json": {
             "schema": {
@@ -147,6 +160,12 @@
             },
             "example": {
               "error": "Internal server error"
+            }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "description": "Rendered `500.html` template."
             }
           }
         }
