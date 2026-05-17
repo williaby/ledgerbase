@@ -8,5 +8,8 @@
   },
   "devDependencies": {
     "newman": "6.2.2"
+  },
+  "overrides": {
+    "handlebars": "^4.7.9"
   }
 }
