@@ -23,10 +23,8 @@ on:
 
 jobs:
   prepare:
-    name: Prepare Poetry & Assured OSS
-    uses: ./.github/workflows/templates/prepare-poetry.yml
-    with:
-      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    name: Prepare uv & Assured OSS
+    uses: ./.github/workflows/prepare-uv.yml
     secrets:
       GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
@@ -39,11 +37,21 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
       - name: Verify no public PyPI fallbacks
-        run: poetry run nox -s verify_assured
+        run: uv run nox -s verify_assured
 
       - name: Build & collect docs via Nox
-        run: poetry run nox -s build_docs
+        run: uv run nox -s build_docs
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

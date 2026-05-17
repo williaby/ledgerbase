@@ -1,0 +1,47 @@
+name: Prepare uv Environment
+
+on:
+  workflow_call:
+    secrets:
+      GCP_SA_JSON:
+        description: "Service account JSON for Google Artifact Registry"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    # Route uv installs through Assured OSS, falling back to PyPI
+    env:
+      UV_INDEX_URL: https://_json_key_base64:${{ secrets.GCP_SA_JSON }}@us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple
+      UV_EXTRA_INDEX_URL: https://pypi.org/simple
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2.12
+        with:
+          egress-policy: audit
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Authenticate to Google Artifact Registry
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_JSON }}
+
+      - name: Install Dependencies
+        run: uv sync --all-extras --frozen
+
+      - name: Export Dev Requirements
+        run: uv export --only-group dev --no-hashes --format requirements-txt --output-file dev-requirements.txt

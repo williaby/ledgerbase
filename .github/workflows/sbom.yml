@@ -28,11 +28,9 @@ permissions:
   security-events: write
 
 jobs:
-  # 1. Prepare Poetry & Assured OSS environment (with caching)
+  # 1. Prepare uv & Assured OSS environment (with caching)
   prepare:
-    uses: ./.github/workflows/templates/prepare-poetry.yml
-    with:
-      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+    uses: ./.github/workflows/prepare-uv.yml
     secrets:
       GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
@@ -45,8 +43,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
       - name: Verify no public PyPI fallbacks
-        run: poetry run nox -s verify_assured
+        run: uv run nox -s verify_assured
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -58,7 +66,7 @@ jobs:
             | sh -s -- -b /usr/local/bin
 
       - name: Run SBOM Validate via Poetry
-        run: poetry run nox -s sbom_validate
+        run: uv run nox -s sbom_validate
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
