@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "Ledgerbase API",
+    "description": "Postman Collection v2.1 derived from docs/api/openapi.json. Exercises the documented Flask routes and asserts response status codes and body shapes. Monetary-amount assertions verify that any monetary field is serialized as a JSON string (never a number) to preserve Decimal precision. Current routes do not return monetary fields, but the helper assertion in the collection-level test script is wired up so future endpoints inherit the check.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "ledgerbase-api-collection-v1"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-API-Key", "type": "string" },
+      { "key": "value", "value": "{{apiKey}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection-level assertion: any monetary-amount field in a JSON response",
+          "// must be a string (not a number) to preserve Decimal precision.",
+          "const MONETARY_FIELD_NAMES = [",
+          "  'amount', 'balance', 'total', 'subtotal', 'price', 'cost',",
+          "  'credit', 'debit', 'value', 'fee', 'tax'",
+          "];",
+          "",
+          "function assertMonetaryFieldsAreStrings(node) {",
+          "  if (node === null || typeof node !== 'object') return;",
+          "  if (Array.isArray(node)) { node.forEach(assertMonetaryFieldsAreStrings); return; }",
+          "  for (const [k, v] of Object.entries(node)) {",
+          "    if (MONETARY_FIELD_NAMES.includes(k.toLowerCase())) {",
+          "      pm.test(`Monetary field '${k}' is a string (preserves Decimal precision)`, function () {",
+          "        pm.expect(v).to.be.a('string');",
+          "        pm.expect(v).to.match(/^-?\\d+(\\.\\d+)?$/);",
+          "      });",
+          "    }",
+          "    if (v && typeof v === 'object') assertMonetaryFieldsAreStrings(v);",
+          "  }",
+          "}",
+          "",
+          "const contentType = pm.response.headers.get('Content-Type') || '';",
+          "if (contentType.includes('application/json')) {",
+          "  try {",
+          "    const body = pm.response.json();",
+          "    assertMonetaryFieldsAreStrings(body);",
+          "  } catch (e) { /* non-JSON body: skip */ }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "GET / (index)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        },
+        "description": "Service liveness probe. Returns a plain text greeting confirming the Ledgerbase API is running."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Body contains running confirmation', function () {",
+              "  pm.expect(pm.response.text()).to.include('LedgerBase API is running.');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /login (rate-limited)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["login"]
+        },
+        "description": "Stub login endpoint protected by a 5-requests-per-minute rate limit. Returns a placeholder confirmation string on success or a JSON error on 429."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200 or 429', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 429]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "  pm.test('Body contains login attempt message', function () {",
+              "    pm.expect(pm.response.text()).to.include('Login attempt');",
+              "  });",
+              "} else {",
+              "  pm.test('Rate-limit response has a non-empty body', function () {",
+              "    // Flask-Limiter has no custom 429 handler registered, so the response",
+              "    // is werkzeug's default TooManyRequests HTML page (not the JSON Error",
+              "    // envelope). Only assert that a body is present.",
+              "    pm.expect(pm.response.text()).to.have.length.greaterThan(0);",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /debug-sentry (always errors)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/debug-sentry",
+          "host": ["{{baseUrl}}"],
+          "path": ["debug-sentry"]
+        },
+        "description": "Deliberately raises a ZeroDivisionError to verify Sentry error monitoring. Always returns 500."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 500', function () {",
+              "  pm.response.to.have.status(500);",
+              "});",
+              "pm.test('Error response is JSON with error field', function () {",
+              "  const contentType = pm.response.headers.get('Content-Type') || '';",
+              "  pm.expect(contentType).to.include('application/json');",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "  pm.expect(body.error).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /not-a-real-route (404 handler)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/not-a-real-route",
+          "host": ["{{baseUrl}}"],
+          "path": ["not-a-real-route"]
+        },
+        "description": "Exercises the registered 404 Not Found error handler. Asserts the JSON error envelope shape."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 404', function () {",
+              "  pm.response.to.have.status(404);",
+              "});",
+              "pm.test('Error response is JSON with error field', function () {",
+              "  const contentType = pm.response.headers.get('Content-Type') || '';",
+              "  pm.expect(contentType).to.include('application/json');",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('error');",
+              "  pm.expect(body.error).to.equal('Not found');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

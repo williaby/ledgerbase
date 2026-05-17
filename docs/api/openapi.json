@@ -1,0 +1,175 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ledgerbase API",
+    "version": "0.1.0",
+    "description": "OpenAPI 3.1.0 specification for the Ledgerbase Flask service. Documents the currently exposed routes and the cross-cutting error responses produced by the registered Flask error handlers.\n\nAll documented endpoints (`/`, `/debug-sentry`, `/login`) are intentionally public diagnostic / liveness routes; no authentication is required. The previous `ApiKeyAuth` scheme was removed since no operation enforced it. Future production endpoints will be documented under `components.securitySchemes` and reference an explicit `security` block.\n\nContent negotiation: the registered error handlers in `src/ledgerbase/error_handlers.py` return the JSON envelopes documented below only when the client sends `Accept: application/json`. With any other Accept header the handlers render the corresponding HTML template (`404.html`, `422.html`, `500.html`); reusable error responses below model both content types. API clients should send `Accept: application/json` to receive the JSON form.\n\nMonetary amounts are always serialized as JSON strings (never numbers) to preserve Decimal precision. The reusable `MonetaryAmount` schema component (type: string, format: decimal) is provided for future endpoints that accept or return monetary values."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Service liveness probe",
+        "description": "Returns a plain text greeting confirming the Ledgerbase API process is running. Used as a lightweight liveness/health check.",
+        "operationId": "getIndex",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "example": "LedgerBase API is running."
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/debug-sentry": {
+      "get": {
+        "summary": "Trigger Sentry test error (internal / test-only)",
+        "description": "Internal diagnostic route. Deliberately raises a `ZeroDivisionError` to verify Sentry error-monitoring wiring; always responds 500. This endpoint is documented here because it is registered on the Flask app, but it is not part of the public API contract — production deployments should either restrict it (authentication / network policy) or disable it via a feature flag. Do not depend on this path from client code.",
+        "operationId": "triggerDebugSentry",
+        "tags": ["internal"],
+        "responses": {
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/login": {
+      "get": {
+        "summary": "Rate-limited login probe",
+        "description": "Stub login endpoint protected by a 5-requests-per-minute rate limit. Returns a placeholder confirmation string. Returns 429 Too Many Requests when the limiter threshold is exceeded.",
+        "operationId": "getLogin",
+        "responses": {
+          "200": {
+            "description": "Login attempt accepted",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "example": "Login attempt"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded (more than 5 requests per minute). The default Flask-Limiter handler returns the werkzeug TooManyRequests HTML page; no custom JSON error handler is registered for 429.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MonetaryAmount": {
+        "type": "string",
+        "format": "decimal",
+        "pattern": "^-?\\d+(\\.\\d+)?$",
+        "description": "A monetary amount serialized as a string to preserve Decimal precision. Never represented as a JSON number. Example: \"123.45\".",
+        "example": "123.45"
+      },
+      "Error": {
+        "type": "object",
+        "description": "Generic error response body used by the 404 and 500 error handlers.",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message."
+          }
+        },
+        "required": ["error"]
+      },
+      "ValidationError": {
+        "type": "object",
+        "description": "Validation error response body produced by the marshmallow ValidationError handler.",
+        "properties": {
+          "errors": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Field-keyed map of validation error messages."
+          }
+        },
+        "required": ["errors"]
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Resource not found. Returned by the registered 404 handler in `src/ledgerbase/error_handlers.py` as JSON for `Accept: application/json` and as the `404.html` template for any other Accept header.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Not found"
+            }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "description": "Rendered `404.html` template."
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "Request body failed marshmallow validation. Returned by the registered 422 handler as JSON for `Accept: application/json` and as the `422.html` template for any other Accept header.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "description": "Rendered `422.html` template (receives the marshmallow error map as `errors`)."
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Unhandled server error. Returned by the registered 500 handler as JSON for `Accept: application/json` and as the `500.html` template for any other Accept header.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Internal server error"
+            }
+          },
+          "text/html": {
+            "schema": {
+              "type": "string",
+              "description": "Rendered `500.html` template."
+            }
+          }
+        }
+      }
+    }
+  }
+}

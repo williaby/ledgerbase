@@ -1,0 +1,15 @@
+{
+  "name": "ledgerbase-api-tests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Newman runner for the Postman collection at docs/api/postman-collection.json. Not published; exists solely so CI can install Newman deterministically via `npm ci`.",
+  "scripts": {
+    "newman": "newman run docs/api/postman-collection.json"
+  },
+  "devDependencies": {
+    "newman": "6.2.2"
+  },
+  "overrides": {
+    "handlebars": "^4.7.9"
+  }
+}
