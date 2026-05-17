@@ -36,8 +36,6 @@ permissions:
 jobs:
   prepare:
     uses: ./.github/workflows/prepare-uv.yml
-    with:
-      GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
     secrets:
       GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
 
@@ -58,8 +56,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b  # v8.1.0
+        with:
+          python-version: "3.11"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
       - name: Verify no public PyPI fallbacks
-        run: poetry run nox -s verify_assured
+        run: uv run nox -s verify_assured
 
       - name: Install jq for JSON parsing
         run: |
@@ -67,14 +75,14 @@ jobs:
 
       - name: Run pip-audit scan (JSON)
         run: |
-          poetry run pip-audit \
+          uv run pip-audit \
             --requirement "${{ matrix.target.req }}" \
             --format json \
             --output "${{ matrix.target.name }}.json"
 
       - name: Convert JSON → SARIF
         run: |
-          poetry run sarif summary "${{ matrix.target.name }}.json" --format sarif \
+          uv run sarif summary "${{ matrix.target.name }}.json" --format sarif \
             > "${{ matrix.target.name }}.sarif"
 
       - name: Upload JSON report

@@ -9,14 +9,22 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
     # via pydantic
 anyio==4.13.0
-    # via httpx
+    # via
+    #   httpx
+    #   mcp
+    #   sse-starlette
+    #   starlette
 argcomplete==3.6.3
     # via nox
 attrs==26.1.0
     # via
+    #   glom
     #   jschema-to-python
+    #   jsonschema
     #   nox
+    #   referencing
     #   sarif-om
+    #   semgrep
 authlib==1.6.12
     # via safety
 babel==2.18.0
@@ -26,6 +34,17 @@ bandit-sarif-formatter==1.1.1
 basedpyright==1.39.4
 beautifulsoup4==4.14.3
     # via furo
+boltons==21.0.0
+    # via
+    #   face
+    #   glom
+    #   semgrep
+boolean-py==5.0
+    # via license-expression
+bracex==2.6
+    # via wcmatch
+cachecontrol==0.14.4
+    # via pip-audit
 certifi==2026.4.22
     # via
     #   httpcore
@@ -49,10 +68,14 @@ click==8.1.8
     #   nltk
     #   python-semantic-release
     #   safety
+    #   semgrep
     #   sqlfluff
     #   typer
+    #   uvicorn
 click-option-group==0.5.9
-    # via python-semantic-release
+    # via
+    #   python-semantic-release
+    #   semgrep
 codespell==2.4.2
 colorama==0.4.6
     # via
@@ -60,6 +83,7 @@ colorama==0.4.6
     #   click
     #   colorlog
     #   pytest
+    #   semgrep
     #   sphinx
     #   sqlfluff
     #   tqdm
@@ -72,10 +96,17 @@ coverage==7.14.0
 cryptography==44.0.3
     # via
     #   authlib
+    #   google-auth
     #   pyjwt
     #   secretstorage
 cycler==0.12.1
     # via matplotlib
+cyclonedx-python-lib==9.1.0
+    # via pip-audit
+defusedxml==0.7.1
+    # via
+    #   py-serializable
+    #   semgrep
 dependency-groups==1.3.1
     # via nox
 deprecated==1.3.1
@@ -97,8 +128,13 @@ dparse==0.6.4
     # via
     #   safety
     #   safety-schemas
+exceptiongroup==1.2.2
+    # via semgrep
+face==26.0.0
+    # via glom
 filelock==3.29.0
     # via
+    #   cachecontrol
     #   python-discovery
     #   safety
     #   virtualenv
@@ -109,12 +145,24 @@ gitdb==4.0.12
     # via gitpython
 gitpython==3.1.50
     # via python-semantic-release
+glom==22.1.0
+    # via semgrep
+google-auth==2.53.0
+    # via keyrings-google-artifactregistry-auth
+googleapis-common-protos==1.75.0
+    # via opentelemetry-exporter-otlp-proto-http
 h11==0.16.0
-    # via httpcore
+    # via
+    #   httpcore
+    #   uvicorn
 httpcore==1.0.9
     # via httpx
 httpx==0.28.1
-    # via safety
+    # via
+    #   mcp
+    #   safety
+httpx-sse==0.4.3
+    # via mcp
 humanize==4.15.0
     # via nox
 identify==2.6.19
@@ -129,6 +177,7 @@ imagesize==2.0.0
 importlib-metadata==8.7.1
     # via
     #   keyring
+    #   opentelemetry-api
     #   twine
 importlib-resources==6.5.2
     # via python-semantic-release
@@ -157,10 +206,23 @@ jsonpath-ng==1.8.0
     # via sarif-tools
 jsonpickle==4.1.1
     # via jschema-to-python
+jsonschema==4.20.0
+    # via
+    #   mcp
+    #   semgrep
+jsonschema-specifications==2025.9.1
+    # via jsonschema
 keyring==24.3.1
-    # via twine
+    # via
+    #   keyrings-google-artifactregistry-auth
+    #   twine
+keyrings-google-artifactregistry-auth==1.1.2
 kiwisolver==1.5.0
     # via matplotlib
+librt==0.11.0 ; platform_python_implementation != 'PyPy'
+    # via mypy
+license-expression==30.4.4
+    # via cyclonedx-python-lib
 lxml==6.1.0
     # via python-docx
 markdown-it-py==4.2.0
@@ -174,12 +236,19 @@ marshmallow==3.26.2
     # via safety
 matplotlib==3.10.9
     # via sarif-tools
+mcp==1.12.2
+    # via semgrep
 mdit-py-plugins==0.6.1
     # via myst-parser
 mdurl==0.1.2
     # via markdown-it-py
 more-itertools==11.0.2
     # via jaraco-classes
+msgpack==1.1.2
+    # via cachecontrol
+mypy==1.19.1
+mypy-extensions==1.1.0
+    # via mypy
 myst-parser==5.1.0
 nh3==0.3.5
     # via readme-renderer
@@ -194,6 +263,39 @@ numpy==2.4.5
     # via
     #   contourpy
     #   matplotlib
+opentelemetry-api==1.37.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-requests
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+    #   semgrep
+opentelemetry-exporter-otlp-proto-common==1.37.0
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.37.0
+    # via semgrep
+opentelemetry-instrumentation==0.58b0
+    # via opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-requests==0.58b0
+    # via semgrep
+opentelemetry-proto==1.37.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.37.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-http
+    #   semgrep
+opentelemetry-semantic-conventions==0.58b0
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-requests
+    #   opentelemetry-sdk
+opentelemetry-util-http==0.58b0
+    # via opentelemetry-instrumentation-requests
+packageurl-python==0.17.6
+    # via cyclonedx-python-lib
 packaging==23.2
     # via
     #   dependency-groups
@@ -201,31 +303,47 @@ packaging==23.2
     #   marshmallow
     #   matplotlib
     #   nox
+    #   opentelemetry-instrumentation
+    #   pip-audit
+    #   pip-requirements-parser
     #   pytest
     #   safety
     #   safety-schemas
+    #   semgrep
     #   sphinx
 pathspec==0.12.1
     # via
+    #   mypy
     #   sqlfluff
     #   yamllint
 pbr==7.0.3
     # via
     #   jschema-to-python
     #   sarif-om
+peewee==3.19.0
+    # via semgrep
 pillow==12.2.0
     # via matplotlib
+pip==26.1.1
+    # via pip-api
+pip-api==0.0.34
+    # via pip-audit
+pip-audit==2.9.0
 pip-licenses==4.5.1
+pip-requirements-parser==32.0.1
+    # via pip-audit
 pkginfo==1.10.0
     # via twine
 platformdirs==4.9.6
     # via
+    #   pip-audit
     #   python-discovery
     #   sqlfluff
     #   virtualenv
 pluggy==1.6.0
     # via
     #   diff-cover
+    #   keyrings-google-artifactregistry-auth
     #   pytest
     #   pytest-cov
 polib==1.2.0
@@ -233,15 +351,29 @@ polib==1.2.0
 pre-commit==4.6.0
 prettytable==3.17.0
     # via pip-licenses
+protobuf==6.33.6
+    # via
+    #   googleapis-common-protos
+    #   opentelemetry-proto
+py-serializable==2.1.0
+    # via cyclonedx-python-lib
+pyasn1==0.6.3
+    # via pyasn1-modules
+pyasn1-modules==0.4.2
+    # via google-auth
 pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
 pydantic==2.9.2
     # via
+    #   mcp
+    #   pydantic-settings
     #   python-semantic-release
     #   safety
     #   safety-schemas
 pydantic-core==2.23.4
     # via pydantic
+pydantic-settings==2.14.1
+    # via mcp
 pyenchant==3.3.0
     # via sphinxcontrib-spelling
 pygithub==1.59.1
@@ -259,7 +391,9 @@ pyjwt==2.12.1
 pynacl==1.6.2
     # via pygithub
 pyparsing==3.3.2
-    # via matplotlib
+    # via
+    #   matplotlib
+    #   pip-requirements-parser
 pytest==8.4.2
     # via
     #   pytest-cov
@@ -271,9 +405,17 @@ python-discovery==1.3.1
     # via virtualenv
 python-docx==1.2.0
     # via sarif-tools
+python-dotenv==1.2.2
+    # via pydantic-settings
 python-gitlab==4.13.0
     # via python-semantic-release
+python-multipart==0.0.28
+    # via mcp
 python-semantic-release==9.21.0
+pywin32==311 ; sys_platform == 'win32'
+    # via
+    #   mcp
+    #   semgrep
 pywin32-ctypes==0.2.3 ; sys_platform == 'win32'
     # via keyring
 pyyaml==6.0.3
@@ -287,6 +429,10 @@ pyyaml==6.0.3
 readme-renderer==44.0
     # via twine
 readthedocs-sphinx-search==0.3.2
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 regex==2026.5.9
     # via
     #   nltk
@@ -294,11 +440,16 @@ regex==2026.5.9
     #   sqlfluff
 requests==2.34.2
     # via
+    #   cachecontrol
+    #   keyrings-google-artifactregistry-auth
+    #   opentelemetry-exporter-otlp-proto-http
+    #   pip-audit
     #   pygithub
     #   python-gitlab
     #   python-semantic-release
     #   requests-toolbelt
     #   safety
+    #   semgrep
     #   sphinx
     #   twine
 requests-toolbelt==1.0.0
@@ -310,17 +461,26 @@ rfc3986==2.0.0
 rich==13.5.3
     # via
     #   bandit
+    #   pip-audit
     #   python-semantic-release
+    #   semgrep
     #   twine
     #   typer
 roman-numerals==4.1.0
     # via roman-numerals-py
 roman-numerals-py==4.1.0
     # via sphinx
+rpds-py==0.30.0
+    # via
+    #   jsonschema
+    #   referencing
 ruamel-yaml==0.19.1
     # via
     #   safety
     #   safety-schemas
+    #   semgrep
+ruamel-yaml-clib==0.2.12
+    # via semgrep
 ruff==0.15.13
 safety==3.7.0
 safety-schemas==0.0.16
@@ -330,6 +490,7 @@ sarif-om==1.0.4
 sarif-tools==3.0.5
 secretstorage==3.5.0 ; sys_platform == 'linux'
     # via keyring
+semgrep==1.139.0
 setuptools==82.0.1
     # via pbr
 shellingham==1.5.4
@@ -342,6 +503,8 @@ smmap==5.0.3
     # via gitdb
 snowballstemmer==3.0.1
     # via sphinx
+sortedcontainers==2.4.0
+    # via cyclonedx-python-lib
 soupsieve==2.8.3
     # via beautifulsoup4
 sphinx==8.2.3
@@ -373,16 +536,25 @@ sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
 sphinxcontrib-spelling==7.7.0
 sqlfluff==3.5.0
+sse-starlette==3.4.4
+    # via mcp
+starlette==1.0.0
+    # via
+    #   mcp
+    #   sse-starlette
 stevedore==5.7.0
     # via bandit
 tblib==3.2.2
     # via sqlfluff
 tenacity==9.1.4
     # via safety
+toml==0.10.2
+    # via pip-audit
 tomli==2.0.2
     # via
     #   coverage
     #   pip-licenses
+    #   semgrep
 tomlkit==0.15.0
     # via
     #   python-semantic-release
@@ -399,25 +571,43 @@ typing-extensions==4.15.0
     # via
     #   anyio
     #   beautifulsoup4
+    #   mypy
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
     #   pydantic
     #   pydantic-core
     #   python-docx
+    #   referencing
     #   safety
     #   safety-schemas
+    #   semgrep
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via pydantic-settings
 urllib3==2.7.0
     # via
     #   requests
+    #   semgrep
     #   twine
     #   types-requests
+uvicorn==0.47.0 ; sys_platform != 'emscripten'
+    # via mcp
 virtualenv==21.3.3
     # via
     #   nox
     #   pre-commit
 vulture==2.16
+wcmatch==8.5.2
+    # via semgrep
 wcwidth==0.7.0
     # via prettytable
 wrapt==1.17.3
-    # via deprecated
+    # via
+    #   deprecated
+    #   opentelemetry-instrumentation
 yamllint==1.37.1
 zipp==3.23.1
     # via importlib-metadata

@@ -1,20 +1,3 @@
----
-# Front-Matter for GitHub Workflow
-title: "Prepare uv Environment"
-name: "prepare-uv.yml"
-description: "Sets up a uv-managed Python environment with Google Artifact Registry authentication"
-category: workflow
-usage: "Called by other workflows that need a uv-managed Python environment"
-behavior: "Sets up uv (and Python), configures Assured OSS index, installs dependencies via uv sync"
-inputs: "GCP_SA_JSON secret for Google Artifact Registry authentication"
-outputs: "dev-requirements.txt file exported from the uv lock"
-dependencies: "astral-sh/setup-uv, google-github-actions/auth"
-author: "LedgerBase Team"
-last_modified: "2026-05-15"
-changelog: "Migrated from Poetry to uv (closes #136)"
-tags: [uv, workflow, python]
----
-
 name: Prepare uv Environment
 
 on:
