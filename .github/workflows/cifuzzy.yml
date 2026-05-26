@@ -9,7 +9,7 @@ usage: "Trigger on push to main/develop, pull_request, or manual dispatch"
 behavior: "Sets up environment; builds fuzzers; runs fuzzing; uploads crash artifacts; generates SARIF"
 inputs: "triggers: push(main,develop), pull_request(main,develop), workflow_dispatch; secrets: none"
 outputs: "Crash artifacts under out/artifacts; SARIF report under sarif/cifuzz.sarif"
-dependencies: "step-security/harden-runner@v2.12.0, actions/checkout@v4, google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master, google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master, actions/upload-artifact@v3, github/codeql-action/upload-sarif@v2"
+dependencies: "step-security/harden-runner@v2.12.0, actions/checkout@v4, google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@6353d1276b9505d4df934ae5da6fa616ad1ee273 # master, google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@6353d1276b9505d4df934ae5da6fa616ad1ee273 # master, actions/upload-artifact@v3, github/codeql-action/upload-sarif@8dca8a82e2fa1a2c8908956f711300f9c4a4f4f6 # v2"
 author: "Byron Williams"
 last_modified: "2025-04-17"
 changelog: "Bumped harden-runner, checkout, artifact & SARIF upload actions to latest majors"
@@ -37,21 +37,21 @@ jobs:
       security-events: write
     steps:
       - name: Harden runner (audit outbound)
-        uses: step-security/harden-runner@v2.12
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411  # v2.19.4
         with:
           egress-policy: audit
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Build Fuzzers
         id: build
-        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@6353d1276b9505d4df934ae5da6fa616ad1ee273 # master
         with:
           oss-fuzz-project-name: "ledgerbase"
 
       - name: Run Fuzzers
-        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@6353d1276b9505d4df934ae5da6fa616ad1ee273 # master
         with:
           oss-fuzz-project-name: "ledgerbase"
           fuzz-seconds: 600
@@ -59,13 +59,13 @@ jobs:
 
       - name: Upload crash artifacts
         if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@c6a366c94c3e0affe28c06c8df20a878f24da3cf  # v3.2.2
         with:
           name: cifuzz-artifacts
           path: out/artifacts
 
       - name: Upload CIFuzz SARIF
         if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@8dca8a82e2fa1a2c8908956f711300f9c4a4f4f6 # v2
         with:
           sarif_file: sarif/cifuzz.sarif
