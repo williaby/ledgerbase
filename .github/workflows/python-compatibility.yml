@@ -37,7 +37,9 @@ jobs:
     name: Python Compatibility Matrix
     uses: ByronWilliamsCPA/.github/.github/workflows/python-compatibility.yml@c22009ccaab0d3234819d30d9d7a03d53c531cb9  # main
     with:
-      python-versions: '["3.10", "3.11", "3.12", "3.13"]'
+      # Project requires Python >=3.11 (sphinx>=8.2 in the dev group drops 3.10),
+      # so 3.10 is intentionally excluded to match requires-python in pyproject.toml.
+      python-versions: '["3.11", "3.12", "3.13"]'
       operating-systems: '["ubuntu-latest"]'
       include-macos: true
       include-windows: true
