@@ -145,6 +145,27 @@ exclude = [
 known-first-party  = ["ledgerbase"]
 combine-as-imports = true #
 
+[tool.basedpyright]
+# Type-check the shipped package source only. The task runner (noxfile.py),
+# dev helpers (load_env.py) and one-off scripts are not part of the package and
+# were never type-checked under the previous mypy scope (src only).
+typeCheckingMode = "standard"
+pythonVersion = "3.11"
+reportMissingTypeStubs = false
+include = ["src"]
+exclude = [
+  "**/__pycache__",
+  ".venv",
+  ".nox",
+  "build",
+  "dist",
+  "migrations",
+  "tests",
+  "scripts",
+  "noxfile.py",
+  "load_env.py",
+]
+
 [tool.mypy.requests]
 ignore_missing_imports = true #
 
