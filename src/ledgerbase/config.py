@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """---
 # Front-Matter for Python Module
 

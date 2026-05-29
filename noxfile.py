@@ -2,8 +2,8 @@
 ##: description = Nox sessions for testing, linting, CI, and documentation generation in LedgerBase. # noqa: E501
 ##: category = dev
 ##: usage = nox [-s <session_name>] [-- <args>] (Default: lint,  autoflake, mypy, tests) # noqa: E501
-##: behavior = Defines reusable Nox sessions for CI workflows including security scans and local development checks. Relies on Poetry for Python tool versions. # noqa: E501
-##: dependencies = nox, poetry, docker, git, npm, wget, ggshield, twine
+##: behavior = Defines reusable Nox sessions for CI workflows including security scans and local development checks. Relies on uv for Python tool versions. # noqa: E501
+##: dependencies = nox, uv, docker, git, npm, wget, ggshield, twine
 ##: tags = ci, automation, testing, docs, security, linting, fuzzing, secrets, packaging
 ##: author = Byron Williams
 ##: last_modified = 2025-04-20 # Updated date
@@ -65,10 +65,9 @@ LINT_TARGETS: list[str] = ["src", "tests", "noxfile.py"]
 MIN_COVERAGE: int = 90
 
 # --- Tool Version Pinning (Hybrid Approach) ---
-# Keep versions only for tools NOT primarily managed by Poetry/Renovate in pyproject.toml # noqa: E501
+# Keep versions only for tools NOT primarily managed by uv/Renovate in pyproject.toml # noqa: E501
 # or where specific pinning independent of pyproject.toml is desired for Nox runs.
 TOOL_VERSIONS: dict[str, str] = {
-    "poetry": "1.8.3",  # Poetry itself
     "safety-sarif": "1.2.0",  # Keep if installed separately via pip? Or add to pyproject? # noqa: E501
     "cifuzz": "latest",  # Placeholder for external tool
     "snyk": "latest",  # NPM package
@@ -111,9 +110,9 @@ SHARED_BUNDLES = [
 
 
 # --- Helper Functions ---
-# (ensure_reports, require_tool, install_poetry_and_deps, discover_files,
+# (ensure_reports, require_tool, install_project_and_deps, discover_files,
 # load_env_from_sops,
-#  check_docker, get_repo_name, get_branch_name, get_poetry_dependencies
+#  check_docker, get_repo_name, get_branch_name, get_project_dependencies
 #  functions remain the same)
 def ensure_reports(
     *dirs_to_ensure: Path,
@@ -122,13 +121,16 @@ def ensure_reports(
     Callable[[Session, P], R],
 ]:
     """Ensure report directories exist before running a session function."""
+
     def decorator(func: Callable[[Session, P], R]) -> Callable[[Session, P], R]:
         @functools.wraps(func)
         def wrapper(session: Session, *args: P.args, **kwargs: P.kwargs) -> R:
             for report_dir in dirs_to_ensure:
                 report_dir.mkdir(parents=True, exist_ok=True)
             return func(session, *args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -141,29 +143,29 @@ def require_tool(session: Session, tool_name: str) -> None:
         )
 
 
-def install_poetry_and_deps(
+def install_project_and_deps(
     session: Session,
     *,
     with_dev: bool = True,
     no_root: bool = True,
 ) -> None:
-    """Install Poetry and project dependencies using pinned Poetry version.
-    Installs Poetry {TOOL_VERSIONS['poetry']}. Args: session: The Nox session object.
-    with_dev: Whether to include development dependencies. no_root: If True, do not
-    install the project package itself, only its dependencies. If False, install the
-    project package along with dependencies (needed for tests/tools importing project code).
-    """  # noqa: E501
-    session.install(f"poetry=={TOOL_VERSIONS['poetry']}")
-    command = ["poetry", "install"]
-    groups = ["dev"]
+    """Install project dependencies into the session venv using uv.
+
+    Args: session: The Nox session object. with_dev: Whether to include the dev
+    dependency group. no_root: If True, do not install the project package itself,
+    only its dependencies. If False, install the project package along with
+    dependencies (needed for tests/tools importing project code).
+    """
+    command = ["uv", "sync", "--frozen"]
+    if not with_dev:
+        command.append("--no-dev")
     if no_root:
-        command.append("--no-root")
-    if with_dev:
-        for group in groups:
-            command.extend(["--with", group])
-    else:
-        command.extend(["--only", "main"])
-    session.run(*command, silent=True)
+        command.append("--no-install-project")
+    session.run_install(
+        *command,
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+        external=True,
+    )
 
 
 def discover_files(
@@ -244,41 +246,36 @@ def get_branch_name() -> str:
         return "unknown-branch"
 
 
-def get_poetry_dependencies(session: Session, *, include_dev: bool = True) -> list[str]:
-    """Export dependencies from Poetry and return a list of package names."""
-    req_file = Path(session.create_tmp()) / "poetry_deps.txt"
+def get_project_dependencies(
+    session: Session,
+    *,
+    include_dev: bool = True,
+) -> list[str]:
+    """Export dependencies via uv and return a list of package names."""
     export_cmd = [
-        "poetry",  # nosec: B607 - Using Poetry from PATH is safe as it's a trusted tool
+        "uv",
         "export",
-        "--format=requirements.txt",
-        f"--output={req_file}",
-        "--without-hashes",  # nosec: B603 - All arguments are hardcoded or generated safely
+        "--format=requirements-txt",
+        "--no-hashes",
+        "--no-emit-project",
     ]
-    if include_dev:
-        export_cmd.append("--with=dev")
-    else:
-        export_cmd.append("--only=main")
-    # Try running poetry from session env first, fallback to external
-    try:
-        session.run(*export_cmd, external=False, silent=True)
-    except nox.command.CommandFailed:
-        session.log("Session poetry failed, trying external poetry...")
-        session.run(*export_cmd, external=True, silent=True)
+    if not include_dev:
+        export_cmd.append("--no-dev")
+    output = session.run(*export_cmd, external=True, silent=True) or ""
     packages = []
-    if req_file.exists():
-        with req_file.open() as f:
-            for line_content in f:
-                stripped_line = line_content.strip()
-                if stripped_line and not stripped_line.startswith("#"):
-                    pkg_name = (
-                        stripped_line.split("==")[0]
-                        .split(">=")[0]
-                        .split("<=")[0]
-                        .split("<")[0]
-                        .split(">")[0]
-                        .split("~=")[0]
-                    )
-                    packages.append(pkg_name.strip())
+    for line_content in output.splitlines():
+        stripped_line = line_content.strip()
+        if stripped_line and not stripped_line.startswith(("#", "-")):
+            pkg_name = (
+                stripped_line.split("==")[0]
+                .split(">=")[0]
+                .split("<=")[0]
+                .split("<")[0]
+                .split(">")[0]
+                .split("~=")[0]
+                .split(";")[0]
+            )
+            packages.append(pkg_name.strip())
     return packages
 
 
@@ -294,7 +291,7 @@ def tests(session: Session) -> None:
     """Run the test suite using pytest. Installs project and dev dependencies.
     Requires project code (`no_root=False`).
     """
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
     session.run("pytest", *session.posargs)
 
 
@@ -304,7 +301,7 @@ def coverage(session: Session) -> None:
     """Run pytest with coverage and enforce minimum coverage level. Requires
     project code (`no_root=False`).
     """
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
     report_path = XML_DIR / "coverage.xml"
     session.run(
         "pytest",
@@ -329,11 +326,8 @@ def pre_commit(session: Session) -> None:
 
 @nox.session(python=LATEST, tags=["ci", "core"], reuse_venv=True)
 def check_lockfile(session: Session) -> None:
-    """Verify that poetry.lock is consistent with pyproject.toml."""
-    # Installs the specific poetry version used for checking
-    session.install(f"poetry=={TOOL_VERSIONS['poetry']}")
-    # Use the new recommended check command
-    session.run("poetry", "check", "--lock")
+    """Verify that uv.lock is consistent with pyproject.toml."""
+    session.run("uv", "lock", "--locked", external=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -341,9 +335,9 @@ def check_lockfile(session: Session) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 @nox.session(python=PYTHON_VERSIONS, tags=["ci", "core", "linting"], reuse_venv=True)
 def lint(session: Session) -> None:
-    """Run Ruff linter (uses pyproject.toml, assumes 'I' ignored). Relies on ruff being installed via Poetry dev deps."""  # noqa: E501
+    """Run Ruff linter (uses pyproject.toml, assumes 'I' ignored). Relies on ruff being installed via the uv dev group."""  # noqa: E501
     # Install project & dev deps, including ruff. Need full env (no_root=False) for entry points. # noqa: E501
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
     session.log("Running Ruff checks ")
     try:
         session.run("ruff", "check", *LINT_TARGETS, *session.posargs)
@@ -353,8 +347,8 @@ def lint(session: Session) -> None:
 
 @nox.session(python=LATEST, tags=["core", "linting", "format"], reuse_venv=True)
 def ruff_fix(session: Session) -> None:
-    """Auto-fix Ruff lint issues  & format code with Ruff. Relies on ruff being installed via Poetry dev deps."""  # noqa: E501
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    """Auto-fix Ruff lint issues  & format code with Ruff. Relies on ruff being installed via the uv dev group."""  # noqa: E501
+    install_project_and_deps(session, with_dev=True, no_root=False)
     targets = LINT_TARGETS + session.posargs
     session.log("Running Ruff auto-fix ...")
     session.run("ruff", "check", *targets, "--fix", "--exit-zero")
@@ -365,18 +359,18 @@ def ruff_fix(session: Session) -> None:
 @nox.session(python=PYTHON_VERSIONS, tags=["ci", "core", "linting"], reuse_venv=True)
 def mypy(session: Session) -> None:
     """Perform static type checking using Mypy (uses pyproject.toml). Needs project
-    installed. Relies on mypy being installed via Poetry dev deps.
+    installed. Relies on mypy being installed via the uv dev group.
     """
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
     session.run("mypy", *session.posargs if session.posargs else [PACKAGE_DIR])
 
 
 @nox.session(python=LATEST, tags=["ci", "docs", "linting"], reuse_venv=True)
 def lint_rst(session: Session) -> None:
     """Lint reStructuredText files using sphinx-lint. Needs project installed. Relies
-    on sphinx-lint being installed via Poetry dev deps.
+    on sphinx-lint being installed via the uv dev group.
     """
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
     rst_dirs_or_files = ["docs/source"]
     session.log("🔍 Running sphinx-lint on RST files...")
     try:
@@ -391,7 +385,7 @@ def vulture(session: Session) -> None:
     - Skips noxfile.py (dynamic usage).
     - Uses whitelist + higher confidence to reduce false positives.
     """
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
 
     scan_paths = [
         p for p in LINT_TARGETS if not p.endswith("noxfile.py")
@@ -504,9 +498,9 @@ def prose(session: Session) -> None:
 @nox.session(python=LATEST, tags=["ci", "linting"], reuse_venv=True)
 def lint_other(session: Session) -> None:
     """Run linting/formatting on YAML, Markdown, and check for typos. Uses external npm
-    tools and Python tools installed via Poetry dev deps.
+    tools and Python tools installed via the uv dev group.
     """
-    install_poetry_and_deps(
+    install_project_and_deps(
         session,
         with_dev=True,
         no_root=False,
@@ -561,7 +555,7 @@ def lint_other(session: Session) -> None:
         session.run(
             "codespell",
             *existing_targets,
-        )  # Runs codespell installed via poetry
+        )  # Runs codespell installed via the uv dev group
     else:
         session.log("No targets found for codespell.")
 
@@ -611,11 +605,11 @@ def lint_all(session: Session) -> None:
 @ensure_reports(SARIF_DIR)  # Only need SARIF_DIR now
 def bandit_scan(session: Session) -> None:
     """Run Bandit SAST scanner.
-    Relies on bandit and bandit-sarif-formatter installed via Poetry dev deps.
+    Relies on bandit and bandit-sarif-formatter installed via the uv dev group.
     Generates a SARIF report.
     """
     # Install bandit & bandit-sarif-formatter via dev dependencies
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
 
     # Define the SARIF report path
     sarif_path = SARIF_DIR / "bandit.sarif"
@@ -639,22 +633,21 @@ def bandit_scan(session: Session) -> None:
 @ensure_reports(JSON_DIR)  # Revert to ensuring JSON_DIR
 def safety(session: Session) -> None:
     """Scan dependencies for vulnerabilities using Safety.
-    Relies on safety installed via Poetry dev deps. Generates a JSON report.
+    Relies on safety installed via the uv dev group. Generates a JSON report.
     """
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
 
     # Define the JSON report path
     json_path = JSON_DIR / "safety_output.json"  # Use JSON path again
     requirements_path = Path(session.create_tmp()) / "requirements.txt"
 
     session.run(
-        "poetry",
+        "uv",
         "export",
-        "--format=requirements.txt",
-        f"--output={requirements_path}",
-        "--with=dev",
-        "--without-hashes",
-        external=False,
+        "--format=requirements-txt",
+        f"--output-file={requirements_path}",
+        "--no-hashes",
+        external=True,
     )
 
     try:
@@ -776,18 +769,18 @@ def sbom_validate(session: Session) -> None:
 @ensure_reports(JSON_DIR)
 def license_report(session: Session) -> None:
     """Generate dependency license report using pip-licenses. Relies on pip-licenses
-    installed via Poetry dev deps. Uses explicit dependency list.
+    installed via the uv dev group. Uses explicit dependency list.
     """
-    install_poetry_and_deps(
+    install_project_and_deps(
         session,
         with_dev=True,
         no_root=False,
-    )  # Install pip-licenses & poetry
+    )  # Install pip-licenses
     json_path = JSON_DIR / "license-report.json"
     disallowed_path = JSON_DIR / "disallowed-licenses.txt"
-    dependencies_to_check = get_poetry_dependencies(session, include_dev=True)
+    dependencies_to_check = get_project_dependencies(session, include_dev=True)
     if not dependencies_to_check:
-        session.error("Could not retrieve dependency list from Poetry.")
+        session.error("Could not retrieve dependency list from uv.")
     session.run(
         "pip-licenses",
         "--format=json",
@@ -810,8 +803,10 @@ def license_report(session: Session) -> None:
         return
     allowed_licenses = {"MIT", "BSD", "Apache-2.0", "ISC", "Python-2.0"}
     disallowed = [
-        (f"{pkg.get('Name', 'Unknown')} ({pkg.get('Version', 'N/A')}) - "
-         f"License: {pkg.get('License', 'Unknown')}")
+        (
+            f"{pkg.get('Name', 'Unknown')} ({pkg.get('Version', 'N/A')}) - "
+            f"License: {pkg.get('License', 'Unknown')}"
+        )
         for pkg in licenses
         if pkg.get("License", "UNKNOWN") not in allowed_licenses
     ]
@@ -879,7 +874,7 @@ def snyk_oss(session: nox.Session) -> None:
         session.error("Missing required SNYK_TOKEN environment variable.")
 
     # Install dependencies so Snyk can scan them
-    install_poetry_and_deps(session, with_dev=True, no_root=False)
+    install_project_and_deps(session, with_dev=True, no_root=False)
 
     sarif_path = SARIF_DIR / "snyk-oss.sarif"
 
@@ -1057,7 +1052,7 @@ def build_docs(session: Session) -> None:
     Uses '-- --strict' for warnings-as-errors. Requires external 'make' and LaTeX tools.
     """
     strict_mode = "--strict" in session.posargs
-    install_poetry_and_deps(
+    install_project_and_deps(
         session,
         with_dev=True,
         no_root=False,
@@ -1145,19 +1140,19 @@ def docker_build(session: Session) -> None:
 @nox.session(python=LATEST, tags=["ci", "packaging"], reuse_venv=True)
 def package_check(session: Session) -> None:
     """Build the sdist and wheel, then check them using twine. Relies on twine
-    installed via Poetry dev deps. Ensures package artifacts are valid.
+    installed via the uv dev group. Ensures package artifacts are valid.
     """
-    install_poetry_and_deps(
+    install_project_and_deps(
         session,
         with_dev=True,
         no_root=False,
-    )  # Install twine & poetry
+    )  # Install twine
     # session.install(f"twine=={TOOL_VERSIONS['twine']}") # Removed # noqa: ERA001
     dist_dir = Path("dist")
     if dist_dir.exists():
         shutil.rmtree(dist_dir)
     session.log("Building sdist and wheel...")
-    session.run("poetry", "build", external=False)
+    session.run("uv", "build", external=True)
     session.log("Checking built artifacts with twine...")
     session.run("twine", "check", "dist/*")
     session.log("Twine check passed.")
@@ -1175,8 +1170,7 @@ def list_security_sessions(session: Session) -> None:
         nox_path = shutil.which("nox")
         if not nox_path:
             session.error("Could not find 'nox' executable in PATH.")
-        list_output = (subprocess.check_output
-                       ([nox_path, "-l", "--json"], text=True))  # nosec: B603, B607 - nox_path is validated above
+        list_output = subprocess.check_output([nox_path, "-l", "--json"], text=True)  # nosec: B603, B607 - nox_path is validated above
         all_sessions = json.loads(list_output)
         security_sessions: list[str] = [
             s["session"] for s in all_sessions if "security" in s.get("tags", [])
@@ -1194,7 +1188,7 @@ def list_security_sessions(session: Session) -> None:
 
 
 @nox.session(python=LATEST, tags=["util"], reuse_venv=True)
-@ensure_reports(TXT_REPORT_DIR) # Use your existing helper
+@ensure_reports(TXT_REPORT_DIR)  # Use your existing helper
 def pre_commit_log(session: Session) -> None:
     """Run all pre-commit hooks verbosely and log to docs/reports/txt/pre-commit.log
     using shell redirection.
@@ -1202,10 +1196,9 @@ def pre_commit_log(session: Session) -> None:
     log_path = TXT_REPORT_DIR / "pre-commit.log"
 
     # IMPORTANT: Determine the correct command to run pre-commit.
-    # Since your hooks use 'poetry run ...', pre-commit likely needs to be
-    # invoked in a way that respects the poetry environment.
-    # Using 'poetry run pre-commit ...' is the safest bet.
-    pre_commit_base_command = "poetry run pre-commit"
+    # Since the hooks use 'uv run ...', invoke pre-commit through uv so it
+    # runs against the project environment.
+    pre_commit_base_command = "uv run pre-commit"
 
     # Construct the full command with arguments
     full_command = f"{pre_commit_base_command} run --all-files --verbose"
@@ -1223,20 +1216,20 @@ def pre_commit_log(session: Session) -> None:
         session.run("bash", "-c", shell_command, external=True)
         # Check if the log file was created and has content, log success
         if log_path.exists() and log_path.stat().st_size > 0:
-             session.log(f"Pre-commit log generated successfully at {log_path}")
+            session.log(f"Pre-commit log generated successfully at {log_path}")
         elif log_path.exists():
-             session.log(f"Pre-commit ran, but log file at {log_path} is empty.")
+            session.log(f"Pre-commit ran, but log file at {log_path} is empty.")
         else:
-             session.warn(f"Pre-commit ran, but log file {log_path} was not created.")
+            session.warn(f"Pre-commit ran, but log file {log_path} was not created.")
 
     except nox.command.CommandFailed as e:
         # The exception 'e' itself contains the exit code info in its string
         # representation. So, just use 'e' directly in the f-string.
         session.error(
-            f"Pre-commit run failed. Check log at {log_path} for details. Error: {e}")
-
+            f"Pre-commit run failed. Check log at {log_path} for details. Error: {e}",
+        )
 
     except (OSError, RuntimeError) as e:
-
         session.error(
-            f"An unexpected error occurred during pre_commit_log session: {e}")
+            f"An unexpected error occurred during pre_commit_log session: {e}",
+        )

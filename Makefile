@@ -22,7 +22,7 @@ logs:
 dev-setup:
 	@echo "🔧 Installing dependencies and loading environment..."
 	make decrypt-sa
-	# Add other local setup commands here, e.g., poetry install, pre-commit install
+	# Add other local setup commands here, e.g., uv sync, pre-commit install
 
 # Code Quality Targets
 lint:

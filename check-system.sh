@@ -3,28 +3,27 @@
 ##: name = check-system.sh
 ##: description = Verifies required system dependencies for LedgerBase.
 ##: usage = ./check-system.sh
-##: behavior = Prints version info for poetry, Python, and sops; exits if any tool is missing.
+##: behavior = Prints version info for uv, Python, and sops; exits if any tool is missing.
 
 set -e
-command -v poetry && poetry --version
+command -v uv && uv --version
 command -v python3 && python3 --version
 command -v sops && sops --version
 
 
 echo "🔍 Checking system environment..."
 
-# Section 1: Poetry setup
-echo "📦 Poetry:"
-poetry --version || { echo "❌ Poetry not found"; exit 1; }
-poetry show > /dev/null || { echo "❌ Poetry dependencies not installed"; exit 1; }
+# Section 1: uv setup
+echo "📦 uv:"
+uv --version || { echo "❌ uv not found"; exit 1; }
+uv lock --locked > /dev/null 2>&1 || { echo "❌ uv.lock is not consistent with pyproject.toml"; exit 1; }
 
-echo "✅ Poetry is installed and functional."
+echo "✅ uv is installed and the lockfile is consistent."
 
-# Section 2: Poetry export plugin
-echo -n "🔌 Checking poetry-plugin-export... "
-if ! poetry self show plugins | grep -q poetry-plugin-export; then
-  echo "❌ Missing plugin: poetry-plugin-export"
-  echo "➡️  Run: poetry self add poetry-plugin-export"
+# Section 2: uv export capability
+echo -n "🔌 Checking uv export... "
+if ! uv export --no-hashes --format requirements-txt > /dev/null 2>&1; then
+  echo "❌ uv export failed"
   exit 1
 else
   echo "✅"
@@ -78,7 +77,7 @@ fi
 
 # Section 7: Python environment loader
 echo "🐍 Testing load_env.py..."
-if poetry run python load_env.py | grep -q "All required environment variables are present"; then
+if uv run python load_env.py | grep -q "All required environment variables are present"; then
   echo "✅ load_env.py is working"
 else
   echo "❌ load_env.py failed — check dotenv files"

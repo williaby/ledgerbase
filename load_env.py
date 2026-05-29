@@ -28,16 +28,13 @@ try:
         )
         raise RuntimeError(message)
 except ImportError as err:
-    message = (
-        "Please install keyring and "
-        "keyrings.google-artifactregistry-auth>=0.6.0"
-    )
+    message = "Please install keyring and keyrings.google-artifactregistry-auth>=0.6.0"
     raise ImportError(message) from err
 
 # Files to search for environment definitions
 ENV_PATHS = [
     Path(".env.dev"),  # local dev env file
-    Path(".env.prod"), # CI / staging env file
+    Path(".env.prod"),  # CI / staging env file
 ]
 
 # Environment variables required for operation
@@ -52,6 +49,7 @@ REQUIRED_VARS = [
     "AIKIDO_API_TOKEN",
     "GOOGLE_CLOUD_PROJECT",
 ]
+
 
 def load_and_validate_env() -> None:
     """Load environment, validate required variables, and configure credentials."""
@@ -69,10 +67,7 @@ def load_and_validate_env() -> None:
     missing_vars = [key for key in REQUIRED_VARS if not os.getenv(key)]
     if missing_vars:
         missing_list = ", ".join(missing_vars)
-        message = (
-            "Missing required environment variables: "
-            f"{missing_list}"
-        )
+        message = f"Missing required environment variables: {missing_list}"
         raise OSError(message)
 
     # 3. Locate or write the GCP JSON for ADC
@@ -89,10 +84,7 @@ def load_and_validate_env() -> None:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(local_cred)
         print(f"🔐 Wrote credentials to {local_cred} from GCP_SA_JSON secret")
     else:
-        message = (
-            "No local service-account.json found and "
-            "GCP_SA_JSON is unset."
-        )
+        message = "No local service-account.json found and GCP_SA_JSON is unset."
         raise FileNotFoundError(message)
 
     # 4. Ensure project is set
@@ -100,8 +92,7 @@ def load_and_validate_env() -> None:
 
     # 5. Configure pip to use Artifact Registry (keyring will handle auth)
     os.environ["PIP_INDEX_URL"] = (
-        "https://us-python.pkg.dev/cloud-aoss/"
-        "cloud-aoss-python/simple"
+        "https://us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple"
     )
     os.environ["PIP_EXTRA_INDEX_URL"] = "https://pypi.org/simple"
 

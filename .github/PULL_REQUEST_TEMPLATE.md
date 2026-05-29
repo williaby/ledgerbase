@@ -30,7 +30,7 @@ This PR has been labeled with:
 
 - **type:dependencies** – indicates that this is a dependency update.
 - **automerge** (or **requires-review**) – indicates whether this PR will be merged automatically or requires manual review.
-- **scope:** labels (such as `scope:poetry`, `scope:devtools`, `scope:docker`, etc.) – to categorize the changes into production or development scopes.
+- **scope:** labels (such as `scope:python-deps`, `scope:devtools`, `scope:docker`, etc.) – to categorize the changes into production or development scopes.
 
 ---
 

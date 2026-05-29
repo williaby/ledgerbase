@@ -25,7 +25,7 @@ vendor classification, budget tracking, and reconciliation with actual savings.
 ## 🧩 Stack
 
 - **Python 3.12+**
-- **Poetry** – Dependency management
+- **uv** – Dependency management
 - **Flask** – Backend API framework
 - **PostgreSQL** – Primary data store
 - **Docker Compose** – Container orchestration
@@ -52,7 +52,7 @@ vendor classification, budget tracking, and reconciliation with actual savings.
 
 - Python 3.12+
 - Docker & Docker Compose
-- Poetry (`pip install poetry`)
+- uv (`pipx install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ### Clone the repository
 
@@ -64,13 +64,13 @@ cd ledgerbase
 ### Install dependencies
 
 ```bash
-poetry install
+uv sync
 ```
 
 ### Run locally
 
 ```bash
-poetry run flask run
+uv run flask run
 ```
 
 For detailed setup and architecture,
@@ -81,10 +81,10 @@ see [docs/setup-instructions.md](docs/setup-instructions.md).
 ## 🧪 Testing and Linting
 
 ```bash
-poetry run pytest
-poetry run flake8
-poetry run bandit -r src
-poetry run mypy src
+uv run pytest
+uv run ruff check src
+uv run bandit -r src
+uv run mypy src
 ```
 
 Or run everything with:
@@ -96,7 +96,7 @@ pre-commit run --all-files
 > Note: Ensure `pre-commit` is installed and initialized:
 >
 > ```bash
-> poetry run pre-commit install
+> uv run pre-commit install
 > ```
 
 ---

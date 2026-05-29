@@ -46,7 +46,7 @@ ignore:
     - ".idea/**"
     - ".DS_Store"
     - "Thumbs.db"
-    - "poetry.lock"
+    - "uv.lock"
     - "dist/**"
     - "build/**"
     - ".env"

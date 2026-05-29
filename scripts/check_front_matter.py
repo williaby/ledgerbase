@@ -34,10 +34,21 @@ import yaml
 # Constants
 FRONT_MATTER_PARTS = 3  # Number of parts when splitting by '---' markers
 REQUIRED = [
-    "title", "name", "description", "category", "usage", "behavior",
-    "inputs", "outputs", "dependencies", "author", "last_modified", "changelog",
+    "title",
+    "name",
+    "description",
+    "category",
+    "usage",
+    "behavior",
+    "inputs",
+    "outputs",
+    "dependencies",
+    "author",
+    "last_modified",
+    "changelog",
 ]
 DATE_RX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
 
 def extract_front_matter(text: str) -> str | None:
     """Extract YAML front-matter from text content.
@@ -57,6 +68,7 @@ def extract_front_matter(text: str) -> str | None:
             return parts[1]
     return None
 
+
 def validate_meta(meta: dict, path: Path) -> list[str]:
     """Validate metadata against required fields and format rules.
 
@@ -72,10 +84,11 @@ def validate_meta(meta: dict, path: Path) -> list[str]:
 
     """
     errs = [f"Missing '{key}' in {path}" for key in REQUIRED if key not in meta]
-    lm = meta.get("last_modified","")
+    lm = meta.get("last_modified", "")
     if lm and not DATE_RX.match(str(lm)):
         errs.append(f"Bad date format in {path}: last_modified='{lm}'")
     return errs
+
 
 def main() -> None:
     """Execute the front-matter validation process.
@@ -93,7 +106,7 @@ def main() -> None:
 
     """
     failures = []
-    for ext in ("md","py","sh","yml","yaml","toml"):
+    for ext in ("md", "py", "sh", "yml", "yaml", "toml"):
         for path in Path("../src").rglob(f"*.{ext}"):
             text = path.read_text()
             fm = extract_front_matter(text)
@@ -113,6 +126,7 @@ def main() -> None:
         sys.exit(1)
     print("All front-matter blocks valid.")
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

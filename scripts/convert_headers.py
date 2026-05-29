@@ -63,6 +63,7 @@ def parse_metadata(lines: list[str]) -> tuple[dict[str, str], list[int]]:
             break
     return meta, consumed
 
+
 def yaml_block(meta: dict[str, str], path: Path) -> list[str]:
     """Generate a YAML front-matter block from metadata.
 
@@ -82,8 +83,13 @@ def yaml_block(meta: dict[str, str], path: Path) -> list[str]:
         meta["title"] = path.stem.replace("_", " ").title()
     # Ensure required fields exist
     required = [
-        "title", "name", "description", "category", "author",
-        "last_modified", "changelog",
+        "title",
+        "name",
+        "description",
+        "category",
+        "author",
+        "last_modified",
+        "changelog",
     ]
     for k in required:
         meta.setdefault(k, '""')
@@ -92,6 +98,7 @@ def yaml_block(meta: dict[str, str], path: Path) -> list[str]:
         block.append(f"{k}: {v}")
     block.append("---")
     return block
+
 
 def process_file(path: Path) -> bool:
     """Process a single Markdown file to convert old metadata to YAML front-matter.
@@ -111,11 +118,12 @@ def process_file(path: Path) -> bool:
     if not meta:
         return False
     # Remove old metadata lines
-    rest = [ln for i,ln in enumerate(text) if i not in consumed]
+    rest = [ln for i, ln in enumerate(text) if i not in consumed]
     # Prepend YAML block
     new = [*yaml_block(meta, path), "", *rest]
     path.write_text("\n".join(new))
     return True
+
 
 def main() -> None:
     """Execute the metadata conversion process.
@@ -141,6 +149,7 @@ def main() -> None:
     else:
         print("No old metadata found to convert.")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
