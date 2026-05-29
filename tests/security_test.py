@@ -1,5 +1,3 @@
-import pytest
-
 from ledgerbase import config
 
 
@@ -13,4 +11,3 @@ def test_placeholder_security_check() -> None:
     if security_settings is None:
         error_message = "Security settings must not be None."
         raise ValueError(error_message)
-    pytest.assume(new=True)

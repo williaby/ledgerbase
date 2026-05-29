@@ -16,7 +16,7 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-  # → Pre-build step: generate requirements.txt from Poetry
+  # → Pre-build step: generate requirements.txt from uv.lock
   commands:
     - bash ./generate_requirements.sh
 

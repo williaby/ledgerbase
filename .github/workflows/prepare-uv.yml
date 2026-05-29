@@ -1,0 +1,73 @@
+---
+# Front-Matter for GitHub Workflow
+title: "Prepare uv Environment"
+name: "prepare-uv.yml"
+description: "Sets up a uv environment with Google Artifact Registry authentication"
+category: workflow
+usage: "Called by other workflows that need a uv environment"
+behavior: "Installs uv, configures Assured OSS via keyring, and installs dependencies"
+inputs: "GCP_SA_JSON secret for Google Artifact Registry authentication"
+outputs: "python-version output variable and dev-requirements.txt file"
+dependencies: "astral-sh/setup-uv, google-github-actions/auth"
+author: "LedgerBase Team"
+last_modified: "2026-05-29"
+changelog: "Migrated dependency management to uv"
+tags: [uv, workflow, python]
+---
+
+name: Prepare uv Environment
+
+on:
+  workflow_call:
+    secrets:
+      GCP_SA_JSON:
+        description: "Service account JSON for Google Artifact Registry"
+        required: true
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      python-version: ${{ steps.setup-python.outputs.python-version }}
+
+    # Route uv installs through Assured OSS, with PyPI as a fallback index
+    env:
+      UV_INDEX_URL: https://_json_key_base64:${{ secrets.GCP_SA_JSON }}@us-python.pkg.dev/cloud-aoss/cloud-aoss-python/simple
+      UV_EXTRA_INDEX_URL: https://pypi.org/simple
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2.12
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        id: setup-python
+        run: |
+          uv python install 3.11
+          echo "python-version=3.11" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to Google Artifact Registry
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_JSON }}
+
+      - name: Install Artifact Registry keyring backend
+        run: uv tool install keyring --with keyrings.google-artifactregistry-auth
+
+      - name: Install Dependencies
+        run: uv sync --frozen --keyring-provider subprocess
+
+      - name: Export Dev Requirements
+        run: |
+          uv export --only-group dev --no-hashes --format requirements-txt \
+            --output-file dev-requirements.txt

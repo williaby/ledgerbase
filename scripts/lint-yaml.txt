@@ -38,7 +38,7 @@ mirrors-isort/.github/workflows/main.yml
 .github/workflows/templates/docker-template.yml
 .github/workflows/templates/python-template-pip.yml
 .github/workflows/templates/nox-template-matrix.yml
-.github/workflows/templates/prepare-poetry.yml
+.github/workflows/templates/prepare-uv.yml
 .github/workflows/templates/nox-template.yml
 .github/workflows/automation/auto-approve.yml
 .github/workflows/automation/stale.yml

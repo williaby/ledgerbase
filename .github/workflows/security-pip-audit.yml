@@ -35,7 +35,7 @@ permissions:
 
 jobs:
   prepare:
-    uses: ./.github/workflows/templates/prepare-poetry.yml
+    uses: ./.github/workflows/prepare-uv.yml
     with:
       GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
     secrets:
@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify no public PyPI fallbacks
-        run: poetry run nox -s verify_assured
+        run: uv run nox -s verify_assured
 
       - name: Install jq for JSON parsing
         run: |
@@ -67,14 +67,14 @@ jobs:
 
       - name: Run pip-audit scan (JSON)
         run: |
-          poetry run pip-audit \
+          uv run pip-audit \
             --requirement "${{ matrix.target.req }}" \
             --format json \
             --output "${{ matrix.target.name }}.json"
 
       - name: Convert JSON → SARIF
         run: |
-          poetry run sarif summary "${{ matrix.target.name }}.json" --format sarif \
+          uv run sarif summary "${{ matrix.target.name }}.json" --format sarif \
             > "${{ matrix.target.name }}.sarif"
 
       - name: Upload JSON report

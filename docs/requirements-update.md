@@ -6,10 +6,10 @@ This document explains how the automatic update of `requirements.txt` and `dev-r
 
 When you open the project in PyCharm, a startup task automatically runs the `generate_requirements.sh` script, which:
 
-1. Updates `requirements.txt` with all project dependencies from Poetry
-2. Updates `dev-requirements.txt` with development dependencies from Poetry
+1. Updates `requirements.txt` with all project dependencies from uv
+2. Updates `dev-requirements.txt` with development dependencies from uv
 
-This ensures that both requirements files are always up-to-date with the dependencies defined in `pyproject.toml` and locked in `poetry.lock`.
+This ensures that both requirements files are always up-to-date with the dependencies defined in `pyproject.toml` and locked in `uv.lock`.
 
 ## Configuration Files
 

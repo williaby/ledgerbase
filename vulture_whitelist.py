@@ -64,9 +64,9 @@ _ = [
     "check_docker",
     "get_repo_name",
     "get_branch_name",
-    "get_poetry_dependencies",
+    "get_project_dependencies",
     "discover_files",
-    "install_poetry_and_deps",
+    "install_project_and_deps",
     "require_tool",
     "ensure_reports",
 ]

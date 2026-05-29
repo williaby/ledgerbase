@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run Semgrep CI session via Nox using Poetry-managed virtualenv."""  # D200
+"""Run Semgrep CI session via Nox using a uv-managed virtualenv."""  # D200
 
 import subprocess  # nosec B404
 import sys
@@ -8,10 +8,10 @@ import sys
 def main() -> None:
     """Invoke the Nox semgrep_ci session and exit with its return code."""  # D103
     try:
-        poetry = "poetry"
+        uv = "uv"
         nox = "nox"
         subprocess.run(  # nosec: B603
-            [poetry, "run", nox, "-s", "semgrep_ci"],
+            [uv, "run", nox, "-s", "semgrep_ci"],
             check=True,
         )
     except subprocess.CalledProcessError as e:

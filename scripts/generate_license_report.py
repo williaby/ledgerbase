@@ -6,7 +6,7 @@
 ##: behavior = Runs license report and displays the generated JSON file
 ##: inputs = None
 ##: outputs = license-report.json, stdout
-##: dependencies = nox, poetry
+##: dependencies = nox, uv
 ##: author = Byron Williams
 ##: last_modified = 2025-04-20
 ##: tags = licensing, reporting, compliance
@@ -37,24 +37,24 @@ def _is_command_available(command: str) -> bool:
 def main() -> None:
     """Run license report via Nox and output the contents of license-report.json.
 
-    This function executes the license report using Nox through Poetry,
+    This function executes the license report using Nox through uv,
     and properly handles any command execution errors.
 
     The function checks if the report was generated successfully and
     outputs its contents to stdout.
     """
-    poetry_cmd = "poetry"
+    uv_cmd = "uv"
     nox_cmd = "nox"
 
-    if not _is_command_available(poetry_cmd):
-        print("❌ Poetry command not found in PATH")
+    if not _is_command_available(uv_cmd):
+        print("❌ uv command not found in PATH")
         sys.exit(1)
 
     if not _is_command_available(nox_cmd):
         print("❌ Nox command not found in PATH")
         sys.exit(1)
 
-    cmd_args = [poetry_cmd, "run", nox_cmd, "-s", "license_report"]
+    cmd_args = [uv_cmd, "run", nox_cmd, "-s", "license_report"]
 
     try:
         result = subprocess.run(  # nosec B603

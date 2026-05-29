@@ -1,12 +1,12 @@
 FROM python:3.11-slim@sha256:82c07f2f6e35255b92eb16f38dbd22679d5e8fb523064138d7c6468e7bf0c15b AS base
 
-ENV POETRY_VERSION=1.8.2
-ENV POETRY_HOME="/opt/poetry"
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-ENV PATH="$POETRY_HOME/bin:$PATH"
+# Install uv (static binary from the official image)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set working directory
 WORKDIR /app
@@ -15,10 +15,13 @@ WORKDIR /app
 RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
 
 # Copy only necessary files for installing deps
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies without dev tools
-RUN poetry install --no-dev --no-interaction
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Put the project virtualenv on PATH
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy actual app code and change ownership
 COPY . .
@@ -28,4 +31,4 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Run app
-CMD ["poetry", "run", "python", "-m", "app"]
+CMD ["uv", "run", "--no-sync", "python", "-m", "app"]
