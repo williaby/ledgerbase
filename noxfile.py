@@ -121,13 +121,16 @@ def ensure_reports(
     Callable[[Session, P], R],
 ]:
     """Ensure report directories exist before running a session function."""
+
     def decorator(func: Callable[[Session, P], R]) -> Callable[[Session, P], R]:
         @functools.wraps(func)
         def wrapper(session: Session, *args: P.args, **kwargs: P.kwargs) -> R:
             for report_dir in dirs_to_ensure:
                 report_dir.mkdir(parents=True, exist_ok=True)
             return func(session, *args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -800,8 +803,10 @@ def license_report(session: Session) -> None:
         return
     allowed_licenses = {"MIT", "BSD", "Apache-2.0", "ISC", "Python-2.0"}
     disallowed = [
-        (f"{pkg.get('Name', 'Unknown')} ({pkg.get('Version', 'N/A')}) - "
-         f"License: {pkg.get('License', 'Unknown')}")
+        (
+            f"{pkg.get('Name', 'Unknown')} ({pkg.get('Version', 'N/A')}) - "
+            f"License: {pkg.get('License', 'Unknown')}"
+        )
         for pkg in licenses
         if pkg.get("License", "UNKNOWN") not in allowed_licenses
     ]
@@ -1165,8 +1170,7 @@ def list_security_sessions(session: Session) -> None:
         nox_path = shutil.which("nox")
         if not nox_path:
             session.error("Could not find 'nox' executable in PATH.")
-        list_output = (subprocess.check_output
-                       ([nox_path, "-l", "--json"], text=True))  # nosec: B603, B607 - nox_path is validated above
+        list_output = subprocess.check_output([nox_path, "-l", "--json"], text=True)  # nosec: B603, B607 - nox_path is validated above
         all_sessions = json.loads(list_output)
         security_sessions: list[str] = [
             s["session"] for s in all_sessions if "security" in s.get("tags", [])
@@ -1184,7 +1188,7 @@ def list_security_sessions(session: Session) -> None:
 
 
 @nox.session(python=LATEST, tags=["util"], reuse_venv=True)
-@ensure_reports(TXT_REPORT_DIR) # Use your existing helper
+@ensure_reports(TXT_REPORT_DIR)  # Use your existing helper
 def pre_commit_log(session: Session) -> None:
     """Run all pre-commit hooks verbosely and log to docs/reports/txt/pre-commit.log
     using shell redirection.
@@ -1212,20 +1216,20 @@ def pre_commit_log(session: Session) -> None:
         session.run("bash", "-c", shell_command, external=True)
         # Check if the log file was created and has content, log success
         if log_path.exists() and log_path.stat().st_size > 0:
-             session.log(f"Pre-commit log generated successfully at {log_path}")
+            session.log(f"Pre-commit log generated successfully at {log_path}")
         elif log_path.exists():
-             session.log(f"Pre-commit ran, but log file at {log_path} is empty.")
+            session.log(f"Pre-commit ran, but log file at {log_path} is empty.")
         else:
-             session.warn(f"Pre-commit ran, but log file {log_path} was not created.")
+            session.warn(f"Pre-commit ran, but log file {log_path} was not created.")
 
     except nox.command.CommandFailed as e:
         # The exception 'e' itself contains the exit code info in its string
         # representation. So, just use 'e' directly in the f-string.
         session.error(
-            f"Pre-commit run failed. Check log at {log_path} for details. Error: {e}")
-
+            f"Pre-commit run failed. Check log at {log_path} for details. Error: {e}",
+        )
 
     except (OSError, RuntimeError) as e:
-
         session.error(
-            f"An unexpected error occurred during pre_commit_log session: {e}")
+            f"An unexpected error occurred during pre_commit_log session: {e}",
+        )

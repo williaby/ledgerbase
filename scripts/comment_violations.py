@@ -45,8 +45,7 @@ def main() -> None:
     event_path = os.getenv("GITHUB_EVENT_PATH")
     if not event_path or not Path(event_path).exists():
         print(
-            "GITHUB_EVENT_PATH is not set or file does not exist; "
-            "skipping comments.",
+            "GITHUB_EVENT_PATH is not set or file does not exist; skipping comments.",
         )
         return
 
@@ -63,9 +62,7 @@ def main() -> None:
 
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        message = (
-            "GITHUB_TOKEN is not set; cannot authenticate to GitHub."
-        )
+        message = "GITHUB_TOKEN is not set; cannot authenticate to GitHub."
         raise RuntimeError(message)
 
     # Read violations

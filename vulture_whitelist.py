@@ -32,7 +32,6 @@ _ = [
     "lint_rst",
     "vulture",
     "lint_other",
-
     # ─── Security & Compliance ────────────────────────────────────────────────
     "bandit_scan",
     "safety",
@@ -49,7 +48,6 @@ _ = [
     "aikido_weekly_scan",
     "aikido_pr_scan",
     "aikido_usage_report",
-
     # ─── Dev & Utility Sessions ───────────────────────────────────────────────
     "fuzz",
     "build_docs",
@@ -58,7 +56,6 @@ _ = [
     "docker_build",
     "package_check",
     "list_security_sessions",
-
     # ─── Helpers Invoked Indirectly ───────────────────────────────────────────
     "load_env_from_sops",
     "check_docker",
