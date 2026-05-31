@@ -84,6 +84,7 @@ pydantic = "^2.9.0,<2.10.0"
 poetry-plugin-export = "^1.8.0"
 PyGithub = "^1.59.0"
 contourpy = "^1.3.2"
+pydoclint = ">=0.8.4"
 
 
 [[tool.poetry.source]]
@@ -200,3 +201,13 @@ ignore-words-list = "ledgernase, PII, mycustomterm" # Add your words here
 check-filenames = true
 # Check hidden files
 check-hidden = true
+
+[tool.pydoclint]
+style = "google"
+exclude = '\.git|tests/|scripts/|benchmarks/|tools/|noxfile\.py|\.claude/'
+arg-type-hints-in-docstring = true
+arg-type-hints-in-signature = true
+skip-checking-raises = false
+require-return-section-when-returning-nothing = false
+require-return-section-when-returning-values = false
+require-yield-section-when-yielding-values = false
