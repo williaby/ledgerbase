@@ -62,7 +62,7 @@ def get_security_settings() -> dict[str, Any]:
     These settings can be extended to read from secure storage.
 
     Returns:
-        Dictionary with SESSION_COOKIE_SECURE and PREFERRED_URL_SCHEME.
+        dict[str, Any]: Dictionary with SESSION_COOKIE_SECURE and PREFERRED_URL_SCHEME.
 
     """
     return {
@@ -83,11 +83,11 @@ def get_config(env: str | None = None) -> type[Config]:
     """Select a Config subclass based on the given environment.
 
     Args:
-        env: One of 'development', 'production', or None. If None, reads
-             the FLASK_ENV environment variable (defaults to 'development').
+        env (str | None): One of 'development', 'production', or None. If None,
+            reads the FLASK_ENV environment variable (defaults to 'development').
 
     Returns:
-        The Config subclass corresponding to the environment.
+        type[Config]: The Config subclass corresponding to the environment.
 
     """
     mapping: dict[str, type[Config]] = {

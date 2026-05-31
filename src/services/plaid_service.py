@@ -25,14 +25,12 @@ def plaid_request(endpoint: str, payload: dict[str, Any]) -> dict[str, Any] | No
     """Make a request to the Plaid API.
 
     Args:
-    ----
         endpoint (str): The API endpoint to call.
-        payload (Dict[str, Any]): The payload to send in the request.
+        payload (dict[str, Any]): The payload to send in the request.
 
     Returns:
-    -------
-        Optional[Dict[str, Any]]: The JSON response from the API,
-        or None if the request fails. # noqa: E501
+        dict[str, Any] | None: The JSON response from the API,
+        or None if the request fails.
 
     """
     url = f"{BASE_URL}{endpoint}"
@@ -63,13 +61,11 @@ def create_link_token(user_id: str = "user-unique-id") -> dict[str, Any] | None:
     """Create a link token for the Plaid API.
 
     Args:
-    ----
         user_id (str): A unique identifier for the user. Defaults to "user-unique-id".
 
     Returns:
-    -------
-        Optional[Dict[str, Any]]: The response containing the link token,
-        or None if the request fails. # noqa: E501
+        dict[str, Any] | None: The response containing the link token,
+        or None if the request fails.
 
     """
     payload = {
@@ -86,12 +82,10 @@ def get_accounts(access_token: str) -> dict[str, Any] | None:
     """Retrieve account information from the Plaid API.
 
     Args:
-    ----
         access_token (str): The access token for the user's account.
 
     Returns:
-    -------
-        Optional[Dict[str, Any]]: The response containing account information,
+        dict[str, Any] | None: The response containing account information,
         or None if the request fails.
 
     """
@@ -108,17 +102,15 @@ def get_transactions(
     """Retrieve transaction data from the Plaid API.
 
     Args:
-    ----
         access_token (str): The access token for the user's account.
         start_date (str): The start date for the transaction query (YYYY-MM-DD).
         end_date (str): The end date for the transaction query (YYYY-MM-DD).
-        options (Optional[Dict[str, Any]]): Additional options for the query.
-        Defaults to None. # noqa: E501
+        options (dict[str, Any] | None): Additional options for the query.
+            Defaults to None.
 
     Returns:
-    -------
-        Optional[Dict[str, Any]]: The response containing transaction data, or
-         None if the request fails.
+        dict[str, Any] | None: The response containing transaction data,
+        or None if the request fails.
 
     """
     payload: dict[str, Any] = {
@@ -138,13 +130,11 @@ def sync_transactions(
     """Synchronize transactions using the Plaid API.
 
     Args:
-    ----
         access_token (str): The access token for the user's account.
-        cursor (Optional[str]): The cursor for incremental sync. Defaults to None.
+        cursor (str | None): The cursor for incremental sync. Defaults to None.
 
     Returns:
-    -------
-        Optional[Dict[str, Any]]: The response containing synchronized transactions,
+        dict[str, Any] | None: The response containing synchronized transactions,
         or None if the request fails.
 
     """

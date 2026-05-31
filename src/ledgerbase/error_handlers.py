@@ -42,6 +42,9 @@ def handle_validation_error(
     Args:
         error (ValidationError): The validation error instance.
 
+    Returns:
+        Response | str | tuple[Response | str, int]: A JSON or HTML 422 response.
+
     """
     if _wants_json():
         return jsonify({"errors": error.messages}), 422
@@ -56,6 +59,9 @@ def handle_not_found(
     Args:
         _error (NotFound): The exception instance (unused).
 
+    Returns:
+        Response | str | tuple[Response | str, int]: A JSON or HTML 404 response.
+
     """
     if _wants_json():
         return jsonify({"error": "Not found"}), 404
@@ -69,6 +75,9 @@ def handle_internal_error(
 
     Args:
         error (Exception): The exception instance.
+
+    Returns:
+        Response | str | tuple[Response | str, int]: A JSON or HTML 500 response.
 
     """
     current_app.logger.exception("Unhandled exception occurred: %s", error)

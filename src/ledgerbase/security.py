@@ -30,7 +30,6 @@ def apply_secure_headers(app: Flask) -> None:
     """Apply secure headers to all responses in the Flask app.
 
     Args:
-    ----
         app (Flask): The Flask application instance.
 
     """
@@ -40,11 +39,9 @@ def apply_secure_headers(app: Flask) -> None:
         """Set secure headers for the response.
 
         Args:
-        ----
             response (Response): The Flask response object.
 
         Returns:
-        -------
             Response: The modified response with secure headers.
 
         """
@@ -72,7 +69,6 @@ def configure_rate_limiting(app: Flask) -> None:
     """Configure rate limiting for the Flask app.
 
     Args:
-    ----
         app (Flask): The Flask application instance.
 
     """
@@ -83,8 +79,7 @@ def configure_rate_limiting(app: Flask) -> None:
     def login() -> str:
         """Handle login attempts with rate limiting.
 
-        Returns
-        -------
+        Returns:
             str: A message indicating a login attempt.
 
         """
@@ -95,7 +90,6 @@ def configure_logging(app: Flask) -> None:
     """Configure logging for the Flask app.
 
     Args:
-    ----
         app (Flask): The Flask application instance.
 
     """

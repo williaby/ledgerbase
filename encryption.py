@@ -41,23 +41,26 @@ class DecryptionError(ValueError):
 
 
 class Encryptor:
-    """Encrypts and decrypts string values using Fernet keys from app config."""
+    """Encrypt and decrypt string values using Fernet keys from app config.
 
-    CONFIG_ERROR_MSG = (
+    Initializes the Encryptor with encryption keys from the Flask app config.
+
+    Attributes:
+        CONFIG_ERROR_MSG (str): Error message raised when the secret keys config
+            is missing or empty.
+
+    Raises:
+        ValueError: If no LEDGERBASE_SECRET_KEYS are found in the config or
+            if the keys list is empty.
+
+    """
+
+    CONFIG_ERROR_MSG: str = (
         "Configuration error: 'LEDGERBASE_SECRET_KEYS' must be a non-empty "
         "list in Flask config."
     )
 
     def __init__(self) -> None:
-        """Initialize the Encryptor with encryption keys from the app config.
-
-        Raises
-        ------
-        ValueError
-            If no LEDGERBASE_SECRET_KEYS are found in the config or
-            if the keys list is empty.
-
-        """
         config = cast("AppConfig", current_app.config)
 
         keys: list[str] = config.get("LEDGERBASE_SECRET_KEYS", [])
@@ -72,15 +75,11 @@ class Encryptor:
     def encrypt(self, value: str) -> str:
         """Encrypt a string value using the primary key.
 
-        Parameters
-        ----------
-        value : str
-            The string value to encrypt.
+        Args:
+            value (str): The string value to encrypt.
 
-        Returns
-        -------
-        str
-            The encrypted string.
+        Returns:
+            str: The encrypted string.
 
         """
         encrypted_bytes: bytes = self.primary_cipher.encrypt(value.encode("utf-8"))
@@ -89,20 +88,14 @@ class Encryptor:
     def decrypt(self, token: str) -> str:
         """Decrypt a token using the primary key, then fall back to secondary keys.
 
-        Parameters
-        ----------
-        token : str
-            The encrypted string token.
+        Args:
+            token (str): The encrypted string token.
 
-        Returns
-        -------
-        str
-            The original decrypted string.
+        Returns:
+            str: The original decrypted string.
 
-        Raises
-        ------
-        DecryptionError
-            If decryption fails with all known keys.
+        Raises:
+            DecryptionError: If decryption fails with all known keys.
 
         """
         for cipher in [self.primary_cipher, *self.secondary_ciphers]:

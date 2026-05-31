@@ -37,5 +37,5 @@ class ExampleModel(db.Model):
 
     """
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
+    id: int = db.Column(db.Integer, primary_key=True)
+    name: str = db.Column(db.String(50), nullable=False)
