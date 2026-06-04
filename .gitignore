@@ -51,6 +51,8 @@ ledgerbase_secure_env/service-account.plain.json
 # Security and audit artifacts
 *.sarif
 *.json
+# Renovate config must be tracked at repo root despite the blanket *.json ignore
+!renovate.json
 safety_output.txt
 semgrep-results.json
 license-report.json
