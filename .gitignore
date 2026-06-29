@@ -73,3 +73,6 @@ sbom.cdx.json
 # Ignore specific directories
 /styles/
 /ledgerbase_secure_env/service-account.json
+
+# Track project MCP server config (exception to *.json)
+!.mcp.json
