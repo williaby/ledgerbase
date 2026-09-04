@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
@@ -16,6 +17,8 @@ from .security import (
 
 # Load environment variables from .env file
 load_dotenv()
+
+_DATABASE_URI_UNSET_MSG = "DATABASE_URL environment variable is not set."
 
 # Initialize SQLAlchemy instance (app-bound later)
 db = SQLAlchemy()
@@ -35,23 +38,23 @@ else:
 
 def create_app() -> Flask:
     """Application factory function."""
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    template_dir = os.path.join(project_root, "templates")
+    project_root = Path(__file__).resolve().parent.parent
+    template_dir = project_root / "templates"
 
-    if not os.path.isdir(template_dir):
+    if not template_dir.is_dir():
         print(f"Warning: Template directory not found at {template_dir}")
         app = Flask(__name__)
     else:
-        app = Flask(__name__, template_folder=template_dir)
+        app = Flask(__name__, template_folder=str(template_dir))
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-        "DATABASE_URL", "sqlite:///default.db"
+        "DATABASE_URL",
+        "sqlite:///default.db",
     )
     if not app.config["SQLALCHEMY_DATABASE_URI"]:
-        raise ValueError("DATABASE_URL environment variable is not set.")
+        raise ValueError(_DATABASE_URI_UNSET_MSG)
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    # app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "default-secret-key")
 
     # Initialize core services and middleware
     db.init_app(app)

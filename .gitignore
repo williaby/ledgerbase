@@ -73,3 +73,15 @@ sbom.cdx.json
 # Ignore specific directories
 /styles/
 /ledgerbase_secure_env/service-account.json
+
+# Test, coverage, and tooling caches
+.coverage
+.coverage.*
+coverage.xml
+coverage-*.xml
+junit-*.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv*/

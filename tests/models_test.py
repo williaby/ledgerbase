@@ -1,11 +1,26 @@
-"""Unit tests for models logic."""
+"""Unit tests for the SQLAlchemy models."""
 
-import pytest
+from ledgerbase import db
+from ledgerbase.models import ExampleModel
+
+NAME_MAX_LENGTH = 50
 
 
-def test_placeholder_model_logic() -> None:
-    """Placeholder test for model logic.
+def test_example_model_is_mapped() -> None:
+    """ExampleModel is registered against the shared SQLAlchemy metadata."""
+    assert issubclass(ExampleModel, db.Model)
+    assert ExampleModel.__tablename__ in db.Model.metadata.tables
 
-    This test is a placeholder and always passes.
-    """
-    pytest.assume(new=True)
+
+def test_example_model_columns() -> None:
+    """ExampleModel declares an integer primary key and a bounded name column."""
+    table = db.Model.metadata.tables[ExampleModel.__tablename__]
+    assert table.c.id.primary_key is True
+    assert table.c.name.nullable is False
+    assert table.c.name.type.length == NAME_MAX_LENGTH
+
+
+def test_example_model_instantiation() -> None:
+    """ExampleModel accepts a name at construction time."""
+    model = ExampleModel(name="test")
+    assert model.name == "test"
